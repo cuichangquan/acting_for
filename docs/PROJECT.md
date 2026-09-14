@@ -31,19 +31,65 @@ Railsアプリが、認証済みのAI Agentによる操作要求について、�
 - OAuth/OIDCやMCPなどへの接続は、必要に応じたAdapterとして検討する。v0.1での実装を約束しない。
 - RailsらしいAPIと導入の容易さを優先し、過剰設計を避ける。
 
-## 3. 用語の暫定定義
+## 3. 用語定義
 
-正式な用語定義は今後の設計工程で確定する。
+**状態：確定（D011）。** ActingFor v0.1では、次の用語を正式名称として使用する。
 
-| 用語 | 現時点の意味 |
-| --- | --- |
-| Principal | Agentが代理として行動する対象のユーザー |
-| Agent | ユーザーから委任を受け、操作を要求する別主体 |
-| Delegation | ユーザーがAgentへ任せた権限と、その適用条件 |
-| Constraint | 金額や有効期限など、委任を適用する条件 |
-| Authorization | 要求された操作を委任の範囲内で実行してよいか判断すること |
-| Approval | 自動許可できない操作について人間の承認を求めること |
-| Audit | 重要な認可判定を記録すること |
+| 用語 | 正式な意味 | 例 |
+| --- | --- | --- |
+| **Principal** | Agentに権限を委任し、Agentがその代理として行動する対象 | `current_user` |
+| **Agent** | Principalの代理として操作を要求する主体。ActingForはその身元認証自体を行わない | Shopping Agent |
+| **Delegation** | PrincipalからAgentへ与えられた代理権限 | 「purchaseを1万円まで許可」 |
+| **Action** | Agentが実行しようとしている操作 | `:purchase`、`:delete_account` |
+| **Resource** | Actionの対象となるオブジェクト | Product、Order |
+| **Context** | 認可判定時に渡される実行時情報 | `amount: 8_900` |
+| **Constraint** | Delegationに付随する条件・制限 | `amount <= 10_000` |
+| **Expiration** | Delegationの有効期限 | `expires_at` |
+| **Authorization** | Delegation、Constraint等をもとに操作可否を判断する処理 | `ActingFor.authorize(...)` |
+| **Decision** | Authorizationの判定結果 | `allow` / `deny` / `require_approval` |
+| **Approval** | 自動実行せず、人間の承認が必要であること | `require_approval` |
+| **Audit Event** | Authorizationで何を判断したかの記録 | agent / principal / action / decision |
+
+### 3.1 命名と責任分界
+
+- 正式用語にはUserではなく **Principal** を使う。RailsアプリではUserであることが多いが、将来ほかの主体を扱う可能性を限定しないためである。
+- **Agent Identity** はコア用語にしない。ActingForはAgentの本人確認や独自ID規格を提供せず、Authenticationを外部の責務とする。
+- **Owner** は使わない。「所有者」と「代理として行動される対象」は意味が異なるためである。
+- **Approval** と **Approval Workflow** を分ける。ActingForが扱うのはDecisionとして `require_approval` を返すところまでであり、承認依頼、承認操作、通知、再実行はホストアプリの責務とする。
+- **Authentication** と **Authorization** を分ける。Authenticationは外部、Delegationに基づくAuthorizationはActingForの責務とする。
+- **Policy** はv0.1のコア用語にしない。将来、PolicyクラスをDSLとして採用する可能性はあるが、ActingForの中心概念はPolicyではなくDelegationである。
+
+概念上の流れは次のとおり。
+
+```text
+Principal
+   │
+   │ Delegation
+   ▼
+ Agent
+   │
+   │ Action + Resource + Context
+   ▼
+ActingFor
+   │
+   ├─ allow
+   ├─ deny
+   └─ require_approval
+```
+
+Public APIはこの語彙に揃える。次は用語の対応を示す設計イメージであり、メソッド名や戻り値を確定するものではない。
+
+```ruby
+decision = ActingFor.authorize(
+  agent: current_agent,
+  principal: current_user,
+  action: :purchase,
+  resource: product,
+  context: {
+    amount: 8_900
+  }
+)
+```
 
 ## 4. v0.1スコープ
 
@@ -121,7 +167,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | --- | --- | --- |
 | 1 | 解決する問題を1文で確定 | 完了。READMEとD006に記録 |
 | 2 | v0.1スコープを正式確定 | 完了。本文とD007に記録 |
-| 3 | 用語定義 | 暫定定義あり |
+| 3 | 用語定義 | 完了。本文とD011に記録 |
 | 4 | ドメインモデル設計 | 未着手 |
 | 5 | Public API設計 | 初期イメージあり、未確定 |
 | 6 | README Quick Start作成 | API設計後 |
@@ -166,8 +212,8 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. 用語定義を確定する。
-2. v0.1の完了条件をレビューし、ドメインモデルとPublic APIを設計する。
+1. `Agent` / `Delegation` / `Audit Event` のドメインモデルとテーブルを設計する。
+2. v0.1の完了条件をレビューし、Public APIを設計する。
 3. Audit、対応Ruby/Rails、ライセンスを決める。
 
 ## 9. 初版の根拠

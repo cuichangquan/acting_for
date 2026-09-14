@@ -16,7 +16,7 @@ ActingFor focuses on this delegated authorization problem inside Rails applicati
 
 ## Intended model
 
-- **Principal**: the user on whose behalf an agent acts.
+- **Principal**: the party on whose behalf an agent acts.
 - **Agent**: the separate actor requesting an action.
 - **Delegation**: the permissions and constraints granted by the principal.
 - **Decision**: whether the requested action is allowed, denied, or requires human approval.
@@ -38,6 +38,8 @@ The following is an illustrative delegation, not a set of built-in rules:
 The host application authenticates the agent and establishes the principal. ActingFor is intended to evaluate delegated authority, alongside the application's existing authorization rules. The host application remains responsible for executing business operations and enforcing authorization decisions.
 
 ActingFor is not an authentication provider, an OAuth/OIDC server, an agent framework, or an MCP server. It aims to remain independent of any particular LLM or agent framework.
+
+The authoritative v0.1 glossary and naming rules are maintained in the [project terminology](docs/PROJECT.md#3-用語定義).
 
 ## v0.1 scope
 
