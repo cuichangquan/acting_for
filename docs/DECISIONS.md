@@ -28,6 +28,7 @@
 - 理由：誰が要求したかと、誰の権限で動くかを区別する必要がある。
 - 設計への反映：`current_user` と `current_agent` を分離する。
 - 未決定：具体的なモデル、関連、識別子、認証結果の受け渡し方法。
+- 後続決定（2026-09-15）：モデルと関連の基本方針はD013で確定。AgentはPrincipalを直接参照せず、Delegationで関係を表現する。
 
 ## D003: Rails内部の委任と認可に責務を絞る
 
@@ -54,6 +55,7 @@
 - 理由：自動許可、拒否、人間の承認が必要な場合を区別する。
 - 未決定：戻り値のクラス、メソッド名、エラー時の扱い、ルールの優先順位、承認後の実行方法。
 - 補足：`require_approval` は実行許可を意味しない。
+- 後続決定（2026-09-15）：D013でDecisionをValue Objectとする方針を確定。メソッド名や詳細ルールは未確定。
 
 ## D006: READMEの紹介文
 
@@ -76,6 +78,7 @@
 - 理由：認証や汎用認可へ責務を広げず、Rails-nativeなAI Agent Delegated Authorizationに集中するため。
 - この決定に含まないもの：項目別完了条件、Public API、具体的なモデルとDBスキーマ、Auditの保存方式、対応Ruby/Rails、ライセンス。これらは下位設計として別途決定する。
 - 根拠：[共有会話「ActingFor問題定義」](https://chatgpt.com/share/6aa7c32e-77b4-83ee-ad35-ae048e8001ef)でのStep 2と、共有会話で決まった内容をローカルへ反映するというユーザー指示。
+- 後続決定（2026-09-15）：D013でドメインモデルとAudit永続化の基本方針を具体化。PROJECTの旧Agent属性案（principal / external_id / provider）はidentifier / name等の最小属性へ置き換えた。
 
 ## D008: v0.1の競合判定とfail-closed原則
 
@@ -84,6 +87,7 @@
 - 決定案：入力が妥当で評価可能な場合だけ自動許可できる。該当なし、必須入力欠落、不正値、条件評価不能は `deny` とする。複数のDelegationが一致した場合は `deny`、`require_approval`、`allow` の順に優先する。
 - 理由：障害や曖昧さによる権限昇格を避け、結果をDelegationの追加順やDB取得順に依存させないため。
 - 補足：reason codeと、プログラミングエラーを例外として扱う境界はPublic API設計で決める。
+- 後続決定（2026-09-15）：D013で一致なしのdefault denyを確定し、explicit deny Delegationはv0.1対象外とした。旧3値のDelegation優先順位案は置き換え、require_approval優先の方向とする。入力欠落・不正値・評価不能時の扱いは引き続き提案。
 
 ## D009: v0.1のApproval責任分界
 
@@ -101,6 +105,7 @@
 - 理由：AI Agentによる重要な認可判定を後から追跡できるようにするため。
 - 未決定：保存方式、識別子、contextの記録・秘匿化、記録失敗時の扱い。構造化イベント方式とホスト責任での永続化は、共有会話で確定していないため採用済みとは扱わない。
 - 根拠：D007と同じ共有会話。
+- 後続決定（2026-09-15）：D013で専用AuditEventテーブルへの永続化、基本append-only、ContextのFilter / Sanitizer経由の記録を確定。識別子、フィルタ仕様、記録失敗時の扱いは未確定。
 
 ## D011: ActingFor v0.1の正式用語
 
@@ -114,6 +119,7 @@
 - Public APIへの反映：引数名は `agent`、`principal`、`action`、`resource`、`context` の語彙に揃える。`ActingFor.authorize(...)` は現時点では設計イメージであり、Public API自体の確定は後続工程で行う。
 - 残っている未決定事項：各概念のRailsモデル、DBスキーマ、Public APIの具体形、Decisionの戻り値クラスとreason code、Audit Eventの保存方式。
 - 根拠：Step 3「用語定義」でユーザーが確定した内容。
+- 後続決定（2026-09-15）：Railsモデル、DecisionのValue Object化、Audit Eventの保存方式の基本方針はD013で確定。DBスキーマとPublic APIの詳細は未確定。
 
 ## D012: ActingForとMCPの正式な責務境界
 
@@ -129,6 +135,23 @@
 - 残っている未決定事項：AdapterのAPIと提供時期、ドメインモデル、DBスキーマ、Public API、既存認可との具体的な接続。これらを本決定で確定したものとは扱わない。
 - 次工程：Step 4「ドメインモデル設計」。
 - 根拠：ユーザーが今回提示した、ActingForとMCPの責務境界を正式決定としてファイルへ反映する指示。
+- 後続決定（2026-09-15）：Step 4の基本方針はD013で確定。次はDelegationの詳細ルールを定義する。
+
+## D013: v0.1のドメインモデル基本方針
+
+- 日付：2026-09-15
+- 状態：**確定（基本方針）。属性案、候補operator、複数一致時の詳細ルール、Public APIは未確定。**
+- 決定：主要なActiveRecord ModelとテーブルはAgent、Delegation、AuditEventの3つとする。AuthorizationはService、DecisionはValue Objectとし、Action、Resource、Constraintの専用テーブルは作らない。
+- 関連：Agentは必須・一意のidentifierと任意のnameを持ち、Principalを直接持たない。ホストRailsアプリのPrincipalをDelegationからpolymorphic associationで参照する。
+- 委任：Actionは文字列で原則完全一致、Resourceはtype / idによる識別情報、ConstraintはJSON / JSONBとする。任意コードや高度なPolicy Languageを保存・実行しない。
+- 判定：Effectはallow / require_approvalとし、explicit deny Delegationは作らない。有効な一致がない場合はdefault deny。両Effectが一致した場合はrequire_approvalを優先する方向だが、詳細ルールは次工程で定義する。
+- 有効性：revoked_atがnilで、expires_atがnilまたは現在時刻より未来の場合に有効とする。starts_atは導入しない。
+- 監査：専用AuditEventテーブルに基本append-onlyで記録する。Authorization Contextをそのまま保存せず、Filter / Sanitizerを通して必要最小限にする。
+- 理由：AgentとPrincipalの関係を委任として表現し、Rails内の代理権限の判定・取消・監査に必要な最小構成を保つため。
+- 正式本文：[v0.1 Domain Model Design](domain_model_v0_1.md)。属性案、例、採用理由と未決定事項は本文で管理する。
+- 既存記録との関係：D002、D005、D007、D010、D011、D012の下位設計を具体化する。D008の旧競合案は上記の方針で部分的に置き換え、未定義・不正入力の扱いは引き続き提案とする。
+- 次工程：Delegation 1件の意味、matching、Resource、Constraint、複数一致、require_approval、作成・更新・取消の詳細を定義し、その後Step 5「Public API Design」へ進む。
+- 根拠：ユーザーが提示したStep 4のドメインモデル設計内容と、docs/domain_model_v0_1.mdへの整理・保存の指示。
 
 ## 追記する際の項目
 
