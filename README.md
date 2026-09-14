@@ -41,6 +41,18 @@ ActingFor is not an authentication provider, an OAuth/OIDC server, an agent fram
 
 The authoritative v0.1 glossary and naming rules are maintained in the [project terminology](docs/PROJECT.md#3-用語定義).
 
+### MCP and ActingFor
+
+> **MCP defines how agents interact with applications. ActingFor defines what agents are authorized to do on behalf of principals within a Rails application.**
+
+ActingFor operates inside the Rails application boundary, evaluating delegated authority after an agent has been authenticated and a request has reached the application.
+
+MCPがAgentとアプリケーションの接続・操作方法を扱うのに対し、ActingForはRailsアプリ内部で、認証済みAgentがPrincipalの代理としてその操作を行う権限を委任されているかを判断する。
+
+The core must remain independent of MCP gems and protocol objects. A future adapter may translate MCP requests into `agent`, `principal`, `action`, `resource`, and `context`; MCP tool names and ActingFor actions are separate concepts. The host application enforces the decision before executing business logic. `require_approval` does not permit execution.
+
+See the [formal responsibility boundary and design rules](docs/PROJECT.md#21-actingforとmcpの正式な責務境界) and [decision D012](docs/DECISIONS.md#d012-actingforとmcpの正式な責務境界).
+
 ## v0.1 scope
 
 v0.1 will provide the following delegated-authorization path inside a Rails application:

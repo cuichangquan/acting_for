@@ -1,6 +1,6 @@
 # ActingFor 開発方針
 
-更新日：2026-09-14
+更新日：2026-09-15
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
@@ -30,6 +30,101 @@ Railsアプリが、認証済みのAI Agentによる操作要求について、�
 - 特定のLLMやAgent Frameworkに依存しない設計を目指す。
 - OAuth/OIDCやMCPなどへの接続は、必要に応じたAdapterとして検討する。v0.1での実装を約束しない。
 - RailsらしいAPIと導入の容易さを優先し、過剰設計を避ける。
+
+### 2.1 ActingForとMCPの正式な責務境界
+
+**状態：確定（D012）。** 今後の設計は次の責務境界に従う。
+
+> **MCPは「AgentがRailsアプリの機能にどうアクセスするか」を扱う。**
+> **ActingForは「そのAgentがPrincipalの代理として、その操作を実行してよいか」を扱う。**
+
+| 項目 | MCP側 / 外部 | ActingFor |
+| --- | --- | --- |
+| Agent ↔ Rails間の接続 | 担当 | 担当しない |
+| Tool / Resource公開 | 担当 | 担当しない |
+| MCPリクエスト形式 | 担当 | Coreは知らない |
+| OAuth等によるアクセス認証 | MCP側 / 外部が担当 | 担当しない |
+| 「誰の代理か」 | 情報を渡す可能性がある | 判断の中心 |
+| Human / Principal → Agentの権限委任 | 担当しない | 担当 |
+| Actionの認可 | 接続・Toolレベルのアクセス制御はあり得る | 委任に基づく業務権限を担当 |
+| 金額・期限等のConstraint | 原則アプリ責務 | 担当 |
+| `require_approval` | 担当しない | 判定を担当 |
+| Delegationの有効期限 | 担当しない | 担当 |
+| DelegationベースのAudit | 担当しない | 認可判定の記録を担当 |
+
+この表は本プロジェクトの責務分担を示す。MCP側のAuthorizationとActingForのAuthorizationはレイヤーが異なる。
+
+```text
+MCP側のAuthorization
+  「このClientは、このMCP Server / Toolへアクセスしてよいか？」
+
+ActingForのAuthorization
+  「このAgentは、このPrincipalの代理として、この業務操作を実行してよいか？」
+```
+
+MCP側でアクセスが許可されても、業務操作の代理権限が認められたことにはならない。ActingForはホストアプリの既存認可と併用し、ホストアプリがDecisionを適用する。Approval Workflowの境界はD009、Auditの境界はD010に従う。
+
+### 2.2 設計ルール
+
+1. **ActingFor CoreはMCPに依存しない。** `mcp` gemやMCP protocol objectをCore APIに入れない。
+2. **MCP固有情報は将来Adapterで変換する。** Coreへ渡す語彙は `agent`、`principal`、`action`、`resource`、`context` とする。Adapterの具体的なAPI、種類、提供時期は未決定であり、v0.1での実装を約束しない。
+3. **ActingForはAgentの本人確認を行わない。** ホストアプリまたは外部の認証基盤が認証したAgentを受け取り、委任に基づいて認可する。
+4. **MCP Tool名とActingFor Actionを同一概念にしない。** たとえばMCP Tool `checkout` の内部でAction `purchase` を判定できる。`tool_name == action` という依存関係を作らない。
+5. **Business LogicはActingForの後ろに置く。** ホストアプリは認可判定を適用してから業務処理を実行する。`deny` と `require_approval` では実行しない。ActingFor自身は業務処理を実行しない。
+
+```text
+MCP Request
+    ↓
+MCP Adapter（将来の接続点）
+    ↓
+agent / principal / action / resource / context
+    ↓
+ActingFor Core
+```
+
+全体の責務境界は次のとおり。認証の具体的な配置はホスト構成によるが、ActingForは認証後に評価する。
+
+```text
+External Agent
+    ↓
+MCP / REST / GraphQL / other
+    ↓
+Protocol / Identity / Authentication（OAuth・OIDC等）
+──────────── Rails内部の委任認可との境界 ────────────
+    ↓
+ActingFor
+  Delegation / Constraint / Expiration
+  Authorization / Approval Decision / Audit
+    ↓
+ホストアプリがDecisionを適用
+──────────── 業務処理との境界 ────────────
+    ↓ 実行が許可された場合
+Rails Business Logic
+```
+
+### 2.3 Shopping Agentの例
+
+以下は責務境界を説明するための委任設定例であり、組み込みの金額ルールや確定済みPublic APIではない。「purchaseは10,000円以内なら自動許可、超過時は承認が必要」という委任があり、その他の条件を満たすものとする。
+
+```text
+AI Agent: purchase(product, amount: 8_900)
+    ↓
+MCP側: purchase toolへのアクセスを許可
+    ↓
+Rails → ActingFor
+    ├─ 誰の代理か？
+    ├─ purchaseが委任されているか？
+    ├─ 上限10,000円以内か？
+    └─ Delegationの期限内か？
+    ↓
+allow
+    ↓
+ホストアプリ → PurchaseService
+```
+
+同じ委任設定で `amount: 30_000` を要求すると、MCPとして正常なTool Callでも、ActingForは `require_approval` を返す。ホストアプリは業務処理を停止し、必要な承認ワークフローを扱う。金額超過が常に `require_approval` になるという一般ルールを定めるものではない。
+
+**ActingForはMCPを置き換えない。MCPの内側に残る「代理権限」の問題を解決する。** この境界を保つことで、接続プロトコルが変わっても委任認可をRails内部で扱える。
 
 ## 3. 用語定義
 
@@ -175,6 +270,8 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
 | 9 | テスト方針 | v0.1の完了条件を定義。詳細設計は未着手 |
 | 10 | 実装開始 | 設計後 |
+
+MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。次はStep 4「ドメインモデル設計」に進む。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
