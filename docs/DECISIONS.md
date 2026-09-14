@@ -58,20 +58,49 @@
 ## D006: READMEの紹介文
 
 - 日付：2026-09-14
-- 状態：**提案（READMEに採用案を記載）**
-- 候補：README冒頭の短いキャッチコピーと、その直後の説明文。
+- 状態：**確定**
+- 決定：README冒頭に短いキャッチコピー `Rails-native delegated authorization for AI agents.` と、その直後に英語・日本語の説明文を置く。
 - 理由：Rails、委任、認可、AI Agent、ユーザーの代理という要素を伝えられる。
-- 記録上の扱い：前の会話で推奨された文案を保持する。ユーザーによる明示的な正式採用の確認は未記録。
 - 本文：[README](../README.md)。ここには複製しない。
+- 根拠：[共有会話「ActingFor問題定義」](https://chatgpt.com/share/6aa7c32e-77b4-83ee-ad35-ae048e8001ef)でのStep 1と、共有会話で決まった内容をローカルへ反映するというユーザー指示。
 
 ## D007: v0.1の具体的な範囲
 
 - 日付：2026-09-14
-- 状態：**提案**
-- 候補：[PROJECTのv0.1スコープ案](PROJECT.md#4-v01スコープ案)。
-- 理由：Agent、Delegation、認可、条件、有効期限、Approval判定、Audit、Rails integrationを最小範囲として検討する。
-- 次の判断：各候補の提供範囲と完了条件を決め、正式確定に更新する。
-- 補足：API、スキーマ、対応バージョン、ライセンスの確定を含まない。
+- 状態：**確定**
+- 決定：[PROJECTのv0.1スコープ](PROJECT.md#4-v01スコープ)に記載したAgent representation、Delegation、Authorization、Constraint、Expiration、Approval判定、Audit log、Rails integrationをv0.1の必須範囲とする。
+- 要約：認証済みのPrincipal/AgentをホストRailsアプリから受け取り、Delegation、条件、有効期限を評価して `allow` / `deny` / `require_approval` を返し、認可判定をAudit logへ記録する。
+- Constraintの境界：金額、resource、contextによる条件付き委任を扱えるようにするが、独自の巨大なPolicy言語は作らない。
+- Approvalの境界：`require_approval` を返すところまでとし、承認ワークフローはホストアプリの責務とする。
+- 対象外：Agent認証、OAuth Server、OIDC Provider、独自Agent Identity規格、MCP Server、Agent間通信、決済、UI・管理画面・通知、Agent証明書、独自暗号方式、分散Authorization Server、汎用Policy Engine。
+- 理由：認証や汎用認可へ責務を広げず、Rails-nativeなAI Agent Delegated Authorizationに集中するため。
+- この決定に含まないもの：項目別完了条件、Public API、具体的なモデルとDBスキーマ、Auditの保存方式、対応Ruby/Rails、ライセンス。これらは下位設計として別途決定する。
+- 根拠：[共有会話「ActingFor問題定義」](https://chatgpt.com/share/6aa7c32e-77b4-83ee-ad35-ae048e8001ef)でのStep 2と、共有会話で決まった内容をローカルへ反映するというユーザー指示。
+
+## D008: v0.1の競合判定とfail-closed原則
+
+- 日付：2026-09-14
+- 状態：**提案（共有会話では未決定）**
+- 決定案：入力が妥当で評価可能な場合だけ自動許可できる。該当なし、必須入力欠落、不正値、条件評価不能は `deny` とする。複数のDelegationが一致した場合は `deny`、`require_approval`、`allow` の順に優先する。
+- 理由：障害や曖昧さによる権限昇格を避け、結果をDelegationの追加順やDB取得順に依存させないため。
+- 補足：reason codeと、プログラミングエラーを例外として扱う境界はPublic API設計で決める。
+
+## D009: v0.1のApproval責任分界
+
+- 日付：2026-09-14
+- 状態：**確定**
+- 決定：v0.1は `require_approval` の判定までを提供し、承認依頼、メール・Push通知、承認画面、ユーザーによる承認、処理再実行を含む承認ワークフローは提供しない。
+- 理由：3値判定の意味を保ちながら、承認者認証、要求の固定、再利用防止など別のセキュリティ領域をv0.1へ持ち込まないため。
+- 根拠：D007と同じ共有会話。
+
+## D010: v0.1の監査境界
+
+- 日付：2026-09-14
+- 状態：**確定（範囲のみ）**
+- 決定：v0.1で認可判定のAudit logを扱う。追跡対象の最小項目はAgent、Principal、action、resource、context、decision、timestampとする。高度な分析、ダッシュボード、SIEM連携は対象外とする。
+- 理由：AI Agentによる重要な認可判定を後から追跡できるようにするため。
+- 未決定：保存方式、識別子、contextの記録・秘匿化、記録失敗時の扱い。構造化イベント方式とホスト責任での永続化は、共有会話で確定していないため採用済みとは扱わない。
+- 根拠：D007と同じ共有会話。
 
 ## 追記する際の項目
 

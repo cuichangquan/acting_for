@@ -45,53 +45,89 @@ Railsアプリが、認証済みのAI Agentによる操作要求について、�
 | Approval | 自動許可できない操作について人間の承認を求めること |
 | Audit | 重要な認可判定を記録すること |
 
-## 4. v0.1スコープ案
+## 4. v0.1スコープ
 
-**状態：候補を整理済み。正式確定は次の作業。**
+**状態：製品スコープは確定（D007）。項目別の完了条件とDefinition of Doneは提案であり、実装済みという意味ではない。**
 
-| 候補 | 目指す最小範囲 | これから決めること |
+### 4.1 v0.1で成立させる利用経路
+
+ホストRailsアプリが認証済みのPrincipalとAgent、要求するactionとresource、判定に必要なcontextを渡す。ActingForはDelegationと条件を評価し、`allow` / `deny` / `require_approval` を返し、認可判定をAudit logへ記録する。ホストアプリは判定を受けて業務処理を実行または停止する。
+
+```text
+host authentication
+  -> principal + agent + action + resource + context
+  -> ActingFor delegation decision
+  -> host executes or stops the operation
+```
+
+Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど外部の仕組みで認証されたAgent情報を受け取る。特定の認証方式やAgent Identity規格は作らない。
+
+### 4.2 必須機能と項目別の完了条件
+
+| 必須機能 | v0.1で提供する範囲 | 完了条件 |
 | --- | --- | --- |
-| Agent主体 | Rails内部でAgentをユーザーと区別する | Gemがモデルを提供するか、アプリの主体を受け取るか |
-| Delegation | UserからAgentへの委任を表現する | データ構造、対象範囲、作成・変更・取消の扱い |
-| Authorization | 委任に基づいて3種類の判定を返す | ルールの優先順位、未定義・入力不正時の扱い |
-| 条件付き権限 | 操作に対する条件を評価する | 条件の記述方法、入力の型と信頼できる取得元 |
-| 有効期限 | 委任の期限を判定に反映する | 時刻の境界、タイムゾーン、実行時の再確認 |
-| Approval判定 | `require_approval` を返せるようにする | 承認後の再認可・実行との責任分界 |
-| Audit log | 重要な認可判定を記録する | 記録項目、保存方法、機密情報の除外、記録失敗時の扱い |
-| Rails integration | Railsアプリから利用できる入口を用意する | 導入方法、既存の認証・認可との接続 |
+| Agent representation | Rails内部で操作主体となるAgentをPrincipalと別に表現する。概念上の最小要素は `id`、`principal`、`external_id`、`provider`。Gemは本人確認を行わない | 同じPrincipalでもAgentが異なれば別の主体として扱われ、認証済みAgent情報をホストから受け取れることを自動テストで示す |
+| Delegation | PrincipalからAgentへの委任として、`principal`、`agent`、`action`、`resource / scope`、`constraints`、`expires_at` を表現する | 指定したPrincipal / Agent / action / resourceだけが一致し、別主体・別action・別resourceには適用されないことを自動テストで示す |
+| Authorization | ActingForの中心機能として、委任された操作を実行してよいか判定する。結果は `allow` / `deny` / `require_approval` の3種類 | 3種類すべてとDelegationが存在しない場合を自動テストし、呼び出し側が結果を区別できる |
+| Constraint | 金額上限、resource一致、context条件などの条件付き委任を扱う。独自の巨大なPolicy言語は作らない | 少なくとも金額上限とresource条件について、条件内・境界値・条件外を自動テストする。context条件の具体的な提供方式はPublic API設計で決める |
+| Expiration | Delegationに `expires_at` を持たせ、期限切れを認可判定へ反映する | 期限内は他の条件に従って判定され、期限切れは `deny` になることを時刻固定テストで示す。時刻境界の詳細はドメインモデル設計で決める |
+| Approval判定 | 自動許可できない操作に `require_approval` を返す。ActingForは「承認が必要」と判断するところまでを担当する | `require_approval` が `allow` と区別され、それだけでは実行許可にならないことを文書とテストで示す。承認依頼、通知、画面、承認後の再実行は含めない |
+| Audit log | 認可判定について、少なくともAgent、Principal、action、resource、context、decision、timestampを記録する | 3種類の判定について必要項目を追跡できることを自動テストで示す。保存方式、機密情報の扱い、記録失敗時の扱いはAudit設計で決める |
+| Rails integration | Rails Gemとして自然に導入・利用できる入口を提供する。generatorの具体構成は後続設計で決める | 対応対象に含めるRailsテストアプリで、インストール、設定、Delegation、判定、Auditまでの一連の利用を統合テストとQuick Startで再現できる |
 
-### v0.1の対象外とする方針
+上表の「提供する範囲」は確定スコープ、「完了条件」はその範囲を検証可能にするための提案である。初期資料の `ActingFor.authorize(...)`、`decision.allowed?`、`rails generate acting_for:install` などは引き続きAPIイメージであり、メソッド名、戻り値クラス、generator構成を確定するものではない。
 
-- 独自OAuth Server、独自OIDC、独自認証プロトコル
+### 4.3 v0.1全体のDefinition of Done
+
+**状態：提案。** 次をすべて満たした時点をv0.1実装完了とする。
+
+1. 4.2の全項目と境界ケースが自動テストされ、対応対象と決めたRuby/Railsの組み合わせでCIが成功する。
+2. サンプルRailsアプリまたは統合テストで、Delegation作成から判定、Audit記録までを再現できる。
+3. READMEに、実行可能なインストール手順、Quick Start、Agent認証との責任分界、Constraint、Expiration、Approvalの責任分界を記載する。
+4. セキュリティ上の主要な失敗ケースを、テストまたは設計文書で扱う。
+5. Public API、永続化方式、対応Ruby/Rails、ライセンスをDECISIONSで確定し、破壊的変更の可能性をv0.1のリリースノートに明記する。
+6. `bundle exec rake` 相当の一つの公開コマンドで、単体・統合テストと静的検査を再現できる。
+7. 未実装機能をREADMEで利用可能と表現せず、対象外と既知の制約を明記する。
+
+### 4.4 v0.1の対象外
+
+- Agent認証
+- OAuth Server、OIDC Provider
 - 独自Agent Identity規格、政府認証Agent ID、Agent証明書発行基盤
-- MCP Server本体、Agent間通信
-- 決済機能
-- UI、管理画面、承認フロー全体の提供
-- 独自暗号プロトコル
+- MCP Server、Agent間通信
+- 決済処理
+- Approval UI、承認依頼の送信、通知機能、承認後の処理再実行
+- UI、管理画面
+- 独自暗号方式
+- 分散Authorization Server
+- 汎用Policy Engine
 
-### まだ決めていないこと
+対象外の機能はホストアプリで実装できる。将来の拡張点を妨げない設計は行うが、v0.1の完了条件には含めない。
 
-- ドメインモデルとDBスキーマ
-- Public API、例外と戻り値の詳細
+### 4.5 スコープ確定後も別途決める設計
+
+- Agent representationとDelegationの具体的なドメインモデル、DBスキーマ、識別子の型
+- Public API、例外、Decisionとreason codeの具体形
+- Constraintの記述方法とcontextの信頼境界
+- Audit logの保存方式、機密情報の扱い、記録失敗時の扱い
+- 失効境界、取消、競合ルール、未定義・不正入力時の扱い
+- Principal自身の認可とDelegationの具体的な接続方法
 - Ruby / Railsの対応バージョン
 - ライセンス
-- 具体的なテスト方針とリリース条件
-
-初期資料の `ActingFor.authorize(...)` や `decision.allowed?` などはAPIのイメージであり、確定仕様ではない。
 
 ## 5. 進行順
 
 | 順番 | 作業 | 状態 |
 | --- | --- | --- |
-| 1 | 解決する問題を1文で確定 | READMEに採用案を記録。明示的な採用確認は未記録 |
-| 2 | v0.1スコープを正式確定 | 次に進める作業 |
+| 1 | 解決する問題を1文で確定 | 完了。READMEとD006に記録 |
+| 2 | v0.1スコープを正式確定 | 完了。本文とD007に記録 |
 | 3 | 用語定義 | 暫定定義あり |
 | 4 | ドメインモデル設計 | 未着手 |
 | 5 | Public API設計 | 初期イメージあり、未確定 |
 | 6 | README Quick Start作成 | API設計後 |
 | 7 | Gem内部構成設計 | 未着手 |
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
-| 9 | テスト方針 | 未着手 |
+| 9 | テスト方針 | v0.1の完了条件を定義。詳細設計は未着手 |
 | 10 | 実装開始 | 設計後 |
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
@@ -102,11 +138,11 @@ Railsアプリが、認証済みのAI Agentによる操作要求について、�
 
 | 候補タイトル | 解決したいこと |
 | --- | --- |
-| v0.1スコープを正式確定する | 必須機能、対象外、完了条件を決める |
+| v0.1の完了条件を確定する | 4.2の完了条件と4.3のDefinition of Doneをレビューする |
 | Principal自身の権限とDelegationの関係を決める | 委任で本人の権限を超えないための、既存認可との接続方法を決める |
 | 判定ルールと失効の扱いを決める | 未定義時、競合ルール、期限切れ、取消、判定から実行までの変更を扱う |
 | Constraint入力の信頼境界を決める | Agentの申告値に依存せず、金額・通貨・対象を確認する方法を決める |
-| require_approval後の責任分界を決める | 承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
+| require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
 | Auditの最小仕様を決める | 判定と実際の実行結果を区別し、記録範囲・秘匿化・失敗時の扱いを決める |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
@@ -130,14 +166,15 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-**v0.1スコープ案を、実装開始前の正式な範囲と完了条件にする。**
-
-その際、READMEの紹介文の採用状態も確認し、決定した内容をDECISIONSに記録する。
+1. 用語定義を確定する。
+2. v0.1の完了条件をレビューし、ドメインモデルとPublic APIを設計する。
+3. Audit、対応Ruby/Rails、ライセンスを決める。
 
 ## 9. 初版の根拠
 
 - `AgentAuthority Project Instructions.pdf`：旧名称での初期構想。
 - `ActingFor_Project_Summary.pdf`：改名後の方針整理。
 - 2026-09-14の引き継ぎと会話：最新の名称、説明文案、責務、進行順、情報管理方針。
+- [ChatGPT共有会話「ActingFor問題定義」](https://chatgpt.com/share/6aa7c32e-77b4-83ee-ad35-ae048e8001ef)：紹介文とv0.1正式スコープ。
 
 初版では、名称と責務について最新の引き継ぎ内容を優先した。PDFの旧名称や未確定のAPI例を、そのまま現在の確定仕様にはしていない。
