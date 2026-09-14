@@ -56,6 +56,7 @@
 - 未決定：戻り値のクラス、メソッド名、エラー時の扱い、ルールの優先順位、承認後の実行方法。
 - 補足：`require_approval` は実行許可を意味しない。
 - 後続決定（2026-09-15）：D013でDecisionをValue Objectとする方針を確定。メソッド名や詳細ルールは未確定。
+- 後続決定（2026-09-15）：D014で複数一致時のrequire_approval > allowを確定。Decisionの具体クラス・API、エラーの具体的な扱いは引き続き未確定。
 
 ## D006: READMEの紹介文
 
@@ -88,6 +89,7 @@
 - 理由：障害や曖昧さによる権限昇格を避け、結果をDelegationの追加順やDB取得順に依存させないため。
 - 補足：reason codeと、プログラミングエラーを例外として扱う境界はPublic API設計で決める。
 - 後続決定（2026-09-15）：D013で一致なしのdefault denyを確定し、explicit deny Delegationはv0.1対象外とした。旧3値のDelegation優先順位案は置き換え、require_approval優先の方向とする。入力欠落・不正値・評価不能時の扱いは引き続き提案。
+- 後続決定（2026-09-15）：D014でmatching、Constraint不成立・invalid constraintの除外、default deny、require_approval > allow、判断できなければallowしないfail closedを確定。旧3値優先順位案は現行仕様ではない。例外等のPublic APIとAudit failure policyは未確定。
 
 ## D009: v0.1のApproval責任分界
 
@@ -106,6 +108,7 @@
 - 未決定：保存方式、識別子、contextの記録・秘匿化、記録失敗時の扱い。構造化イベント方式とホスト責任での永続化は、共有会話で確定していないため採用済みとは扱わない。
 - 根拠：D007と同じ共有会話。
 - 後続決定（2026-09-15）：D013で専用AuditEventテーブルへの永続化、基本append-only、ContextのFilter / Sanitizer経由の記録を確定。識別子、フィルタ仕様、記録失敗時の扱いは未確定。
+- 後続決定（2026-09-15）：D014で業務処理結果を監査対象外とする責務、agent_identifierとmatched_delegation_idsを含む基本情報、allowlist優先方針を確定。reason_code正式一覧、Filter / Sanitizer API、DB型、Audit failure policyは未確定。
 
 ## D011: ActingFor v0.1の正式用語
 
@@ -136,6 +139,7 @@
 - 次工程：Step 4「ドメインモデル設計」。
 - 根拠：ユーザーが今回提示した、ActingForとMCPの責務境界を正式決定としてファイルへ反映する指示。
 - 後続決定（2026-09-15）：Step 4の基本方針はD013で確定。次はDelegationの詳細ルールを定義する。
+- 後続決定（2026-09-15）：Step 4はD014で完了。次はStep 5「Public API設計」を実施する。MCP・Authenticationとの責務境界は維持する。
 
 ## D013: v0.1のドメインモデル基本方針
 
@@ -152,6 +156,31 @@
 - 既存記録との関係：D002、D005、D007、D010、D011、D012の下位設計を具体化する。D008の旧競合案は上記の方針で部分的に置き換え、未定義・不正入力の扱いは引き続き提案とする。
 - 次工程：Delegation 1件の意味、matching、Resource、Constraint、複数一致、require_approval、作成・更新・取消の詳細を定義し、その後Step 5「Public API Design」へ進む。
 - 根拠：ユーザーが提示したStep 4のドメインモデル設計内容と、docs/domain_model_v0_1.mdへの整理・保存の指示。
+- 後続決定（2026-09-15）：詳細ルールはD014で確定。Delegationの意味・基本属性、matching、Resource、Constraint、競合、Lifecycle、Auditを具体化し、単一delegation_id案はmatched_delegation_idsへ変更。Public APIとDB型等は引き続き未確定。
+
+## D014: v0.1 Delegation判定・Constraint・Lifecycle・Audit詳細
+
+- 日付：2026-09-15
+- 状態：**確定**
+- 決定の範囲：D013の基本方針を以下の詳細ルールで具体化し、Step 4を完了とする。未確定事項は本記録の末尾に明示する。
+- Delegationの意味：Agent AがPrincipal Pの代理としてResource RにAction XをConstraint Cの範囲内で実行する権限E。Agent、Principal、Action、Resource Scope、Constraints、Effect、Validityで構成する。基本属性は[設計書](domain_model_v0_1.md#4-delegation)に記録する。
+- Matching：Agent、Principal、Action、Resourceが一致し、expiredでもrevokedでもなく、すべてのConstraintを満たす場合だけmatchする。Actionは完全一致のみ。
+- Resource：type / idはAuthorization用識別情報とし、ActiveRecord polymorphic associationにしない。typeあり・idありは個別対象、typeあり・idなしはそのtype全体、両方nilはResource不要のAction。typeがnilでidありは不正。typeがnilは全Resourceを意味しない。resource_idのDB型は未確定。
+- Constraint：JSON / JSONBのArrayで、各要素はfield / operator / value。複数条件はAND、ContextのトップレベルKeyのみ参照し、同一fieldの複数指定を認める。operatorはeq、lt、lte、gt、gte、in。eqはString / Integer / Boolean、大小比較はInteger、inはContext側scalar・value側Arrayとする。
+- 型とfail closed：暗黙の型変換は禁止。missing fieldとnilはConstraint不成立、invalid constraintはmatchさせない。authorityを明確に確認できなければallowしない。空Constraintは[]とし、NULLと使い分けず[]へ統一する方向。Floatを積極的に扱わず、金額等はIntegerを推奨する。
+- Constraintの対象外：OR、NOT、nested expressions、nested object access、regex、custom functions、任意Rubyコード、database query、resource traversal、cross-resource conditions、wildcardは作らない。
+- Effectと競合：保存するeffectはallow / require_approvalのみ。explicit deny Delegationは作らない。一致0件はdeny、allowのみならallow、require_approvalが1件以上あればrequire_approval。Resource・Constraintの具体性、id、created_at、作成順によるoverrideやpriorityフィールドを導入しない。
+- 有効性：revoked_atがnil、かつexpires_atがnilまたは現在時刻より未来なら有効。現在時刻と等しい期限はexpired。starts_atは導入せず、expiredとrevokedを区別する。
+- Lifecycle：認可内容は原則immutable。principal、agent、action、resource scope、constraints、effectを直接UPDATEせず、権限変更は旧Delegationのrevokeと新Delegationのcreateで行う。通常操作でhard deleteを前提にしない。
+- Audit責務：Authorization Decisionを記録する。allow後の業務処理の成功・失敗はホストRailsアプリの責務。基本情報はagent_id / agent_identifier、Principal、Action / Resource、matched_delegation_ids / reason_code / sanitized context、decision、created_at。
+- Audit変更：単一delegation_id案を廃止し、複数一致をmatched_delegation_idsの配列で記録する。一致なしのdenyは[]。新しい中間テーブルは作らず、JSON / JSONB等の配列で十分とする方針。
+- Audit保護：原則append-onlyで、通常APIにupdate / destroyを前提としない。DBレベルのWORMや暗号署名は対象外。ContextはFilter / Sanitizerを通し、allowlist方式を優先して保存可能な項目だけを選ぶ方向とする。
+- 理由：汎用Policy Engine化を避け、明確な委任だけを認可し、権限変更後も過去Auditが参照するDelegationの意味と判定根拠を保つため。
+- 履歴：D013の基本方針を詳細化し、D008の競合・fail closed案とD010のAudit境界を具体化する。過去記録は削除せず、後続決定として参照する。
+- 未確定：Public API、Decisionの具体クラス/API、reason_code正式一覧、Audit failure policy、Filter / SanitizerのPublic API、DB schemaの細かな型とresource_idの正式DB型、Ruby / Rails対応バージョン、migration / generator構成。Audit INSERT失敗時のallow維持・deny・例外は固定しない。
+- 正式本文：[v0.1 Domain Model Design](domain_model_v0_1.md)。reason_codeの例は候補であり確定一覧ではない。
+- 次工程：Step 5「Public API設計」。
+- 根拠：ユーザーが2026-09-15に提示したStep 4の正式決定と設計ドキュメント更新指示。
 
 ## 追記する際の項目
 

@@ -62,7 +62,7 @@ ActingForのAuthorization
   「このAgentは、このPrincipalの代理として、この業務操作を実行してよいか？」
 ```
 
-MCP側でアクセスが許可されても、業務操作の代理権限が認められたことにはならない。ActingForはホストアプリの既存認可と併用し、ホストアプリがDecisionを適用する。Approval Workflowの境界はD009、Auditの境界はD010に従う。
+MCP側でアクセスが許可されても、業務操作の代理権限が認められたことにはならない。ActingForはホストアプリの既存認可と併用し、ホストアプリがDecisionを適用する。Approval Workflowの境界はD009、Auditの境界はD010と後続決定D014に従う。
 
 ### 2.2 設計ルール
 
@@ -136,7 +136,7 @@ allow
 | **Agent** | Principalの代理として操作を要求する主体。ActingForはその身元認証自体を行わない | Shopping Agent |
 | **Delegation** | PrincipalからAgentへ与えられた代理権限 | 「purchaseを1万円まで許可」 |
 | **Action** | Agentが実行しようとしている操作 | `:purchase`、`:delete_account` |
-| **Resource** | Actionの対象となるオブジェクト | Product、Order |
+| **Resource** | Authorization用の対象識別情報（D014） | Product、Order |
 | **Context** | 認可判定時に渡される実行時情報 | `amount: 8_900` |
 | **Constraint** | Delegationに付随する条件・制限 | `amount <= 10_000` |
 | **Expiration** | Delegationの有効期限 | `expires_at` |
@@ -208,12 +208,12 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | 必須機能 | v0.1で提供する範囲 | 完了条件 |
 | --- | --- | --- |
 | Agent representation | Rails内部で操作主体となるAgentをPrincipalと別に表現する。最小属性は `id`、必須・一意の `identifier`、任意の `name`、timestamps。PrincipalとはDelegationを介して関連付ける（D013）。Gemは本人確認を行わない | 同じPrincipalでもAgentが異なれば別の主体として扱われ、認証済みAgent情報をホストから受け取れることを自動テストで示す |
-| Delegation | PrincipalからAgentへの委任として、`principal`、`agent`、`action`、Resource識別情報、`effect`、`constraints`、`expires_at`、`revoked_at` を表現する（D013） | 指定したPrincipal / Agent / action / resourceだけが一致し、別主体・別action・別resourceには適用されないことを自動テストで示す |
-| Authorization | ActingForの中心機能として、委任された操作を実行してよいか判定する。結果は `allow` / `deny` / `require_approval` の3種類 | 3種類すべてとDelegationが存在しない場合を自動テストし、呼び出し側が結果を区別できる |
-| Constraint | 金額上限、resource一致、context条件などの条件付き委任を扱う。独自の巨大なPolicy言語は作らない | 少なくとも金額上限とresource条件について、条件内・境界値・条件外を自動テストする。context条件の具体的な提供方式はPublic API設計で決める |
+| Delegation | PrincipalからAgentへの委任として、`principal`、`agent`、`action`、Resource識別情報、`effect`、`constraints`、`expires_at`、`revoked_at` を表現する。認可内容は原則immutableで、変更はrevoke + createとする（D014） | 指定したPrincipal / Agent / action / resourceだけが一致し、別主体・別action・別resourceには適用されないことを自動テストで示す |
+| Authorization | ActingForの中心機能として、委任された操作を実行してよいか判定する。全matching条件を満たす委任を評価し、結果は `allow` / `deny` / `require_approval` の3種類。一致なしはdeny、require_approvalをallowより優先し、判断できなければallowしない（D014） | 3種類すべてとDelegationが存在しない場合を自動テストし、呼び出し側が結果を区別できる |
+| Constraint | JSON / JSONBのfield / operator / value配列をAND評価する。ContextのトップレベルKeyのみ参照し、6 operatorと型ルールに従う。暗黙変換をせず、不成立・不正なConstraintはmatchさせない（D014） | 少なくとも金額上限とresource条件について、条件内・境界値・条件外を自動テストする。Constraint形式と評価ルールはD014で確定済み。Public APIはStep 5で決める |
 | Expiration | Delegationに `expires_at` と `revoked_at` を持たせ、期限切れ・取消済みを有効対象から除外する（D013） | 有効期限なし・期限内は他の条件に従って評価し、現在時刻と等しい期限・期限切れ・取消済みのDelegationが除外されることを時刻固定テストで示す。有効な一致がなければ `deny` となる |
 | Approval判定 | 自動許可できない操作に `require_approval` を返す。ActingForは「承認が必要」と判断するところまでを担当する | `require_approval` が `allow` と区別され、それだけでは実行許可にならないことを文書とテストで示す。承認依頼、通知、画面、承認後の再実行は含めない |
-| Audit log | 認可判定を専用AuditEventテーブルへ基本append-onlyで記録する。Agent、Principal、action、resource、フィルタ済みcontext、decision、timestampを扱う（D013） | 3種類の判定について必要項目を追跡できることを自動テストで示す。Filter / Sanitizerによる必要最小限のcontext記録を検証する。具体的なフィルタ仕様と記録失敗時の扱いはAudit設計で決める |
+| Audit log | 認可判定を専用AuditEventテーブルへ基本append-onlyで記録する。Agent（agent_id / agent_identifier）、Principal、action、resource、matched_delegation_ids、reason_code、フィルタ済みcontext、decision、created_atを扱う。業務処理の成功・失敗は対象外（D014） | 3種類の判定について必要項目を追跡できることを自動テストで示す。allowlist優先のFilter / Sanitizerによる必要最小限のcontext記録を検証する。具体的なAPIと記録失敗時の扱いは未確定 |
 | Rails integration | Rails Gemとして自然に導入・利用できる入口を提供する。generatorの具体構成は後続設計で決める | 対応対象に含めるRailsテストアプリで、インストール、設定、Delegation、判定、Auditまでの一連の利用を統合テストとQuick Startで再現できる |
 
 上表の「提供する範囲」は確定スコープ、「完了条件」はその範囲を検証可能にするための提案である。初期資料の `ActingFor.authorize(...)`、`decision.allowed?`、`rails generate acting_for:install` などは引き続きAPIイメージであり、メソッド名、戻り値クラス、generator構成を確定するものではない。
@@ -247,11 +247,15 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.5 スコープ確定後も別途決める設計
 
-- [ドメインモデル基本方針](domain_model_v0_1.md)に基づく属性案の確定、DBスキーマ、識別子の型、Delegation matchingとResourceの詳細
-- Public API、例外、Decisionとreason codeの具体形
-- Constraintの記述方法とcontextの信頼境界
-- AuditEventの詳細スキーマ、Filter / Sanitizerの仕様、記録失敗時の扱い
-- Delegationの作成・更新・取消の操作、複数一致時の詳細ルール、未定義・不正入力時の扱い
+Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。以下は引き続き未確定。
+
+- Public API、例外の具体的な扱い
+- Decisionの具体クラス・属性・API、reason_code正式一覧
+- Audit failure policy（Audit INSERT失敗時にallowを維持するか、denyにするか、例外にするか）
+- Filter / SanitizerのPublic API
+- DB schemaの細かな型・制約、resource_idの正式DB型
+- migration / generator構成
+- Contextの信頼境界とホスト側での値の確認方法
 - Principal自身の認可とDelegationの具体的な接続方法
 - Ruby / Railsの対応バージョン
 - ライセンス
@@ -263,15 +267,15 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | 1 | 解決する問題を1文で確定 | 完了。READMEとD006に記録 |
 | 2 | v0.1スコープを正式確定 | 完了。本文とD007に記録 |
 | 3 | 用語定義 | 完了。本文とD011に記録 |
-| 4 | ドメインモデル設計 | 基本方針を確定（D013）。[設計書](domain_model_v0_1.md)に記録。Delegationの詳細ルールは未確定 |
-| 5 | Public API設計 | 初期イメージあり、未確定 |
+| 4 | ドメインモデル設計 | 完了。基本方針D013と詳細ルールD014を[設計書](domain_model_v0_1.md)に記録 |
+| 5 | Public API設計 | 次に実施。初期イメージあり、未確定 |
 | 6 | README Quick Start作成 | API設計後 |
 | 7 | Gem内部構成設計 | 未着手 |
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
 | 9 | テスト方針 | v0.1の完了条件を定義。詳細設計は未着手 |
 | 10 | 実装開始 | 設計後 |
 
-MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4の基本方針はD013で確定。次はDelegationの意味と詳細ルールを定義し、その後Step 5へ進む。
+MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。次はStep 5「Public API設計」を実施する。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
@@ -283,10 +287,10 @@ MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4の基�
 | --- | --- |
 | v0.1の完了条件を確定する | 4.2の完了条件と4.3のDefinition of Doneをレビューする |
 | Principal自身の権限とDelegationの関係を決める | 委任で本人の権限を超えないための、既存認可との接続方法を決める |
-| 判定ルールと失効の扱いを決める | 未定義時、競合ルール、期限切れ、取消、判定から実行までの変更を扱う |
+| 判定・取消のPublic APIを設計する | D014のmatching、競合、期限切れ、revoke + createを前提に、API、例外、判定から実行までの変更の扱いを決める |
 | Constraint入力の信頼境界を決める | Agentの申告値に依存せず、金額・通貨・対象を確認する方法を決める |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
-| Auditの最小仕様を決める | 判定と実際の実行結果を区別し、記録範囲・秘匿化・失敗時の扱いを決める |
+| AuditのPublic APIと失敗時方針を決める | D014の監査責務と基本情報を前提に、reason_code正式一覧、Filter / Sanitizer API、Audit failure policyを決める |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
 
@@ -297,7 +301,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 | README.md | Gemの紹介と、検証済みの使い方 |
 | docs/PROJECT.md | 開発方針、スコープ、進行順 |
 | docs/DECISIONS.md | 決定事項、理由、提案・確定・保留の区別 |
-| docs/domain_model_v0_1.md | v0.1ドメインモデルの基本方針と詳細設計の未決定事項 |
+| docs/domain_model_v0_1.md | v0.1ドメインモデルの確定設計と後続工程の未決定事項 |
 | GitHub Issues | 開発タスク、懸念点、未解決の質問 |
 
 - 会話の区切りで、決まった内容を該当ファイルへ反映する。
@@ -310,9 +314,9 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. [ドメインモデル設計書の次工程](domain_model_v0_1.md#22-次に決めること)に従い、Delegationのmatching、Resource、Constraint、複数一致、作成・更新・取消の詳細を定義する。
-2. v0.1の完了条件をレビューし、Public APIを設計する。
-3. DBスキーマとAudit Filter / Sanitizerの詳細、対応Ruby/Rails、ライセンスを決める。
+1. Step 5「Public API設計」を実施し、Decisionの具体クラス/APIを決める。
+2. reason_code正式一覧、Audit failure policy、Filter / SanitizerのPublic APIを検討する。
+3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、migration / generator構成、対応Ruby/Rails、ライセンスを決め、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠
 

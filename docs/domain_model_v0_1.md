@@ -2,7 +2,12 @@
 
 更新日：2026-09-15
 
-Step 4で決めたドメインモデルの基本方針を記録する（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）。実装済み仕様ではない。「案」「候補」「方向」「想定」と記した項目、および末尾の詳細ルールは未確定とする。
+Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIやDB型など、未確定事項は第22節に残す。
+
+### 更新履歴
+
+- 2026-09-15 / D013：モデル構成、関連、委任・監査の基本方針を記録。
+- 2026-09-15 / D014：matching、Resourceのnilの意味、Constraint、複数一致、Lifecycle、Audit詳細を確定。従来の単一 `delegation_id` 案は、複数一致を記録する `matched_delegation_ids` へ変更した。旧方針と理由はDECISIONSのD013と後続決定で追跡する。
 
 ## 1. 目的
 
@@ -100,9 +105,16 @@ AgentとPrincipalの関係そのものをDelegationとして表現する。こ�
 
 > PrincipalがAgentへ与えた代理権限。
 
-ActingForの中心となるModel。1件のDelegationは概念的に、あるAgentが、あるPrincipalの代理として、あるResourceに対して、あるActionを、一定のConstraintの範囲内で実行する権限を表す。
+ActingForの中心となるModel。1件のDelegationの正式な意味は次のとおり。
 
-### 最小属性案
+> Agent A が、Principal P の代理として、Resource R に対して Action X を、Constraint C の範囲内で実行する権限 E を持つ。
+
+```text
+Delegation = Agent + Principal + Action + Resource Scope
+             + Constraints + Effect + Validity
+```
+
+### 基本属性
 
 ```text
 id
@@ -147,26 +159,28 @@ cancel_order
 delete_account
 ```
 
-v0.1では原則として完全一致とする。`purchase.*`、`orders:*`、wildcard、regex、action hierarchyのような高度な表現は導入しない。汎用Policy Engine化を避けるためである。
+v0.1では完全一致のみとする。`purchase.*`、`orders:*`、wildcard、regex、action hierarchyのような高度な表現は導入しない。汎用Policy Engine化を避けるためである。
 
 ## 7. Resource
 
 Resource専用テーブルは作らず、Delegationの `resource_type` / `resource_id` で対象を表現する。
 
-| 識別情報 | 対象の考え方 |
+| 識別情報 | 正式な意味 |
 | --- | --- |
-| `resource_type: Order`, `resource_id: 123` | Order #123 |
-| `resource_type: Order`, `resource_id: nil` | Order全体 |
+| `resource_type: "Order"`, `resource_id: "123"` | Order #123のみ |
+| `resource_type: "Order"`, `resource_id: nil` | Order全体 |
+| `resource_type: nil`, `resource_id: nil` | Resourceを必要としないAction |
+| `resource_type: nil`, `resource_id: "123"` | 不正 |
 
-上記の対象範囲とmatchingの詳細は次工程で正式定義する。
+`resource_type: nil` は「全Resource」を意味しない。例の文字列表記はDB型の決定ではなく、`resource_id` の正式DB型は未確定。
 
-ResourceはRailsのpolymorphic associationとして強く結び付けず、**Authorization用の識別情報**として扱う。将来、対象がActiveRecord Object、Class、Virtual Resource、External Resourceになる可能性があるためである。
+ResourceはActiveRecord polymorphic associationにはせず、**Authorization用の識別情報**として扱う。将来、Virtual ResourceやExternal Resource等を扱える余地を残す。
 
 ## 8. Constraint
 
 Constraint専用テーブルは作らず、DelegationのJSON / JSONBとして保存する。
 
-フォーマット例（正式フォーマットは未確定）：
+正式な基本形式は `Array<Constraint>` とし、各Constraintは `field`、`operator`、`value` を持つ。
 
 ```json
 [
@@ -183,7 +197,23 @@ Constraint専用テーブルは作らず、DelegationのJSON / JSONBとして保
 ]
 ```
 
-候補operatorは `eq`、`lt`、`lte`、`gt`、`gte`、`in`。複数条件の評価方法は正式フォーマットとあわせて定義する。
+複数Constraintは**AND**で評価し、すべて満たす必要がある。同じfieldを複数指定でき、上の例は `amount > 10000 AND amount <= 30000` を表す。
+
+ContextのトップレベルKeyのみ参照できる。`order.amount`、`items[0].price` などのnested accessは非対応。
+
+| 対応operator | 型ルール |
+| --- | --- |
+| `eq` | String / Integer / Boolean |
+| `lt` / `lte` / `gt` / `gte` | Integer |
+| `in` | Context側はscalar、Constraint側valueはArray |
+
+暗黙の型変換は禁止する。たとえばContextのamountが `"8900"`、Constraintが `amount <= 10000` の場合、文字列を整数に変換せずConstraint不成立とする。
+
+- missing field、nilはConstraint不成立。
+- invalid constraintはmatchさせない。
+- fail closedを基本原則とする。
+- 空Constraintは `[]` とする。NULLと `[]` を使い分けず `[]` へ統一する方向とする。
+- Floatはv0.1のConstraint値として積極的に扱わず、金額等はInteger表現を推奨する。
 
 Ruby Procや任意コードをDBへ保存しない。たとえば次のコードをDelegationへ保存する設計は採用しない。
 
@@ -193,11 +223,11 @@ Ruby Procや任意コードをDBへ保存しない。たとえば次のコード
 
 理由はAudit、安全性、serialization、バージョン管理、DB上での意味の確認が難しくなるためである。
 
-v0.1ではConstraintを小さく保ち、AND / OR / NOTを表現する高度なPolicy Language、nested expressions、arbitrary functions、cross-resource references、custom executable codeを作らない。
+v0.1ではConstraintを小さく保つ。OR、NOT、nested expressions、nested object access、regex、custom functions、arbitrary Ruby code、database query、resource traversal、cross-resource conditions、wildcardは作らない。
 
 ## 9. Delegation Effect
 
-Delegationに保存するEffectは `allow` / `require_approval` とし、v0.1ではexplicit deny Delegationを作らない。**default deny**を採用する。
+Delegationに保存するEffectは `allow` / `require_approval` とし、v0.1ではexplicit deny Delegationを作らない。**default deny**を採用する。denyはDecisionとして存在するが、Delegation effectとしては保存しない。
 
 ```text
 一致する有効なDelegationが存在する
@@ -237,27 +267,52 @@ AND
 
 `starts_at` はv0.1では導入しない。
 
-## 11. Authorization
+### Delegation lifecycle
 
-AuthorizationはActiveRecord ModelではなくServiceとする。概念的な入力と判定フローは次のとおり。
+Delegationの認可内容は原則immutableとして扱う。principal、agent、action、resource scope、constraints、effectを直接UPDATEしない。
 
 ```text
-Agent / Principal / Action / Resource / Context
-    ↓
-対応するDelegation検索
-    ↓
-Expiration / Revocationを確認
-    ↓
-Constraint評価
-    ↓
-Matching Delegation
-    ├─ allow
-    └─ require_approval
-    ↓
-Decision
+権限変更 = 旧Delegationをrevoke + 新Delegationをcreate
 ```
 
-一致する有効なDelegationが存在しなければ `deny` を返す。ActingForは業務処理を実行せず、ホストアプリがDecisionを適用する。`require_approval` は実行許可を意味しない。
+過去Auditが参照するDelegationの意味を壊さないためである。Gemの通常操作ではhard deleteを前提にしない。expired（期限切れ）とrevoked（取消）は区別する。
+
+## 11. Authorization
+
+AuthorizationはActiveRecord ModelではなくServiceとする。入力概念はAgent、Principal、Action、Resource、Context。
+
+### Delegation matching
+
+Authorization時は次の条件を**すべて**満たすDelegationだけがmatchする。1つでも満たさなければ、そのDelegationはmatchしない。
+
+1. Agent一致
+2. Principal一致
+3. Action一致（完全一致）
+4. Resource一致（第7節）
+5. expiredしていない
+6. revokedされていない
+7. Constraintをすべて満たす
+
+```text
+Authorization Request (Agent / Principal / Action / Resource / Context)
+    ↓
+Agent一致 → Principal一致 → Action一致 → Resource一致
+    ↓
+Expiration確認 → Revocation確認 → Constraint評価
+    ↓
+Matching Delegations
+    ├─ require_approvalが1件以上 → require_approval
+    ├─ allowのみ                → allow
+    └─ 0件                      → deny
+    ↓
+Decision
+    ↓
+AuditEvent
+```
+
+基本原則はfail closed。ActingForがauthorityを明確に確認できない場合はallowしない。Audit記録失敗時の扱いは別途未確定（第22節）。
+
+ActingForは業務処理を実行せず、ホストアプリがDecisionを適用する。`require_approval` は実行許可を意味しない。
 
 ## 12. Decision
 
@@ -271,58 +326,64 @@ decision.denied?
 decision.approval_required?
 ```
 
-必要に応じて `status`、`reason`、`delegation` などを持たせる想定。永続化が必要なDecision情報はAuditEventへ記録する。
+具体クラス、属性、メソッド名はStep 5で決める。永続化が必要なDecision情報はAuditEventへ記録する。
 
 ## 13. Delegationが複数一致した場合
 
-安全側に倒すため、`allow` と `require_approval` が両方一致した場合は、次の優先順とする方向で設計する。
+正式な優先順位は次のとおり。
 
 ```text
 require_approval > allow
 ```
 
-詳細ルールは未確定。将来explicit denyを導入するなら `deny > require_approval > allow` という優先順位が考えられるが、explicit deny自体はv0.1に含めない。
+| 一致する有効なDelegation | Decision |
+| --- | --- |
+| 0件 | `deny` |
+| allowのみ | `allow` |
+| require_approvalが1件以上 | `require_approval` |
+
+ResourceやConstraintの具体性によるoverrideはしない。id、created_at、作成順による優先順位やpriorityフィールドは作らない。「specific rule wins」も導入しない。権限を上書きするPolicy Engineへ発展させず、判断できない場合はallowしない。
 
 ## 14. AuditEvent
 
-AuditEventはAuthorization判定を専用テーブル `acting_for_audit_events` に記録する。
+AuditEventは、**ActingForがどのAuthorization Decisionを行ったか**を専用テーブル `acting_for_audit_events` に記録する。実際の業務処理が成功したかを記録する責務は持たない。
 
-### 最小属性案
+たとえばActingForがallowを返した後、PurchaseServiceが成功したか失敗したかはホストRailsアプリ側の責務である。
+
+### 基本情報
+
+| 観点 | 追跡する情報 |
+| --- | --- |
+| WHO | `agent_id`、`agent_identifier` |
+| FOR WHOM | `principal_type`、`principal_id` |
+| WHAT | `action`、`resource_type`、`resource_id` |
+| WHY | `matched_delegation_ids`、`reason_code`、sanitized context |
+| RESULT | `decision` |
+| WHEN | `created_at` |
+
+### matched_delegation_ids
+
+従来の単一 `delegation_id` 案は廃止し、複数Delegationが同時にmatchするため `matched_delegation_ids` に置き換える（D014）。新しい中間テーブルは作らず、v0.1ではJSON / JSONB等の配列で十分とする方針。
 
 ```text
-id
-agent_id
-principal_type
-principal_id
-action
-resource_type
-resource_id
-decision
-reason_code
-delegation_id
-context
-created_at
+複数一致: matched_delegation_ids: [12, 18]
+一致なしのdeny: matched_delegation_ids: []
 ```
 
-記録例：
+### reason_code
 
-```yaml
-agent: shopping-agent-abc
-principal: User#10
-action: purchase
-resource: Product#55
-context:
-  amount: 8900
-decision: allow
-delegation_id: 123
-reason_code: delegation_matched
-```
+Auditでreason_codeを利用する。正式一覧は**未確定**。以下は候補例であり、確定仕様ではない。
 
-属性とreason codeの具体形は未確定。
+- `delegation_matched`
+- `no_matching_delegation`
+- `authorization_error`
+- `invalid_constraint`
+
+Public API / Audit詳細設計で最終決定する。
 
 ## 15. AuditEventの方針
 
-AuditEventは基本的にappend-onlyとする。通常利用ではINSERTを中心とし、UPDATE / DELETEを前提にしない。Authorizationの結果を書き換えるのではなく、新しいAuditEventを追加して履歴を残す。
+AuditEventは基本的にappend-onlyとする。通常利用ではINSERTを中心とし、通常APIとしてupdate / destroyを前提にしない。Authorizationの結果を書き換えるのではなく、新しいAuditEventを追加して履歴を残す。DBレベルのWORMや暗号署名等まではv0.1で担当しない。
 
 ## 16. Audit Contextの安全性
 
@@ -336,7 +397,7 @@ Audit Filter / Sanitizer
 AuditEvent Context
 ```
 
-AuditEventには必要最小限の情報だけを保存する。例は `amount`、`currency`、`order_id`。Audit機能そのものが情報漏洩リスクにならない設計とする。Filter / Sanitizerの具体的な仕様は後続設計で決める。
+AuditEventには必要最小限の情報だけを保存する。例は `amount`、`currency`、`order_id`。Audit機能そのものが情報漏洩リスクにならない設計とする。基本方針はallowlist方式を優先し、保存してよい項目だけを選択する方向とする。全項目を保存して危険項目を削除する方式を基本にしない。Filter / SanitizerのPublic APIは未確定。
 
 ## 17. v0.1 テーブル構成
 
@@ -364,7 +425,7 @@ Principal（ホストRailsアプリ）
 AuditEvent
     ├─ Agent
     ├─ Principal
-    └─ Delegation（必要に応じて）
+    └─ matched_delegation_ids（複数一致を配列で記録）
 ```
 
 AgentとPrincipalを直接結び付けない。Delegationが、AgentがPrincipalの代理として行動する権限そのものを表す。
@@ -431,13 +492,17 @@ AuditEvent
 
 ## 22. 次に決めること
 
-次は **Delegation 1件が正確に何を意味するのか** を正式に定義する。
+Step 4は完了。次はStep 5「Public API Design」を実施する。次の事項は引き続き**未確定**。
 
-- Delegation matching rule
-- `resource_type` / `resource_id` の意味
-- Constraintの正式フォーマットとoperator
-- 複数Delegationが一致した場合の詳細ルール
-- `require_approval` の判定ルール
-- Delegationの作成・更新・取消の考え方
+- Public APIと例外の具体的な扱い
+- Decisionの具体クラス・属性・API（第12節のメソッドはAPIイメージ）
+- reason_codeの正式一覧（第14節の一覧は候補）
+- Audit failure policy
+- Filter / SanitizerのPublic API
+- DB schemaの細かな型・制約、resource_idの正式DB型
+- Ruby / Rails対応バージョン
+- migration / generator構成
 
-これを確定した後、Step 5「Public API Design」へ進む。属性案、DBの型・制約、DecisionのAPI、Auditの詳細も後続設計で具体化する。
+### Audit失敗時の扱い（未確定）
+
+Authorizationの判定がallowでも、AuditEvent INSERTに失敗した場合に、allowを維持するか、denyへ倒すか、例外にするかは未確定。v0.1の仕様としてここでは固定せず、Step 5以降で検討する。
