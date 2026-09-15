@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. The public API, supported Ruby/Rails versions, and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is in progress: the entry point, arguments, and Decision shape are decided; items 4–10 remain undecided. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -60,10 +60,10 @@ v0.1 will provide the following delegated-authorization path inside a Rails appl
 1. Accept an authenticated principal and agent from the host application.
 2. Match the requested action and resource against a delegation from that principal to that agent.
 3. Evaluate constraints such as amount, resource, request context, and expiry.
-4. Return `allow`, `deny`, or `require_approval`.
+4. Return an `ActingFor::Decision` value object with status `:allow`, `:deny`, or `:require_approval`.
 5. Record an audit log for the authorization decision without executing the business operation.
 
-The proposed completion criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching details, the public API, database schema details, and audit filtering remain to be finalized. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
+The proposed completion criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. The remaining public API details, database schema details, and audit filtering API remain to be finalized. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
 
 The scope deliberately excludes agent authentication, approval workflow and approval UI, general-purpose policy engines, OAuth/OIDC servers, MCP servers, payments, and agent-to-agent communication. See the [v0.1 scope and proposed acceptance criteria](docs/PROJECT.md#4-v01スコープ) and [decision record D007](docs/DECISIONS.md#d007-v01の具体的な範囲) for details and decision status.
 
@@ -74,6 +74,7 @@ The initial project documents are maintained in Japanese:
 - [Project scope, roadmap, and open questions](docs/PROJECT.md)
 - [Decisions and their rationale](docs/DECISIONS.md)
 - [v0.1 domain model design](docs/domain_model_v0_1.md)
+- [v0.1 public API design — Design-stage API / Not implemented yet](docs/public_api_v0_1.md)
 - [GitHub Issues](https://github.com/cuichangquan/acting_for/issues)
 
-The scope document distinguishes finalized product boundaries, proposed acceptance criteria, and implemented features. API examples from the initial project materials are design sketches, not a published API.
+The scope document distinguishes finalized product boundaries, proposed acceptance criteria, and implemented features. The authoritative Step 5 public API document distinguishes decided design from undecided candidates. The API is not implemented or published yet.

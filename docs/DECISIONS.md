@@ -57,6 +57,7 @@
 - 補足：`require_approval` は実行許可を意味しない。
 - 後続決定（2026-09-15）：D013でDecisionをValue Objectとする方針を確定。メソッド名や詳細ルールは未確定。
 - 後続決定（2026-09-15）：D014で複数一致時のrequire_approval > allowを確定。Decisionの具体クラス・API、エラーの具体的な扱いは引き続き未確定。
+- 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
 
 ## D006: READMEの紹介文
 
@@ -123,6 +124,7 @@
 - 残っている未決定事項：各概念のRailsモデル、DBスキーマ、Public APIの具体形、Decisionの戻り値クラスとreason code、Audit Eventの保存方式。
 - 根拠：Step 3「用語定義」でユーザーが確定した内容。
 - 後続決定（2026-09-15）：Railsモデル、DecisionのValue Object化、Audit Eventの保存方式の基本方針はD013で確定。DBスキーマとPublic APIの詳細は未確定。
+- 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
 
 ## D012: ActingForとMCPの正式な責務境界
 
@@ -181,6 +183,43 @@
 - 正式本文：[v0.1 Domain Model Design](domain_model_v0_1.md)。reason_codeの例は候補であり確定一覧ではない。
 - 次工程：Step 5「Public API設計」。
 - 根拠：ユーザーが2026-09-15に提示したStep 4の正式決定と設計ドキュメント更新指示。
+- 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
+
+## D015: Authorization Public Entry Point
+
+- 日付：2026-09-15
+- Status：**確定（設計のみ・未実装）**。Step 5項目1。
+- Context：Step 4が完了し、Railsアプリから委任認可を呼び出すPublic Entry Pointを決める必要がある。
+- Decision：`ActingFor.authorize(...)` を正式なPublic Entry Pointとする。内部構成は未確定とし、Public APIと分離する。
+- Rationale：短く責務が明確で、Agent / Principal / Actionを明示できる。`ActingFor::Authorization.call(...)` は内部Service構造を公開するためPublic APIに採用しない。`agent.authorized_to?(:purchase)` はPrincipalが見えにくく、`principal.authorize_agent(...)` はPrincipal ModelへAuthorization責務を持ち込むため採用しない。
+- Consequences：内部で `ActingFor::Authorization.call(...)` 等を使うかは実装時に決める。ホスト向けの入口を保ちながら内部構造を変更できる。Agent AuthenticationやMCPとの既存の責務境界は維持する。本決定は内部Serviceの実装を開始する指示ではない。
+- 正式本文：[Authorization Entry Point](public_api_v0_1.md#3-authorization-entry-point)。
+- 根拠：ユーザーが提示したStep 5 Decision 1と設計ドキュメントのみの更新指示。
+
+## D016: authorize Arguments
+
+- 日付：2026-09-15
+- Status：**確定（設計のみ・未実装）**。Step 5項目2。
+- Context：D015の入口に、正式用語とStep 4のAction / Resource / Context設計に沿う引数仕様が必要である。
+- Decision：`ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})` とし、keyword argumentsのみを採用する。agent / principal / actionは必須。agentはホスト側で認証済みの操作主体、principalは代理される対象でUserに限定しない。
+- Decision（Action）：Symbolで自然に書けるようにし、Stringも受け付ける方向とする。`:purchase` → `"purchase"` のように内部で同一Actionへ正規化する。matchingは完全一致とし、wildcard / regex / hierarchy / `purchase.*` / `orders:*` は扱わない。
+- Decision（Resource / Context）：resourceは特定の `product`、type全体の `Product`、Resource不要の `nil` を想定する。nilは全Resourceを意味しない。contextはHashを受け取り、ConstraintはトップレベルKeyのみを参照する。`order.amount` 等のnested object accessはv0.1では評価しない。
+- Rationale：複数引数の意味や順番の取り違えを防ぎ、Agent / Principalを明示する。Step 4の最小構成と評価ルールを維持する。
+- Consequences：位置引数は採用しない。Action正規化からConstraint値の暗黙変換を認めるものではない。入力不正と例外の境界は項目5、Contextの信頼境界とホストの値確認要件は項目10で決める。本決定では確定しない。
+- 正式本文：[authorize Arguments](public_api_v0_1.md#4-authorize-arguments)。
+- 根拠：ユーザーが提示したStep 5 Decision 2と設計ドキュメントのみの更新指示。
+
+## D017: Decision Value Object
+
+- 日付：2026-09-15
+- Status：**確定（設計のみ・未実装）**。Step 5項目3。
+- Context：Step 4でDecisionはValue Object、AuditEventはActiveRecord Modelと決定した。Public APIの戻り値の形を具体化する必要がある。
+- Decision：`ActingFor.authorize(...)` はSymbolを直接返さず `ActingFor::Decision` を返す。最低限、概念として `decision.status` を持ち、statusは `:allow` / `:deny` / `:require_approval` の3種類だけとする。
+- Decision（意味）：allowはPrincipalからAgentへのDelegation上の実行可能性が確認されたこと、denyは有効なDelegationを確認できない等によりActingForとして許可しないこと、require_approvalは自動実行せずHuman Approvalが必要なことを表す。`require_approval != allow`。allowはRailsアプリ全体の最終認可を意味しない。
+- Rationale：3種類の認可結果をValue Objectとして表現し、実行時の判定結果と監査用の永続化を分離する。Step 4のDecision / AuditEventの責務を維持する。
+- Consequences：DecisionはActiveRecord Modelや直接DB保存するModelにしない。必要な認可判定情報をAuditEventへ記録する。`allowed?` / `denied?` / `approval_required?` 等は項目4の候補に留める。例外は項目5、Audit呼び出しと失敗時方針は項目8、既存認可との具体的な接続は項目9で決める。Approval Workflowはv0.1の責務外。
+- 正式本文：[Decision](public_api_v0_1.md#5-decision)。Step 5は項目1〜3が決定済み、4〜10は未決定で進行中。
+- 根拠：ユーザーが提示したStep 5 Decision 3と設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

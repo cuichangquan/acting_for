@@ -2,7 +2,7 @@
 
 更新日：2026-09-15
 
-Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIやDB型など、未確定事項は第22節に残す。
+Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIの後続決定は[Step 5の正本](public_api_v0_1.md)を参照。残る未確定事項は第22節に記録する。
 
 ### 更新履歴
 
@@ -326,7 +326,7 @@ decision.denied?
 decision.approval_required?
 ```
 
-具体クラス、属性、メソッド名はStep 5で決める。永続化が必要なDecision情報はAuditEventへ記録する。
+後続決定D017で、戻り値クラスは `ActingFor::Decision`、概念上の `decision.status` は `:allow` / `:deny` / `:require_approval` と確定した（未実装）。上記メソッド等の具体的なDecision APIはStep 5項目4で決める。永続化が必要なDecision情報はAuditEventへ記録する。
 
 ## 13. Delegationが複数一致した場合
 
@@ -492,10 +492,10 @@ AuditEvent
 
 ## 22. 次に決めること
 
-Step 4は完了。次はStep 5「Public API Design」を実施する。次の事項は引き続き**未確定**。
+Step 4は完了。Step 5「Public API Design」は進行中で、項目1〜3はD015〜D017で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
 
-- Public APIと例外の具体的な扱い
-- Decisionの具体クラス・属性・API（第12節のメソッドはAPIイメージ）
+- Public APIの残り（Step 5項目4〜10）と例外の具体的な扱い
+- Decisionの具体的なAPIと追加属性（第12節のpredicateメソッドは候補）
 - reason_codeの正式一覧（第14節の一覧は候補）
 - Audit failure policy
 - Filter / SanitizerのPublic API

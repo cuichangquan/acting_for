@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：設計。以下は実装済み機能の一覧ではない。
+- 現在の段階：Step 5「Public API Design」進行中。項目1〜3は決定済み、4〜10は未決定。以下は実装済み機能の一覧ではない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -172,7 +172,7 @@ ActingFor
    └─ require_approval
 ```
 
-Public APIはこの語彙に揃える。次は用語の対応を示す設計イメージであり、メソッド名や戻り値を確定するものではない。
+Public APIはこの語彙に揃える。次はD015〜D017で決定した設計上の利用例であり、未実装。戻り値は `ActingFor::Decision` とする。Step 5の正本は[Public API Design](public_api_v0_1.md)。
 
 ```ruby
 decision = ActingFor.authorize(
@@ -181,7 +181,7 @@ decision = ActingFor.authorize(
   action: :purchase,
   resource: product,
   context: {
-    amount: 8_900
+    amount: product.price
   }
 )
 ```
@@ -192,7 +192,7 @@ decision = ActingFor.authorize(
 
 ### 4.1 v0.1で成立させる利用経路
 
-ホストRailsアプリが認証済みのPrincipalとAgent、要求するactionとresource、判定に必要なcontextを渡す。ActingForはDelegationと条件を評価し、`allow` / `deny` / `require_approval` を返し、認可判定をAudit logへ記録する。ホストアプリは判定を受けて業務処理を実行または停止する。
+ホストRailsアプリが認証済みのPrincipalとAgent、要求するactionとresource、判定に必要なcontextを渡す。ActingForはDelegationと条件を評価し、statusが `:allow` / `:deny` / `:require_approval` の `ActingFor::Decision` を返し、認可判定をAudit logへ記録する。ホストアプリは判定を受けて業務処理を実行または停止する。
 
 ```text
 host authentication
@@ -216,7 +216,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | Audit log | 認可判定を専用AuditEventテーブルへ基本append-onlyで記録する。Agent（agent_id / agent_identifier）、Principal、action、resource、matched_delegation_ids、reason_code、フィルタ済みcontext、decision、created_atを扱う。業務処理の成功・失敗は対象外（D014） | 3種類の判定について必要項目を追跡できることを自動テストで示す。allowlist優先のFilter / Sanitizerによる必要最小限のcontext記録を検証する。具体的なAPIと記録失敗時の扱いは未確定 |
 | Rails integration | Rails Gemとして自然に導入・利用できる入口を提供する。generatorの具体構成は後続設計で決める | 対応対象に含めるRailsテストアプリで、インストール、設定、Delegation、判定、Auditまでの一連の利用を統合テストとQuick Startで再現できる |
 
-上表の「提供する範囲」は確定スコープ、「完了条件」はその範囲を検証可能にするための提案である。初期資料の `ActingFor.authorize(...)`、`decision.allowed?`、`rails generate acting_for:install` などは引き続きAPIイメージであり、メソッド名、戻り値クラス、generator構成を確定するものではない。
+上表の「提供する範囲」は確定スコープ、「完了条件」はその範囲を検証可能にするための提案である。`ActingFor.authorize(...)` の入口・引数と戻り値 `ActingFor::Decision` はD015〜D017で設計決定済みだが、未実装。`decision.allowed?` 等のDecision APIと `rails generate acting_for:install` 等のgenerator構成は未確定。
 
 ### 4.3 v0.1全体のDefinition of Done
 
@@ -249,8 +249,8 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。以下は引き続き未確定。
 
-- Public API、例外の具体的な扱い
-- Decisionの具体クラス・属性・API、reason_code正式一覧
+- Public APIの残り（Step 5項目4〜10）、例外の具体的な扱い
+- Decisionの具体的なAPIと追加属性、reason_code正式一覧（クラスは `ActingFor::Decision`、概念上の `status` と3種類の値はD017で決定済み）
 - Audit failure policy（Audit INSERT失敗時にallowを維持するか、denyにするか、例外にするか）
 - Filter / SanitizerのPublic API
 - DB schemaの細かな型・制約、resource_idの正式DB型
@@ -268,16 +268,33 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 2 | v0.1スコープを正式確定 | 完了。本文とD007に記録 |
 | 3 | 用語定義 | 完了。本文とD011に記録 |
 | 4 | ドメインモデル設計 | 完了。基本方針D013と詳細ルールD014を[設計書](domain_model_v0_1.md)に記録 |
-| 5 | Public API設計 | 次に実施。初期イメージあり、未確定 |
+| 5 | Public API設計 | 進行中。項目1〜3はD015〜D017で決定済み、4〜10は未決定。[正本](public_api_v0_1.md) |
 | 6 | README Quick Start作成 | API設計後 |
 | 7 | Gem内部構成設計 | 未着手 |
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
 | 9 | テスト方針 | v0.1の完了条件を定義。詳細設計は未着手 |
 | 10 | 実装開始 | 設計後 |
 
-MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。次はStep 5「Public API設計」を実施する。
+MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。現在はStep 5「Public API設計」を進めている。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
+
+### 5.1 Step 5の検討項目
+
+| 項目 | 内容 | 状態 |
+| --- | --- | --- |
+| 1 | Authorization entry point | 決定済み（D015） |
+| 2 | authorizeの引数仕様 | 決定済み（D016） |
+| 3 | Decisionの形 | 決定済み（D017） |
+| 4 | Decision API | 未決定 |
+| 5 | denyとExceptionの境界 | 未決定 |
+| 6 | Bang API（authorize!）の要否 | 未決定 |
+| 7 | Delegation操作API | 未決定 |
+| 8 | Auditの扱いとAudit失敗時方針 | 未決定 |
+| 9 | 既存認可（Pundit / CanCanCan等）との関係 | 未決定 |
+| 10 | Contextの信頼境界 | 未決定 |
+
+入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。次は項目4を検討し、まだ実装は開始しない。
 
 ## 6. Issue化する候補
 
@@ -302,6 +319,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 | docs/PROJECT.md | 開発方針、スコープ、進行順 |
 | docs/DECISIONS.md | 決定事項、理由、提案・確定・保留の区別 |
 | docs/domain_model_v0_1.md | v0.1ドメインモデルの確定設計と後続工程の未決定事項 |
+| docs/public_api_v0_1.md | Step 5 Public API設計の正本。決定済み範囲と未決定事項・進捗 |
 | GitHub Issues | 開発タスク、懸念点、未解決の質問 |
 
 - 会話の区切りで、決まった内容を該当ファイルへ反映する。
@@ -314,7 +332,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Step 5「Public API設計」を実施し、Decisionの具体クラス/APIを決める。
+1. Step 5項目4「Decision API」から検討を続ける。項目1〜3はD015〜D017で決定済み、4〜10は未決定。実装は開始しない。
 2. reason_code正式一覧、Audit failure policy、Filter / SanitizerのPublic APIを検討する。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、migration / generator構成、対応Ruby/Rails、ライセンスを決め、v0.1の完了条件をレビューする。
 
