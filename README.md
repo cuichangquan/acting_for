@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is in progress: 8 of 10 items are decided; the relationship with existing authorization and the Context trust boundary remain undecided. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). The next project step is Step 6, README Quick Start. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -35,7 +35,7 @@ The following is an illustrative delegation, not a set of built-in rules:
 
 ## Responsibility
 
-The host application authenticates the agent and establishes the principal. ActingFor is intended to evaluate delegated authority, alongside the application's existing authorization rules. The host application remains responsible for executing business operations and enforcing authorization decisions.
+The host application authenticates the agent and establishes the principal. ActingFor is intended to evaluate delegated authority, alongside the application's existing authorization rules. The host application must check the principal's current permissions at execution time and supply verified Context values. An agent's effective permissions are the intersection of the principal's own permissions and delegated permissions. ActingFor does not call host authorization libraries directly. The host application remains responsible for executing business operations and enforcing authorization decisions.
 
 ActingFor is not an authentication provider, an OAuth/OIDC server, an agent framework, or an MCP server. It aims to remain independent of any particular LLM or agent framework.
 
@@ -63,7 +63,7 @@ v0.1 will provide the following delegated-authorization path inside a Rails appl
 4. Generate an `ActingFor::Decision` value object with status `:allow`, `:deny`, or `:require_approval`.
 5. Automatically save an AuditEvent within `authorize` before returning the Decision; raise an exception if saving fails. ActingFor does not execute the business operation.
 
-The proposed completion criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. The remaining public API details, database schema details, and audit filtering API remain to be finalized. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
+The proposed completion criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. Step 5 public API design is finalized; finer details such as exception class names, database schema details, and the audit filtering API remain undecided. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
 
 The scope deliberately excludes agent authentication, approval workflow and approval UI, general-purpose policy engines, OAuth/OIDC servers, MCP servers, payments, and agent-to-agent communication. See the [v0.1 scope and proposed acceptance criteria](docs/PROJECT.md#4-v01スコープ) and [decision record D007](docs/DECISIONS.md#d007-v01の具体的な範囲) for details and decision status.
 

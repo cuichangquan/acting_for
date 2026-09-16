@@ -2,7 +2,7 @@
 
 更新日：2026-09-16
 
-**状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **8 / 10**。項目1〜8は設計決定済み（D015〜D023）、項目9〜10は未決定。Step 5全体は進行中であり、Gemの実装は開始しない。
+**状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gemは未実装であり、本更新では実装を開始しない。
 
 ## 1. Purpose
 
@@ -111,7 +111,7 @@ context: {
 }
 ```
 
-Agentから送られた値を信用してよいか、ホストアプリによる確認済み値を必須にするかは、項目10で別途決定する。本節では信頼境界を確定しない。
+Context値の正確性・信頼性はホストの責務とし、確認・確定した値を渡す。詳細は[Context Trust Boundary](#13-context-trust-boundary)（D025）を参照。
 
 ## 5. Decision
 
@@ -133,7 +133,7 @@ decision.status
 | `:deny` | 有効なDelegationを確認できなかった等により、ActingForとして操作を許可しない |
 | `:require_approval` | 自動実行してはいけない。Human Approvalが必要 |
 
-ActingForの `allow` はRailsアプリ全体の最終認可を意味しない。ホストアプリ自身のAuthorizationとの具体的な関係は項目9で決める。
+ActingForの `allow` はRailsアプリ全体の最終認可を意味しない。Principal自身の現在の権限はホストが実行時にも確認し、両方の認可を満たす必要がある（[Existing Authorization Integration](#12-existing-authorization-integration)、D024）。
 
 **`require_approval != allow`。** Approval Workflow自体はActingFor v0.1の責務ではない。
 
@@ -260,22 +260,149 @@ allow / deny / require_approval
 Host Applicationが結果を適用
 ```
 
-ActingFor CoreへMCP固有Objectを入れず、MCP Tool名とActingFor Actionを同一概念にしない。この説明は既存認可との正式な接続方法を確定するものではない。
+ActingFor CoreへMCP固有Objectを入れず、MCP Tool名とActingFor Actionを同一概念にしない。ホスト認可とContextの責任分界は第12・13節に従う。
 
-## 12. Open Questions
+## 12. Existing Authorization Integration
 
-Step 5で残る項目は次の2つ。本更新では決定しない。
+**確定：D024 / Step 5項目9。** Principal自身がその操作を実行する権限を持つかは、ホストRailsアプリケーションが判断する。ActingForが判断するのは **Principal → AgentのDelegation** のみ。
 
-- **項目9 / 既存認可との関係**：Pundit / CanCanCan / 独自Authorization、Principal自身の権限、DelegationがPrincipalの権限を超えない仕組み、評価順序、ActingForから既存認可を直接呼ぶか。
-- **項目10 / Contextの信頼境界**：Agent申告値を信用するか、amountの取得元、resource情報・currencyの検証、ホスト側で再取得すべき値、trusted / untrusted context。Audit保存時のFilter / Sanitizer方針とは別の論点として決める。
+ホストはPundit、CanCanCan、Action Policy、独自Authorizationなどを利用できる。ActingForはこれらに依存せず、Coreから `Pundit.authorize(...)` 等を直接呼ばない。
 
-項目1〜8の決定範囲外の詳細として、Exception class名、Delegation作成のvalidation APIと `delegate!` の有無、Decision追加属性、reason_code正式一覧、Filter / SanitizerのPublic APIも未決定のまま残す。
+### 二段階の認可と実効権限
+
+Business Logicの実行には、次の両方が必要となる。
+
+```text
+① Host Application Authorization
+   Principal本人にその操作を実行する権限がある
+        AND
+② ActingFor Authorization
+   その操作がPrincipalからAgentへ委任され、実行が許可される
+```
+
+```text
+Agent Request
+    ↓
+Authentication
+    ↓
+Principalを特定
+    ↓
+Host Authorization
+    ↓
+ActingFor Authorization
+    ↓ 両方を通過した場合のみ
+Business Logic
+```
+
+重要原則：
+
+```text
+Agentの実効権限 = Principal自身の権限 ∩ Delegationされた権限
+```
+
+Delegationが存在しても、Principal本人が持たない権限をAgentへ与えることはできない。Delegationを権限昇格の仕組みにしない。
+
+### ホストアプリ側の利用イメージ
+
+以下は設計上の概念例であり、実装済みAPIやQuick Startではない。Punditが認可対象の主体として `current_user`（この操作のPrincipal）を使用するホスト構成を前提とする。
+
+```ruby
+authorize product, :purchase?
+
+decision = ActingFor.authorize(
+  agent: current_agent,
+  principal: current_user,
+  action: :purchase,
+  resource: product,
+  context: {
+    amount: product.price
+  }
+)
+
+if decision.allowed?
+  PurchaseService.call(product)
+end
+```
+
+`authorize product, :purchase?` はPrincipal自身の権限を確認し、`ActingFor.authorize(...)` はPrincipalからAgentへの委任を確認する。両者は別の責務であり、ホスト認可を通過しない場合は業務処理へ進めない。
+
+### 実行時の確認とApproval
+
+Delegation作成時の権限確認だけでは不十分。たとえばDay 1にPrincipalがpurchase権限を持ちAgentへ委任していても、Day 30にPrincipalがその権限を失った場合、残存するDelegationだけを根拠にpurchaseを許可してはいけない。**Principalの現在の権限は実行時にもホストアプリで確認する。**
+
+`require_approval` もPrincipalに存在しない権限を作り出さない。
+
+```text
+Principal自身に権限なし → STOP
+Principal自身に権限あり + ActingFor = require_approval → Approval Workflowへ
+```
+
+ApprovalはPrincipalの権限を拡張しない。`require_approval` はallowではなく、Approval Workflow自体は引き続きホストの責務とする。今回、Authorization Adapter、`host_authorizer:`、`principal_authorizer:` やApproval Workflowの詳細は設計しない。
+
+## 13. Context Trust Boundary
+
+**確定：D025 / Step 5項目10。** Contextの正確性・信頼性はホストアプリの責務。ActingForは渡された値が現実世界やDB上で正しいかを検証せず、そのContextを使ってConstraintを評価する。
+
+### Agent申告値とホストによる値の確定
+
+Agentが `{"product_id": 123, "amount": 8000}` と申告しても、実際の商品価格は30,000円かもしれない。申告されたamountを無条件にContextへ渡してはいけない。ホストが必要に応じてDB等の信頼できる情報源から再取得・確認して値を確定する。
+
+以下はContext構築の設計例。業務実行には第12節のホスト認可も必要となる。
+
+```ruby
+product = Product.find(params[:product_id])
+
+decision = ActingFor.authorize(
+  agent: current_agent,
+  principal: current_user,
+  action: :purchase,
+  resource: product,
+  context: {
+    amount: product.price,
+    currency: product.currency
+  }
+)
+```
+
+```text
+Agent入力
+    ↓
+Host Application：検証 / DB再取得 / 値の確定
+    ↓
+Context
+    ↓
+ActingFor：Constraint評価
+```
+
+| 責任主体 | 責務 |
+| --- | --- |
+| Host Application | Context値が正しいか確認する |
+| ActingFor | 渡されたContextで `amount <= 10_000`、`currency == "JPY"` 等のConstraintを評価する |
+
+ActingFor自身はProductのDB取得、商品価格の確認、外部サービスによるcurrency確認、Resource所有者の確認、Agent申告値とDB値の比較などのBusiness Logicを実行しない。
+
+v0.1では `trusted_context:` / `untrusted_context:` の別APIや、`TrustedContext`、`VerifiedContext`、`ContextVerifier` を導入しない。ホストアプリが責任を持ってContextを確定してから渡す、というルールに留め、過剰設計しない。Audit保存時のFilter / Sanitizerは別の責務であり、既存方針を維持する。
+
+### API形式不正と必要field不足
+
+| 入力 | 扱い |
+| --- | --- |
+| `context: "hello"` のようにHashではなく、Context形式自体が不正 | Exception。Authorization結果のdenyではない |
+| `context: {}` のように形式は有効だが、Constraintが必要とするamount等のfieldがない | Constraint不成立。そのDelegationはmatchしない |
+
+必要field不足はStep 4のfail closedを維持する。有効なmatching Delegationがなければdenyとなる。Exception class名の正式一覧は今回決定しない。
+
+**ActingForはContext値の真偽を検証するのではなく、ホストアプリが責任を持って確定したContextを受け取る。** API形式の確認とConstraint評価は、この責任分界と区別する。
+
+## 14. Open Questions
+
+Step 5の10項目は完了。決定範囲外の詳細として、Exception class名、Delegation作成のvalidation APIと `delegate!` の有無、Decision追加属性、reason_code正式一覧、Filter / SanitizerのPublic APIも未決定のまま残す。
 
 DB型、migration / generator構成、対応Ruby / Rails等の後続設計は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
 
-## 13. Step 5 Progress
+## 15. Step 5 Progress
 
-Step 4は完了。Step 5は **8 / 10** 決定済みで進行中。次にやることは **Step 5-9：既存認可（Pundit / CanCanCan等）との関係**。
+Step 4は完了。Step 5「Public API Design」も **10 / 10、Complete**。次は **Step 6：README Quick Start作成**。今回はStep 6に着手しない。
 
 | 項目 | 内容 | 状態 |
 | --- | --- | --- |
@@ -287,7 +414,7 @@ Step 4は完了。Step 5は **8 / 10** 決定済みで進行中。次にやる�
 | 6 | Bang API（authorize!） | 決定済み（D020：v0.1では提供しない） |
 | 7 | Delegation操作API | 決定済み（D021） |
 | 8 | Audit / Audit failure | 決定済み（D022・D023） |
-| 9 | 既存認可（Pundit / CanCanCan等）との関係 | 未決定 |
-| 10 | Contextの信頼境界 | 未決定 |
+| 9 | 既存認可（Pundit / CanCanCan等）との関係 | 決定済み（D024） |
+| 10 | Contextの信頼境界 | 決定済み（D025） |
 
 設計決定は実装完了を意味しない。本更新ではGem本体、Model、Service、Decision class、AuditEvent、migration、generator、spec / test、Gem version、gemspec依存関係を作成・変更しない。

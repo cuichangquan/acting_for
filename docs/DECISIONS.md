@@ -38,6 +38,7 @@
 - 理由：独自認証基盤や汎用認可エンジンまで広げると、目的が曖昧になり過剰設計につながる。
 - 設計への反映：独自OAuth/OIDC、独自Agent Identity規格、MCP Server本体は作らない。
 - 未決定：既存認証・認可との具体的な接続、Adapterの種類と提供時期。
+- 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
 
 ## D004: 特定のLLMやAgent Frameworkに依存しない
 
@@ -189,6 +190,7 @@
 - 根拠：ユーザーが2026-09-15に提示したStep 4の正式決定と設計ドキュメント更新指示。
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
 - 後続決定（2026-09-16）：D018〜D023でDecision Public API、deny / Exception、authorize!非提供、Delegation専用API、自動Auditと保存失敗時Exceptionを確定。ドメインモデルは変更しない。Step 5は8 / 10決定済み。
+- 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
 
 ## D015: Authorization Public Entry Point
 
@@ -214,6 +216,7 @@
 - 正式本文：[authorize Arguments](public_api_v0_1.md#4-authorize-arguments)。
 - 根拠：ユーザーが提示したStep 5 Decision 2と設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-16）：入力不正と例外の境界はD019で確定。具体的なException class名とContextの信頼境界は未決定。
+- 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
 
 ## D017: Decision Value Object
 
@@ -227,6 +230,7 @@
 - 正式本文：[Decision](public_api_v0_1.md#5-decision)。Step 5は項目1〜3が決定済み、4〜10は未決定で進行中。
 - 根拠：ユーザーが提示したStep 5 Decision 3と設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-16）：4つのDecision Public APIはD018、deny / ExceptionはD019、Audit呼び出しと保存失敗時方針はD022・D023で確定。Step 5は8 / 10決定済み、項目9・10は未決定。
+- 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
 
 ## D018: Decision Public API
 
@@ -293,6 +297,33 @@
 - Consequences：D019のdeny / Exception境界をAudit保存にも適用する。具体的なException class名は未決定。既存認可との関係（項目9）とContextの信頼境界（項目10）は本決定では確定しない。
 - 正式本文：[Audit保存失敗時はException](public_api_v0_1.md#10-audit)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
+
+## D024: Existing Authorization Integration
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目9。
+- Context：Delegationが存在してもPrincipal本人に操作権限があるとは限らず、委任後にPrincipalの権限が失われる場合もある。既存認可と委任認可の責任分界が必要である。
+- Decision：Principal自身の現在の権限確認はホストRailsアプリの責務とし、Delegation作成時だけでなく実行時にも確認する。ActingForはPrincipal → AgentのDelegation認可のみを担当する。Business Logic実行にはホスト認可とActingFor認可の両方が必要。概念上はAuthentication → Principal特定 → Host Authorization → ActingFor Authorization → Business Logicとする。
+- Decision（実効権限）：Agentの実効権限 = Principal自身の権限 ∩ Delegationされた権限。DelegationだけでPrincipalの権限を超えさせない。require_approvalもPrincipalの権限を拡張せず、Principalに権限がなければ停止する。
+- Decision（依存）：ホストはPundit / CanCanCan / Action Policy / 独自Authorization等を利用できる。ActingFor Coreはこれらに依存せず、直接呼び出さない。
+- Rationale：Delegationを権限昇格の仕組みにせず、特定のAuthorization Libraryへの依存や汎用Policy Engine化を避けるため。
+- Consequences：ホストは残存するDelegationだけを根拠に業務処理を実行しない。Principalに権限がありrequire_approvalとなった場合も自動実行せず、ホストのApproval Workflowへ進む。Adapter、host_authorizer:、principal_authorizer:やApproval Workflowの詳細は今回設計しない。
+- 正式本文：[Existing Authorization Integration](public_api_v0_1.md#12-existing-authorization-integration)。
+- 根拠：ユーザーが提示したStep 5項目9の正式決定と、設計ドキュメントのみの更新指示。
+
+## D025: Context Trust Boundary
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目10。
+- Context：Agentが申告する金額等は現実世界やDBの値と一致するとは限らない。Contextの真偽と、API形式・Constraint評価を区別する必要がある。
+- Decision：Contextの正確性・信頼性はホストアプリの責務。Agent申告値を無条件に渡さず、必要に応じDB等の信頼できる情報源から再取得・確認し、確定したContextを渡す。ActingForは値の真偽を検証せず、渡されたContextでConstraintを評価する。
+- Decision（責務外）：ActingForはProductのDB取得、価格・通貨・Resource所有者の確認、Agent申告値とDB値の比較などのBusiness Logicを実行しない。v0.1ではtrusted_context: / untrusted_context:やTrustedContext / VerifiedContext / ContextVerifierを導入しない。
+- Decision（形式と不足）：`context: "hello"` 等の形式不正はExceptionでありdenyではない。`context: {}` は形式として有効だが必要fieldがなければConstraint不成立となり、そのDelegationはmatchしない。D014のfail closedとD019のdeny / Exception境界を維持する。
+- Rationale：業務データの正しさはホストが保証し、ActingForをConstraint評価という責務に留め、v0.1の過剰設計を避けるため。
+- Consequences：Context確定とAudit Filter / Sanitizerを混同しない。Exception class正式一覧、reason_codeや既存の未決定詳細を追加確定しない。本決定とD024によりStep 5は10 / 10で完了（Design finalized）。実装済みを意味しない。次はStep 6「README Quick Start作成」だが、今回は着手しない。
+- 正式本文：[Context Trust Boundary](public_api_v0_1.md#13-context-trust-boundary)。
+- 根拠：ユーザーが提示したStep 5項目10の正式決定と、設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

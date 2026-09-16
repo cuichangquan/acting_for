@@ -493,9 +493,9 @@ AuditEvent
 
 ## 22. 次に決めること
 
-Step 4は完了。Step 5「Public API Design」は進行中で、進捗は8 / 10、項目1〜8はD015〜D023で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
+Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
 
-- Public APIの残り（Step 5項目9〜10）と具体的なException class名
+- 具体的なException class名
 - Decisionの追加属性
 - Delegation作成の細かなvalidation APIと `delegate!` の有無
 - reason_codeの正式一覧（第14節の一覧は候補）
@@ -503,6 +503,12 @@ Step 4は完了。Step 5「Public API Design」は進行中で、進捗は8 / 10
 - DB schemaの細かな型・制約、resource_idの正式DB型
 - Ruby / Rails対応バージョン
 - migration / generator構成
+
+### 既存認可とContextの後続決定（D024・D025）
+
+Principal自身の現在の権限はホストアプリが実行時にも確認し、Delegation認可と両方を満たす場合のみ業務処理へ進む。Agentの実効権限はPrincipal自身の権限とDelegationされた権限の積集合であり、require_approvalも権限を拡張しない。ActingFor CoreはPundit等を直接呼ばない。
+
+Context値の正確性・信頼性はホストの責務であり、Agent申告値を無条件に渡さず、必要に応じDB等で確認・確定する。ActingForは値の真偽を検証せずConstraintを評価する。Context形式不正はException、有効な形式での必要field不足はConstraint不成立・Delegation不一致とし、第8節のfail closedを維持する。trusted / untrusted Contextの仕組みは導入しない。詳細は[Step 5の正本](public_api_v0_1.md#12-existing-authorization-integration)を参照。Domain Model自体は変更しない。
 
 ### Auditの後続決定（D022・D023）
 
