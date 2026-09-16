@@ -4,7 +4,7 @@
 
 **Step 7は完了（Complete / Design finalized / Not implemented）。** 本書をStep 7「Gem Structure Design」の正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gemは未実装・未リリース。このドキュメントは実装済み構成を示すものではない。ファイル構成とRubyコードは設計例であり、今回作成するのは設計ドキュメントのみ（Design documentation only / No implementation）。
 
-[Step 4 Domain Model Design](domain_model_v0_1.md)、[Step 5 Public API Design](public_api_v0_1.md)、[Step 6 README Quick Start](../README.md#quick-start)の決定を維持する。進捗は[PROJECT](PROJECT.md#5-進行順)、決定理由は[DECISIONS](DECISIONS.md)を参照。次はStep 8「Test Strategy」だが、今回は着手しない。
+[Step 4 Domain Model Design](domain_model_v0_1.md)、[Step 5 Public API Design](public_api_v0_1.md)、[Step 6 README Quick Start](../README.md#quick-start)の決定を維持する。進捗は[PROJECT](PROJECT.md#5-進行順)、決定理由は[DECISIONS](DECISIONS.md)を参照。後続のStep 8「Test Strategy」は[正本](test_strategy_v0_1.md)（D029）で設計完了した。
 
 ## 1. v0.1 Minimal Gem Structure
 
@@ -167,7 +167,7 @@ require "acting_for/engine"
 
 テストではDummy Rails Applicationを持つ構成を採用し、最低限 `test/dummy/` を想定する。Rails Engine integration、ActiveRecord、Migration、Rails autoload、Host Applicationとのintegrationを実際のRails環境で検証できるようにするためである。
 
-`test/` という構造表記はテストフレームワークの採用決定を意味しない。**Minitest / RSpecは未決定**であり、Step 8 Test Strategyで決定する。Test Strategy詳細・Test case一覧には今回着手しない。
+Step 7時点では `test/` という構造のみを決め、Test Frameworkは未決定だった。後続の[Step 8 Test Strategy](test_strategy_v0_1.md)（D029）で **Minitest採用・RSpec不採用** を確定した。Unit / Integrationの境界と検証シナリオはStep 8正本に従う。`test/dummy` は最小Rails integration hostとし、sample product / demo applicationにはしない。TestコードとDummy Rails Appは未実装。
 
 ## 10. Configuration / Initializer
 
@@ -200,9 +200,8 @@ Internalは利用者向けAPIではなく、READMEでは原則としてInternal 
 
 ## 13. 未決定事項と次工程
 
-以下を今回追加確定しない。
+以下は引き続き未決定であり、本書では追加確定しない。
 
-- Minitest / RSpec、Test Strategy詳細、Test case一覧
 - Rails / Ruby対応version、Gem version constraint
 - DB columnの最終型、Migrationの実コード・taskの具体的なコマンド名
 - Exception class名、reason_code一覧、Decisionの追加属性
@@ -218,6 +217,6 @@ Internalは利用者向けAPIではなく、READMEでは原則としてInternal 
 | Step 5 Public API Design | Complete / 10 of 10 / Design finalized |
 | Step 6 README Quick Start Design | Complete / Design-stage Quick Start finalized |
 | Step 7 Gem Structure Design | Complete / Design finalized / Not implemented |
-| Next: Step 8 Test Strategy | 未着手。今回は着手しない |
+| Step 8 Test Strategy | Complete / Design finalized / Not implemented（D029） |
 
 Gem全体は引き続き **Not implemented / Not released**。Gem本体、Model、Service、Migration、Generator、Dummy Rails App等の実装ファイルは今回作成しない。

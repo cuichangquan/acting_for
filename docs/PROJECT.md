@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Step 7「Gem Structure Design」完了（Complete / Design finalized / Not implemented）。[Step 7正本](gem_structure_v0_1.md)に記録。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
+- 現在の段階：Step 8「Test Strategy」完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -210,7 +210,7 @@ decision = ActingFor.authorize(
 
 ## 4. v0.1スコープ
 
-**状態：製品スコープは確定（D007）。項目別の完了条件とDefinition of Doneは提案であり、実装済みという意味ではない。**
+**状態：製品スコープは確定（D007）。Test上のAcceptance CriteriaはStep 8で設計確定（D029）。Definition of Done全体はProposal / 提案であり、実装済みという意味ではない。**
 
 ### 4.1 v0.1で成立させる利用経路
 
@@ -233,17 +233,25 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | Agent representation | Rails内部で操作主体となるAgentをPrincipalと別に表現する。最小属性は `id`、必須・一意の `identifier`、任意の `name`、timestamps。PrincipalとはDelegationを介して関連付ける（D013）。Gemは本人確認を行わない | 同じPrincipalでもAgentが異なれば別の主体として扱われ、認証済みAgent情報をホストから受け取れることを自動テストで示す |
 | Delegation | PrincipalからAgentへの委任として、`principal`、`agent`、`action`、Resource識別情報、`effect`、`constraints`、`expires_at`、`revoked_at` を表現する。認可内容は原則immutableで、変更はrevoke + createとする（D014） | 指定したPrincipal / Agent / action / resourceだけが一致し、別主体・別action・別resourceには適用されないことを自動テストで示す |
 | Authorization | ActingForの中心機能として、委任された操作を実行してよいか判定する。全matching条件を満たす委任を評価し、結果は `allow` / `deny` / `require_approval` の3種類。一致なしはdeny、require_approvalをallowより優先し、判断できなければallowしない（D014） | 3種類すべてとDelegationが存在しない場合を自動テストし、呼び出し側が結果を区別できる |
-| Constraint | JSON / JSONBのfield / operator / value配列をAND評価する。ContextのトップレベルKeyのみ参照し、6 operatorと型ルールに従う。暗黙変換をせず、不成立・不正なConstraintはmatchさせない（D014） | 少なくとも金額上限とresource条件について、条件内・境界値・条件外を自動テストする。Constraint形式と評価ルールはD014で確定済み。Public APIの決定はStep 5の正本を参照 |
+| Constraint | JSON / JSONBのfield / operator / value配列をAND評価する。ContextのトップレベルKeyのみ参照し、6 operatorと型ルールに従う。暗黙変換をせず、不成立・不正なConstraintはmatchさせない（D014） | Contextに対する条件について、条件内・境界値・条件外を自動テストする。Resource matchingはDelegation matching側で扱う。Constraint形式と評価ルールはD014で確定済み。Public APIの決定はStep 5の正本を参照 |
 | Expiration | Delegationに `expires_at` と `revoked_at` を持たせ、期限切れ・取消済みを有効対象から除外する（D013） | 有効期限なし・期限内は他の条件に従って評価し、現在時刻と等しい期限・期限切れ・取消済みのDelegationが除外されることを時刻固定テストで示す。有効な一致がなければ `deny` となる |
 | Approval判定 | 自動許可できない操作に `require_approval` を返す。ActingForは「承認が必要」と判断するところまでを担当する | `require_approval` が `allow` と区別され、それだけでは実行許可にならないことを文書とテストで示す。承認依頼、通知、画面、承認後の再実行は含めない |
 | Audit log | 認可判定を専用AuditEventテーブルへ基本append-onlyで記録する。Agent（agent_id / agent_identifier）、Principal、action、resource、matched_delegation_ids、reason_code、フィルタ済みcontext、decision、created_atを扱う。業務処理の成功・失敗は対象外（D014） | 3種類の判定について必要項目を追跡できることを自動テストで示す。allowlist優先のFilter / Sanitizerによる必要最小限のcontext記録を検証する。自動記録と保存失敗時ExceptionはD022・D023で確定済み。Filter / SanitizerのPublic APIは未確定 |
-| Rails integration | Rails Gemとして自然に導入・利用できる入口を提供する。Headless Rails EngineとRails標準Migration方式を採用し、v0.1では独自Generatorを作らない（D028） | 対応対象に含めるRailsテストアプリで、インストール、設定、Delegation、判定、Auditまでの一連の利用を統合テストとQuick Startで再現できる |
+| Rails integration | Rails Gemとして自然に導入・利用できる入口を提供する。Headless Rails EngineとRails標準Migration方式を採用し、v0.1では独自Generatorを作らない（D028） | 最小Hostである `test/dummy` で、導入、Engine boot、Migration、autoload、namespace分離、Delegation、Authorization、AuditまでをIntegration Testで検証する。Runnable Quick Startは未完了 |
 
-上表の「提供する範囲」は確定スコープ、「完了条件」はその範囲を検証可能にするための提案である。`ActingFor.authorize(...)` の入口・引数と戻り値 `ActingFor::Decision` はD015〜D017で設計決定済みだが、未実装。`decision.allowed?` 等のDecision APIはD018で設計決定済み。Gem構成は[Step 7の正本](gem_structure_v0_1.md)で設計確定。v0.1では独自Generator・Configuration / Initializerを作らない（D028）。
+上表の「提供する範囲」は確定スコープ。Test上のAcceptance Criteriaは[Step 8正本の対応表](test_strategy_v0_1.md#13-v01-acceptance-criteriaとの対応)で設計確定（D029）し、詳細な検証範囲は同書に従う。Testコードはまだ存在せず、合格済みという意味ではない。`ActingFor.authorize(...)` の入口・引数と戻り値 `ActingFor::Decision` はD015〜D017で設計決定済みだが、未実装。`decision.allowed?` 等のDecision APIはD018で設計決定済み。Gem構成は[Step 7の正本](gem_structure_v0_1.md)で設計確定。v0.1では独自Generator・Configuration / Initializerを作らない（D028）。
+
+横断的Security Acceptance CriteriaもStep 8で確定する。
+
+| 要件 | Test上のAcceptance Criteria |
+| --- | --- |
+| Host Authorization Boundary | Principalの現在権限とDelegationの積集合を守る。委任後の権限喪失とrequire_approvalでも権限を拡張しないことをIntegration Testで示す |
+| Context Trust Boundary | Hostが値を確定し、ActingForは渡されたContextを評価する。形式不正はException、必要field不足はConstraint不成立としてIntegration Testで区別する |
+| fail-closed | Unit / Integration双方で、権限を明確に確認できなければallowしない。API misuse / System failure / Audit保存失敗はdenyへ変換せずExceptionとする |
 
 ### 4.3 v0.1全体のDefinition of Done
 
-**状態：提案。** 次をすべて満たした時点をv0.1実装完了とする。
+**状態：Proposal / 提案。** 対応Ruby version、対応Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notesが未決定のため、Step 8完了後も全体は正式決定しない。以下はv0.1実装完了条件の提案である。
 
 1. 4.2の全項目と境界ケースが自動テストされ、対応対象と決めたRuby/Railsの組み合わせでCIが成功する。
 2. サンプルRailsアプリまたは統合テストで、Delegation作成から判定、Audit記録までを再現できる。
@@ -292,15 +300,15 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 5 | Public API設計 | 完了（Complete）。進捗は10 / 10。D015〜D025で全項目決定済み。[正本](public_api_v0_1.md) |
 | 6 | README Quick Start | 完了（Complete / Design-stage Quick Start finalized）。D026・D027、[README](../README.md#quick-start)に反映済み。実行不可 |
 | 7 | Gem Structure Design | 完了（Complete / Design finalized / Not implemented）。D028、[正本](gem_structure_v0_1.md) |
-| 8 | Test Strategy | 次工程。未着手。既存の完了条件は提案のまま |
+| 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
 | 未採番 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する。後続の順番は未確定 |
 | 10 | 実装開始 | 設計後 |
 
-MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。次はStep 8「Test Strategy」。
+MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
-Step 7決定に伴い、従来Step 9に置いていたテスト方針を次工程のStep 8とする。セキュリティモデル設計の後続の順番は今回固定しない。Gem実装にはまだ入っていない。
+Step 7決定に伴い、従来Step 9に置いていたテスト方針をStep 8へ変更した。セキュリティモデル設計の後続の順番は今回固定しない。Gem実装にはまだ入っていない。
 
 ### 5.1 Step 5の検討項目
 
@@ -317,7 +325,7 @@ Step 7決定に伴い、従来Step 9に置いていたテスト方針を次工�
 | 9 | 既存認可（Pundit / CanCanCan等）との関係 | 決定済み（D024） |
 | 10 | Contextの信頼境界 | 決定済み（D025） |
 
-入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。Step 5 progress = **10 / 10、Complete**。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。次はStep 8「Test Strategy」。今回は着手せず、実装も開始しない。
+入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。Step 5 progress = **10 / 10、Complete**。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。実装は開始しない。
 
 D024により、Principal自身の現在の権限はホストが実行時にも確認し、ActingForのDelegation認可と両方を満たして初めて業務処理を実行する。Agentの実効権限はPrincipal自身の権限とDelegationされた権限の積集合であり、require_approvalも権限を拡張しない。CoreはPundit等を直接呼ばない。D025により、Context値の正確性・信頼性はホストが保証する。ActingForは値の真偽を検証せずConstraintを評価する。形式不正はException、必要field不足はConstraint不成立とする。
 
@@ -340,7 +348,13 @@ D024により、Principal自身の現在の権限はホストが実行時にも�
 
 ### 5.3 Step 7 Gem Structure Design
 
-**Complete / Design finalized / Not implemented（D028）。** [Gem Structure Designの正本](gem_structure_v0_1.md)に最小構成、Headless Rails Engine、Model / Internal Service / Decisionの配置、Migration、autoload、依存関係、Public / Internal boundaryを記録した。独自GeneratorとConfiguration / Initializerは現時点で作らない。Gemは未実装・未リリース。次はStep 8 Test Strategyだが、今回は着手しない。
+**Complete / Design finalized / Not implemented（D028）。** [Gem Structure Designの正本](gem_structure_v0_1.md)に最小構成、Headless Rails Engine、Model / Internal Service / Decisionの配置、Migration、autoload、依存関係、Public / Internal boundaryを記録した。独自GeneratorとConfiguration / Initializerは現時点で作らない。Gemは未実装・未リリース。後続のStep 8もD029で設計完了した。
+
+### 5.4 Step 8 Test Strategy Design
+
+**Complete / Design finalized / Not implemented（D029）。** [Test Strategyの正本](test_strategy_v0_1.md)にMinitest採用、Unit / Integrationの境界、最小 `test/dummy`、Decision、ConstraintEvaluator、authorize、Delegation matching、Audit / 保存失敗、Migration / Engine、Host Authorization Boundary、Context Trust Boundary、fail-closed、v0.1 Acceptance Criteriaとの対応を記録した。
+
+Testコードはまだ存在しない。4.3のDefinition of Done全体はProposal / 提案を維持する。次工程の番号・順序は新たに決めず、Security Model DesignをStep 9として採番しない。GemはNot implemented / Not releasedであり、実装開始には進まない。
 
 ## 6. Issue化する候補
 
@@ -348,7 +362,7 @@ D024により、Principal自身の現在の権限はホストが実行時にも�
 
 | 候補タイトル | 解決したいこと |
 | --- | --- |
-| v0.1の完了条件を確定する | 4.2の完了条件と4.3のDefinition of Doneをレビューする |
+| v0.1の完了条件を確定する | Step 8のTest上のAcceptance Criteriaを前提に、未決定事項を含む4.3のDefinition of Done全体をレビューする |
 | Public APIの残る詳細を設計する | D018〜D023を前提に、具体的なException class、Delegation作成のvalidation API等を決める |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
 | Auditの残る詳細を決める | D022・D023の自動記録・保存失敗時Exceptionを前提に、reason_code正式一覧とFilter / Sanitizer APIを決める |
@@ -365,6 +379,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 | docs/domain_model_v0_1.md | v0.1ドメインモデルの確定設計と後続工程の未決定事項 |
 | docs/public_api_v0_1.md | Step 5 Public API設計の正本。決定済み範囲と未決定事項・進捗 |
 | docs/gem_structure_v0_1.md | Step 7 Gem Structure Designの正本。Design finalized / Not implemented |
+| docs/test_strategy_v0_1.md | Step 8 Test Strategy Designの正本。Complete / Design finalized / Not implemented |
 | GitHub Issues | 開発タスク、懸念点、未解決の質問 |
 
 - 会話の区切りで、決まった内容を該当ファイルへ反映する。
@@ -377,7 +392,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. 次はStep 8「Test Strategy」。Step 7はComplete / Design finalized / Not implemented。今回はStep 8にも実装にも着手しない。
+1. Step 8はComplete / Design finalized / Not implemented。次工程の番号・順序は今回新たに決めず、実装にも進まない。
 2. reason_code正式一覧、Filter / SanitizerのPublic API等の詳細は未決定のまま残す。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、Migration実コード・taskの確認、対応Ruby/Rails、ライセンス等を後続工程で扱い、v0.1の完了条件をレビューする。
 

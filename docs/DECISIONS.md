@@ -379,6 +379,25 @@
 - Consequences：Step 7正本にv0.1 Minimal Gem Structureを記録するが、実装ファイルは作成・変更しない。Step 4〜6の仕様を維持し、GemはNot implemented / Not released。次はStep 8 Test Strategy（今回は未着手）。従来の進行順でStep 9だったテスト方針をStep 8へ更新し、セキュリティモデル設計の後続の順番は固定しない。Exception class名、reason_code、Audit Sanitizer Public API、Approval Workflow、各Adapter等の未決定詳細は維持する。
 - 正式本文：[Gem Structure Design](gem_structure_v0_1.md)、[Step 7の記録](PROJECT.md#53-step-7-gem-structure-design)、[README](../README.md#project-documents)。
 - 根拠：ユーザーが提示したStep 7 Gem Structure Designの正式決定と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D029でStep 8を完了し、Minitest採用とTest Strategyを設計確定。上記の未決定・未着手表記はStep 7時点の履歴として残す。
+
+## D029: Step 8 Test Strategy Design
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Step 8は **Complete / Design finalized / Not implemented**。Testコードはまだ存在しない。
+- Context：Step 4〜7の決定を維持し、v0.1の必須機能とSecurity Boundaryを検証するTest Strategyを正式に記録する必要がある。
+- Decision（Framework / 境界）：Minitestを正式採用し、RSpecはv0.1では採用しない。DecisionとConstraintEvaluatorのpure / internal logicはUnit Test、Rails / DB / Public APIをまたぐ処理はIntegration Testとする。authorizeはAudit保存まで含む中心的なIntegration Test対象とする。
+- Decision（Dummy）：`test/dummy` は最小Rails integration host。Engine、ActiveRecord、Migration、autoload、authorize、Host Principal / Resourceとの連携を検証する。EC製品、Approval Workflow、MCP Server、OAuth / OIDC、UI、Controller E2E、複雑なBusiness Logicは含めない。
+- Decision（Unit）：Decisionの3状態と4つのPublic API、require_approval != allowを検証する。ConstraintEvaluatorは単一条件の成立・不成立、AND、境界値、field不足、不正・評価不能、型不一致、nested非対応、fail-closedを検証する。lookup、effect優先、final Decision、AuditはUnit対象外。constructorや内部method・class構造を契約にしない。
+- Decision（Authorization / Matching）：Public behaviorを中心に全matching条件、allow / deny / require_approval、一致なしdeny、require_approval > allow、期限・取消・Action / Resource / Constraint mismatchを検証する。expires_at == nowはexpired。結果をDB id、created_at順、作成順、specificityへ依存させない。通常の認可不成立はDecision、API misuse / internal errorはExceptionとする。
+- Decision（Audit）：authorize経由で3状態すべての自動保存、Agent / Principal / Action / Resource / Decision / matched_delegation_ids / sanitized Context / timestampの追跡を検証する。一致なしは空配列、複数一致は該当Delegationを追跡する。記録はAuthorization Decisionであり、業務成否ではない。全結果について保存失敗時はDecisionを返さず、denyへ変換せず、Exceptionで中断し、Business Logicへ進ませない。
+- Decision（Rails）：DummyでEngine boot、Zeitwerk / autoload、isolate_namespace、Migration、Model接続、Host namespace衝突防止と3つのacting_for_テーブルを検証する。DB型・Migration実装詳細・task名は固定しない。
+- Decision（Security）：Hostの現在権限とDelegationの積集合、委任後の権限喪失、Approvalによる権限拡張なしをIntegration Testで検証する。CoreはHost Authorization libraryを直接呼ばず、特定libraryのAPIを契約にしない。ContextはHostが値を確定し、Coreは渡された値でConstraintを評価する。形式不正はException、必要field不足はConstraint不成立。新しいContext APIは導入しない。fail-closedをUnit / Integration双方で扱い、API misuse / configuration error / internal error / Audit failureをdenyへ変換しない。
+- Decision（Acceptance Criteria）：Agent representation、Delegation、Authorization、Constraint、Expiration / Revocation、Approval、Audit、Rails integrationへTest上のAcceptance Criteriaを対応付ける。Host Authorization Boundary、Context Trust Boundary、fail-closedを横断的要件として追加する。Resource matchingとContextのConstraint evaluationを区別し、Rails integrationは導入・Engine boot・Migration・Delegation・Authorization・Audit等で検証する。
+- Rationale：Rails-nativeな構成と最小Hostでv0.1に必要な検証を行い、不要なFramework依存を増やさず、内部実装の変更余地とSecurity Boundaryを守るため。
+- Consequences：D028のTest Framework保留を本決定で解消する。Step 4〜7の製品仕様は変更しない。PROJECT 4.3のDefinition of Done全体はProposal / 提案を維持する。Ruby / Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notes、Exception class名、reason_code正式一覧、Filter / Sanitizer Public API、delegate!等は未決定のまま。次工程の番号・順序は新たに決めず、実装には進まない。GemはNot implemented / Not released。
+- 正式本文：[Test Strategy Design](test_strategy_v0_1.md)、[Step 8の記録](PROJECT.md#54-step-8-test-strategy-design)。
+- 根拠：ユーザーが提示したStep 8 Test Strategy Designの正式決定と、設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

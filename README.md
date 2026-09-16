@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Step 7 Gem Structure Design is complete (Design finalized / Not implemented). Next: Step 8 Test Strategy. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its test acceptance criteria are finalized in Step 8; the overall Definition of Done remains a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Step 7 Gem Structure Design is complete (Design finalized / Not implemented). Step 8 Test Strategy is complete (Complete / Design finalized / Not implemented); test code does not exist yet. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -180,9 +180,9 @@ v0.1 will provide the following delegated-authorization path inside a Rails appl
 4. Generate an `ActingFor::Decision` value object with status `:allow`, `:deny`, or `:require_approval`.
 5. Automatically save an AuditEvent within `authorize` before returning the Decision; raise an exception if saving fails. ActingFor does not execute the business operation.
 
-The proposed completion criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. Step 5 public API design is finalized; finer details such as exception class names, database schema details, and the audit filtering API remain undecided. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
+The Step 8 test acceptance criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. Step 5 public API design is finalized; finer details such as exception class names, database schema details, and the audit filtering API remain undecided. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
 
-The scope deliberately excludes agent authentication, approval workflow and approval UI, general-purpose policy engines, OAuth/OIDC servers, MCP servers, payments, and agent-to-agent communication. See the [v0.1 scope and proposed acceptance criteria](docs/PROJECT.md#4-v01スコープ) and [decision record D007](docs/DECISIONS.md#d007-v01の具体的な範囲) for details and decision status.
+The scope deliberately excludes agent authentication, approval workflow and approval UI, general-purpose policy engines, OAuth/OIDC servers, MCP servers, payments, and agent-to-agent communication. See the [v0.1 scope, test acceptance criteria, and proposed Definition of Done](docs/PROJECT.md#4-v01スコープ) and [decision record D007](docs/DECISIONS.md#d007-v01の具体的な範囲) for details and decision status.
 
 ## Project documents
 
@@ -193,6 +193,7 @@ The initial project documents are maintained in Japanese:
 - [v0.1 domain model design](docs/domain_model_v0_1.md)
 - [v0.1 public API design — Design-stage API / Not implemented yet](docs/public_api_v0_1.md)
 - [v0.1 Gem Structure Design — Design finalized / Not implemented](docs/gem_structure_v0_1.md)
+- [v0.1 Test Strategy Design — Complete / Design finalized / Not implemented](docs/test_strategy_v0_1.md)
 - [GitHub Issues](https://github.com/cuichangquan/acting_for/issues)
 
-The scope document distinguishes finalized product boundaries, proposed acceptance criteria, and implemented features. The authoritative Step 5 public API document distinguishes decided design from undecided candidates. The API is not implemented or published yet.
+The scope document distinguishes finalized product boundaries and test acceptance criteria, the proposed overall Definition of Done, and implemented features. The authoritative Step 5 public API document distinguishes decided design from undecided candidates. The API is not implemented or published yet.
