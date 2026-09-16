@@ -1,6 +1,6 @@
 # ActingFor v0.1 Domain Model Design
 
-更新日：2026-09-16
+更新日：2026-09-17
 
 Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIの後続決定は[Step 5の正本](public_api_v0_1.md)を参照。残る未確定事項は第22節に記録する。
 
@@ -58,13 +58,15 @@ Rails上でDBへ永続化する主要Modelは3つとする。
 
 ActingForはAgentの本人確認やAgent Identityの検証を行わない。
 
+後続決定D026により、認証済み外部Agentをローカル `ActingFor::Agent` へresolveする責務もホストアプリにある。Userのような会員登録・ログインは前提にしない。AgentレコードのProvisioning方法はv0.1では固定せず、正式なProvisioning APIも追加しない。詳細は[Agent Registration / Resolution Boundary](PROJECT.md#24-agent-registration--resolution-boundary)を参照。モデル・属性・関連は変更しない。
+
 ```text
 外部の接続・認証基盤（OAuth / OIDC / MCP / API Key / その他）
     ↓
 Authentication
     ↓
 Authenticated Agent
-    ↓
+    ↓ Host Applicationがresolve
 ActingFor::Agent
 ```
 

@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). The next project step is Step 6, README Quick Start. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -21,17 +21,134 @@ ActingFor focuses on this delegated authorization problem inside Rails applicati
 - **Delegation**: the permissions and constraints granted by the principal.
 - **Decision**: whether the requested action is allowed, denied, or requires human approval.
 
-The following is an illustrative delegation, not a set of built-in rules:
+## Quick Start
 
-| Requested action | Decision |
-| --- | --- |
-| Search products | `allow` |
-| Add a product to the cart | `allow` |
-| Purchase for up to JPY 10,000 | `allow` |
-| Purchase for more than JPY 10,000 | `require_approval` |
-| Delete the account | `deny` |
+**Design-stage example — not implemented yet.**
+The API below shows the intended v0.1 developer experience. ActingFor is not yet released, and these examples are not runnable yet.
 
-`require_approval` does not authorize execution. ActingFor reports that approval is required; the host application owns the approval workflow.
+### 1. Understand the flow
+
+A Shopping Agent purchases a product on behalf of a Principal:
+
+```text
+Principal
+   ↓ delegates
+Shopping Agent
+   ↓ requests :purchase
+Host Application
+   ↓
+ActingFor.authorize(...)
+   ↓
+allow / deny / require_approval
+   ↓
+Host Application decides what to do next
+```
+
+ActingFor evaluates delegated authority; it does not execute business logic.
+
+### 2. Prepare an authenticated/resolved Agent
+
+The host application authenticates the external agent, or relies on an external authentication provider, then resolves it to a local `ActingFor::Agent`. Here, `shopping_agent` is that authenticated/resolved Agent. ActingFor holds an Agent representation but provides no agent authentication, login, or session management. It does not require agents to sign up like users. Agent provisioning is not fixed for v0.1; see the [Agent boundary](docs/PROJECT.md#24-agent-registration--resolution-boundary).
+
+### 3. Delegate authority
+
+The Principal grants two Delegations for the `:purchase` Action on the `Product` Resource type. These amounts are example delegation settings, not built-in ActingFor rules. Assume these are the only applicable Delegations, both valid, and prices are Integer amounts in JPY.
+
+A dedicated creation API is planned; `ActingFor.delegate(...)` below illustrates the intended shape. Its complete arguments, defaults, validation, and whether `delegate!` exists remain undecided ([Delegation API](docs/public_api_v0_1.md#9-delegation-api)).
+
+```ruby
+user = current_user # The Principal in this example
+
+ActingFor.delegate(
+  agent: shopping_agent,
+  principal: user,
+  action: :purchase,
+  resource: Product,
+  constraints: [
+    { field: "amount", operator: "lte", value: 10_000 }
+  ],
+  effect: :allow
+)
+
+ActingFor.delegate(
+  agent: shopping_agent,
+  principal: user,
+  action: :purchase,
+  resource: Product,
+  constraints: [
+    { field: "amount", operator: "gt",  value: 10_000 },
+    { field: "amount", operator: "lte", value: 30_000 }
+  ],
+  effect: :require_approval
+)
+```
+
+The second Delegation requires both Constraints to hold. Above ¥30,000, neither Delegation matches, so the Decision is `deny`. There is no explicit deny Delegation.
+
+### 4. Authorize an action
+
+For a product priced at ¥8,900, the host loads the actual Resource and supplies its verified price as Context. The Principal is the same user who delegated authority above.
+
+```ruby
+product = Product.find(params[:product_id])
+
+decision = ActingFor.authorize(
+  agent: shopping_agent,
+  principal: current_user,
+  action: :purchase,
+  resource: product,
+  context: {
+    amount: product.price
+  }
+)
+```
+
+### 5. Handle the Decision
+
+For the example Delegations:
+
+| Purchase amount | Decision | Meaning |
+| --- | --- | --- |
+| ¥8,900 | `allow` | Meets ActingFor's Delegation conditions |
+| ¥20,000 | `require_approval` | No automatic execution; approval is required |
+| ¥50,000 | `deny` | Do not execute |
+
+Inspect `decision.status`, `decision.allowed?`, `decision.denied?`, or `decision.approval_required?`. **`require_approval != allow`**: when approval is required, `decision.allowed?` returns `false`.
+
+```ruby
+case decision.status
+when :allow
+  # Host Application may proceed only if host authorization also permits it
+when :require_approval
+  # Stop and start the host application's approval flow
+when :deny
+  # Do not execute
+end
+```
+
+### 6. Existing authorization still applies
+
+```text
+Host Authorization
+       AND
+ActingFor Authorization
+       ↓
+Business Logic
+```
+
+The host must check the Principal's current permissions at execution time, using Pundit, CanCanCan, Action Policy, or its own authorization. ActingFor Core does not call these directly or replace existing authorization. Even with `allow`, the operation must not execute if the Principal lacks permission. `require_approval` does not expand the Principal's permissions; the host owns the approval workflow.
+
+### 7. Trust only verified Context
+
+The host verifies and establishes business-critical values; ActingFor evaluates Constraints against the supplied Context. Use the host-loaded `product.price` above, rather than blindly trusting an agent-supplied `params[:amount]`. This does not prohibit params in general: agent-supplied business values require verification before use.
+
+ActingFor does not fetch prices from the database, validate currency, check ownership, or compare agent claims with stored values. Those are host business responsibilities. See [Context Trust Boundary](docs/public_api_v0_1.md#13-context-trust-boundary) for input details.
+
+### 8. Audit is automatic
+
+Authorization decisions are automatically recorded as AuditEvents inside `ActingFor.authorize(...)`. No separate audit call is required.
+
+If the AuditEvent cannot be saved, authorization raises an exception and no Decision is returned: it neither returns `allow` nor converts the failure to `deny`. The host must not proceed to business logic.
 
 ## Responsibility
 

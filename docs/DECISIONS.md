@@ -1,6 +1,6 @@
 # ActingFor 決定記録
 
-更新日：2026-09-16
+更新日：2026-09-17
 
 このファイルは、決定内容と理由を残す。現在の開発範囲は[PROJECT](PROJECT.md)、紹介文の本文は[README](../README.md)を参照する。
 
@@ -27,6 +27,7 @@
 - 決定：Agentはユーザー本人ではなく、一定範囲の権限を委任された代理主体とする。
 - 理由：誰が要求したかと、誰の権限で動くかを区別する必要がある。
 - 設計への反映：`current_user` と `current_agent` を分離する。
+- 後続決定（2026-09-17）：D026でAgent Authentication / Resolutionのホスト責務を明確化。上記は主体の分離を示すもので、ActingForによる `current_agent` helper提供の決定ではない。
 - 未決定：具体的なモデル、関連、識別子、認証結果の受け渡し方法。
 - 後続決定（2026-09-15）：モデルと関連の基本方針はD013で確定。AgentはPrincipalを直接参照せず、Delegationで関係を表現する。
 
@@ -324,6 +325,37 @@
 - Consequences：Context確定とAudit Filter / Sanitizerを混同しない。Exception class正式一覧、reason_codeや既存の未決定詳細を追加確定しない。本決定とD024によりStep 5は10 / 10で完了（Design finalized）。実装済みを意味しない。次はStep 6「README Quick Start作成」だが、今回は着手しない。
 - 正式本文：[Context Trust Boundary](public_api_v0_1.md#13-context-trust-boundary)。
 - 根拠：ユーザーが提示したStep 5項目10の正式決定と、設計ドキュメントのみの更新指示。
+
+## D026: Agent Registration / Resolution Boundary
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context：ローカルAgent Modelの存在が、Userのような会員登録・ログインやAuthentication / Session管理の提供と誤解されない責務境界が必要である。
+- Decision：`ActingFor::Agent` は外部AgentをRails内部で識別するためのローカル表現。AgentをUserと同じように会員登録・ログインさせることは前提にしない。ActingForはAgentを保持するが、認証・ログインさせる仕組みは提供しない。
+- Decision（Authentication / Resolution）：OAuth / OIDC / API Key / MCPその他の接続・認証方法はHost Applicationまたは外部認証基盤の責務。認証済み外部Agentをローカル `ActingFor::Agent` へresolveする責務もHost Application側とする。
+- Decision（Provisioning）：Agentレコードの作成方法はv0.1では固定しない。管理画面、API、初回認証時、seed、その他ホスト独自方式は例であり、正式なProvisioning APIとして確定しない。
+- Decision（README）：Quick Startでは `current_agent` を使わず、ホストにより認証・解決済みの `shopping_agent` を使う。`current_agent` helperやAgent作成・登録・解決・認証の新しいPublic APIを追加確定しない。
+- Rationale：Railsの `current_user` と同様のAuthentication / Session機能までGemが提供するという誤解を避け、外部の本人確認とRails内部の委任認可を分離するため。
+- Consequences：D002の主体分離、D012のMCP非依存とAuthentication責務外、D013のローカルAgent表現を維持・補足する。AgentはPrincipalを直接belongs_toせず、関係はDelegationで表現する。Domain ModelとStep 5仕様は変更しない。Provisioning方式・具体APIは未固定のまま残す。
+- 正式本文：[Agent Registration / Resolution Boundary](PROJECT.md#24-agent-registration--resolution-boundary)、[Domain ModelのAgent](domain_model_v0_1.md#3-agent)。
+- 根拠：ユーザーが提示したAgent Registration / Resolution Boundaryの正式決定と、設計ドキュメントのみの更新指示。
+
+## D027: README Quick Start Design
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Step 6は **Complete / Design-stage Quick Start finalized**。
+- Context：Rails開発者が数分でActingForの価値と基本的な使い方を理解でき、未実装のGemを実行可能と誤認しないREADMEが必要である。
+- Decision（構成）：代表例は「Shopping AgentがPrincipalの代理として商品を購入する」、Actionは `purchase`。Principal / Agent / Delegation / Action / Resource / Context / Constraint / Decisionを使用する。全体フロー、認証・解決済みAgent、委任、認可、Decision、既存認可、verified Context、自動Auditの8節とする。ActingForはBusiness Logicを実行せず、Hostが次の処理を判断する。
+- Decision（段階）：冒頭でDesign-stage example、未実装・未リリース・実行不可を一度明示する。Installation、Gem追加、bundle installは掲載しない。
+- Decision（Delegation）：`ActingFor.delegate(...)` の設計例は2件のみ。10,000円以下をallow、10,000円超かつ30,000円以下をrequire_approvalとする。30,000円超はmatching Delegationなしでdeny。組み込み金額ルールではなく委任設定例であり、explicit deny Delegationは使用しない。D021の方向性を示すだけで、全引数・default・validation・delegate!の有無は確定しない。
+- Decision（Authorization / Decision）：D026の `shopping_agent`、実際の `product`、ホストが取得・確認した `product.price` を用いる。8,900円のallow例を中心に、20,000円のrequire_approval、50,000円のdenyを表で示す。D018のstatus / allowed? / denied? / approval_required?を使用し、require_approval != allow、承認時のallowed?はfalseと明示する。
+- Decision（Host / Context）：Host Authorization AND ActingFor Authorizationを満たして業務処理へ進む。Principalの現在の権限確認はHost責務で、allowはアプリ全体の最終認可ではなく、require_approvalも権限を拡張しない。CoreはPundit等を直接呼ばない。Agent申告の業務上重要な値を無検証で使わず、HostがContextを確認・確定し、ActingForがConstraintを評価する。paramsの一般的な禁止や新しいContext APIは導入しない。
+- Decision（Audit）：authorize内部でAuthorization DecisionをAuditEventへ自動記録し、別途audit呼び出しを要求しない。保存失敗時はExceptionで、allowもdenyもDecisionも返さず、Business Logicへ進ませない。
+- Decision（除外）：MCP詳細、認証方式の具体説明、Provisioning Public API、Constraint全仕様、Exception class一覧、AuditEvent全カラム・reason_code・Context Filter / Sanitizer、Approval Workflow実装、Pundit等の具体Integrationコード、その他未決定API、将来機能はQuick Startへ入れない。詳細は既存設計書へ委ねる。
+- Rationale：代表例と短い責務説明で利用価値を伝え、設計例を実装済み機能や追加API確定と誤解させないため。
+- Consequences：READMEへの反映によりStep 6設計を完了とする。Gem実装完了やRunnable Quick Start完了ではない。Step 5は10 / 10完了のまま仕様を変更せず、D014のmatching・immutable・require_approval > allow等とD018〜D025を維持する。D026のProvisioningと既存の未決定詳細も追加確定しない。
+- 正式本文：[README Quick Start](../README.md#quick-start)、[Step 6の記録](PROJECT.md#52-step-6-readme-quick-start-design)。
+- 根拠：ユーザーが提示したStep 6 README Quick Start Designの正式決定と、設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

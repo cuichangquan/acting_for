@@ -1,11 +1,11 @@
 # ActingFor 開発方針
 
-更新日：2026-09-16
+更新日：2026-09-17
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Step 5「Public API Design」完了（Complete / Design finalized）。進捗は10 / 10。全項目が決定済み。以下は実装済み機能の一覧ではない。
+- 現在の段階：Step 6「README Quick Start」完了（Complete / Design-stage Quick Start finalized）。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -24,7 +24,7 @@ Railsアプリが、認証済みのAI Agentによる操作要求について、�
 ## 2. 基本方針
 
 - Human / Principal と Agent を別主体として扱う。
-- `current_user` と `current_agent` を分離する。
+- PrincipalとAgentを分離する。ホストの `current_user` とAgentは別主体であり、ActingForが `current_agent` helperを提供する意味ではない（D026）。
 - 認証済みのAgentに対する、Railsアプリ内部の委任と認可に集中する。
 - 汎用認可エンジン、独自のAgent Identity規格は作らない。
 - 特定のLLMやAgent Frameworkに依存しない設計を目指す。
@@ -128,6 +128,26 @@ allow
 
 **ActingForはMCPを置き換えない。MCPの内側に残る「代理権限」の問題を解決する。** この境界を保つことで、接続プロトコルが変わっても委任認可をRails内部で扱える。
 
+### 2.4 Agent Registration / Resolution Boundary
+
+**状態：確定（D026）。** `ActingFor::Agent` は、外部AgentをRails内部で識別するローカル表現。Userと同じ会員登録・ログインを前提にしない。
+
+```text
+External Agent
+    ↓ Authentication（Host / 外部認証基盤）
+Host Application
+    ↓ resolve
+ActingFor::Agent
+    ↓
+ActingFor.authorize(...)
+```
+
+Agent AuthenticationはHost Applicationまたは外部認証基盤の責務であり、OAuth / OIDC / API Key / MCPその他の接続・認証方法にCoreを依存させない。認証済み外部AgentをローカルAgentへ対応付けるResolutionもHost Applicationの責務とする。
+
+AgentレコードのProvisioning方法はv0.1では固定しない。管理画面、API、初回認証時、seed、ホスト独自方式などは選択肢の例であり、ActingForの正式なProvisioning APIとして確定しない。
+
+README Quick Startでは認証・Session管理の提供と誤解されないよう `current_agent` を使わず、ホストによって認証・解決済みの `shopping_agent` を用いる。ActingForはAgentを保持するが、認証・ログインさせる仕組みは提供しない。D012・D013の責務境界、PrincipalとAgentをDelegationで関連付ける構造は維持する。
+
 ## 3. 用語定義
 
 **状態：確定（D011）。** ActingFor v0.1では、次の用語を正式名称として使用する。
@@ -178,7 +198,7 @@ Public APIはこの語彙に揃える。次はD015〜D017で決定した設計�
 
 ```ruby
 decision = ActingFor.authorize(
-  agent: current_agent,
+  agent: shopping_agent, # ホストによって認証・解決済み
   principal: current_user,
   action: :purchase,
   resource: product,
@@ -270,13 +290,13 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 3 | 用語定義 | 完了。本文とD011に記録 |
 | 4 | ドメインモデル設計 | 完了。基本方針D013と詳細ルールD014を[設計書](domain_model_v0_1.md)に記録 |
 | 5 | Public API設計 | 完了（Complete）。進捗は10 / 10。D015〜D025で全項目決定済み。[正本](public_api_v0_1.md) |
-| 6 | README Quick Start作成 | 次のStep。未着手 |
+| 6 | README Quick Start | 完了（Complete / Design-stage Quick Start finalized）。D026・D027、[README](../README.md#quick-start)に反映済み。実行不可 |
 | 7 | Gem内部構成設計 | 未着手 |
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
 | 9 | テスト方針 | v0.1の完了条件を定義。詳細設計は未着手 |
 | 10 | 実装開始 | 設計後 |
 
-MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。次はStep 6「README Quick Start作成」。
+MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。次はStep 7「Gem内部構成設計」。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
@@ -295,9 +315,26 @@ MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013
 | 9 | 既存認可（Pundit / CanCanCan等）との関係 | 決定済み（D024） |
 | 10 | Contextの信頼境界 | 決定済み（D025） |
 
-入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。Step 5 progress = **10 / 10、Complete**。次はStep 6「README Quick Start作成」。今回は着手せず、実装も開始しない。
+入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。Step 5 progress = **10 / 10、Complete**。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。次はStep 7「Gem内部構成設計」。今回は着手せず、実装も開始しない。
 
 D024により、Principal自身の現在の権限はホストが実行時にも確認し、ActingForのDelegation認可と両方を満たして初めて業務処理を実行する。Agentの実効権限はPrincipal自身の権限とDelegationされた権限の積集合であり、require_approvalも権限を拡張しない。CoreはPundit等を直接呼ばない。D025により、Context値の正確性・信頼性はホストが保証する。ActingForは値の真偽を検証せずConstraintを評価する。形式不正はException、必要field不足はConstraint不成立とする。
+
+### 5.2 Step 6 README Quick Start Design
+
+**Complete / Design-stage Quick Start finalized（D027）。** [README Quick Start](../README.md#quick-start)への反映を完了した。Gem実装・リリースやRunnable Quick Startの完了ではない。Step 5の10 / 10の仕様は変更しない。
+
+代表ユースケースは「Shopping AgentがPrincipalの代理として商品を購入する」。Principal、Agent、Delegation、Action（`purchase`）、Resource、Context、Constraint、Decisionを使い、次の8節で数分で基本を理解できる構成とする。
+
+1. 全体フロー：Principalの委任からHostの要求、authorize、3状態、Hostの次の判断まで。ActingForはBusiness Logicを実行しない。
+2. 認証・解決済みAgent：D026に従う `shopping_agent` を使う。
+3. Delegation作成：10,000円以下allow、10,000円超かつ30,000円以下require_approvalの2件のみ。30,000円超はmatchingなしでdeny。組み込み金額ルールでもexplicit deny Delegationでもない。
+4. Authorization：実際の `product` と、ホストが取得・確認した `product.price` を渡す。代表例は8,900円。
+5. Decision：8,900円 / 20,000円 / 50,000円の表とD018の4つのPublic APIを示す。require_approval != allow、承認時のallowed?はfalse。
+6. 既存認可：Host Authorization AND ActingFor Authorization。Principalの現在の権限確認はホスト責務で、allowも最終実行許可ではなく、require_approvalも権限を拡張しない。
+7. Context：Agent申告値を無検証で利用しない。ホストが値を確認・確定し、ActingForはConstraintを評価する。
+8. Audit：authorize内で自動記録し、保存失敗時はException。allowもdenyもDecisionも返さず、業務処理へ進ませない。
+
+冒頭で未実装・未リリース・実行不可を一度明示する。Installation、Gem追加・bundle install、MCPや認証方式の詳細、Provisioning API、Constraint全仕様、Exception一覧、AuditEvent全カラム・reason_code・Filter / Sanitizer、Approval Workflow実装、Pundit等の具体Integrationコード、その他未決定APIや将来機能はQuick Startに入れない。`ActingFor.delegate(...)` はD021の方向性を示す例であり、全引数・default・validation・`delegate!` は未決定のまま残す。
 
 ## 6. Issue化する候補
 
@@ -316,7 +353,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 | 管理先 | 役割 |
 | --- | --- |
-| README.md | Gemの紹介と、検証済みの使い方 |
+| README.md | Gemの紹介とDesign-stage Quick Start。実行可能な手順は実装・検証後に掲載 |
 | docs/PROJECT.md | 開発方針、スコープ、進行順 |
 | docs/DECISIONS.md | 決定事項、理由、提案・確定・保留の区別 |
 | docs/domain_model_v0_1.md | v0.1ドメインモデルの確定設計と後続工程の未決定事項 |
@@ -333,7 +370,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Step 6「README Quick Start作成」へ進む。Step 5は10 / 10で完了。今回はStep 6には着手せず、実装も開始しない。
+1. Step 7「Gem内部構成設計」へ進む。Step 6はDesign-stage Quick Startとして完了。今回、実装は開始しない。
 2. reason_code正式一覧、Filter / SanitizerのPublic API等の詳細は未決定のまま残す。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、migration / generator構成、対応Ruby/Rails、ライセンスを決め、v0.1の完了条件をレビューする。
 

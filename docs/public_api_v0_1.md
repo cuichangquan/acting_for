@@ -1,6 +1,6 @@
 # ActingFor v0.1 Public API Design
 
-更新日：2026-09-16
+更新日：2026-09-17
 
 **状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gemは未実装であり、本更新では実装を開始しない。
 
@@ -16,6 +16,8 @@
 - CoreはMCPに依存せず、MCP Tool名とActingFor Actionを同一概念にしない。
 - Step 4のAction完全一致、Resourceのnilの意味、Constraint評価、DecisionとAuditEventの責務を維持する。
 - 汎用Policy Engineへ拡大せず、v0.1で過剰設計しない。
+
+D026による補足：認証済み外部Agentからローカル `ActingFor::Agent` へのResolutionもホスト責務であり、Provisioning方法はv0.1では固定しない。本書の `current_agent` はホスト側の概念例であり、ActingFor提供のhelperではない。READMEでは認証・解決済みの `shopping_agent` を使う。[Agent Registration / Resolution Boundary](PROJECT.md#24-agent-registration--resolution-boundary)を参照。新しいPublic APIやStep 5の仕様変更は含まない。
 
 ## 3. Authorization Entry Point
 
@@ -402,7 +404,7 @@ DB型、migration / generator構成、対応Ruby / Rails等の後続設計は[St
 
 ## 15. Step 5 Progress
 
-Step 4は完了。Step 5「Public API Design」も **10 / 10、Complete**。次は **Step 6：README Quick Start作成**。今回はStep 6に着手しない。
+Step 4は完了。Step 5「Public API Design」も **10 / 10、Complete**。後続のStep 6は **Complete / Design-stage Quick Start finalized**（D027）。最新の進捗は[PROJECT](PROJECT.md#5-進行順)、設計例は[README](../README.md#quick-start)を参照。Gemは未実装・未リリースで、例は実行不可。
 
 | 項目 | 内容 | 状態 |
 | --- | --- | --- |
