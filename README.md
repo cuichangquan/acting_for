@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its detailed acceptance criteria remain a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Step 7 Gem Structure Design is complete (Design finalized / Not implemented). Next: Step 8 Test Strategy. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -192,6 +192,7 @@ The initial project documents are maintained in Japanese:
 - [Decisions and their rationale](docs/DECISIONS.md)
 - [v0.1 domain model design](docs/domain_model_v0_1.md)
 - [v0.1 public API design — Design-stage API / Not implemented yet](docs/public_api_v0_1.md)
+- [v0.1 Gem Structure Design — Design finalized / Not implemented](docs/gem_structure_v0_1.md)
 - [GitHub Issues](https://github.com/cuichangquan/acting_for/issues)
 
 The scope document distinguishes finalized product boundaries, proposed acceptance criteria, and implemented features. The authoritative Step 5 public API document distinguishes decided design from undecided candidates. The API is not implemented or published yet.

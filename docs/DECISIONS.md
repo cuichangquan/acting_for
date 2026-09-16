@@ -192,6 +192,7 @@
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
 - 後続決定（2026-09-16）：D018〜D023でDecision Public API、deny / Exception、authorize!非提供、Delegation専用API、自動Auditと保存失敗時Exceptionを確定。ドメインモデルは変更しない。Step 5は8 / 10決定済み。
 - 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
+- 後続決定（2026-09-17）：Migration提供方式と独自Generator非提供はD028で確定。DB型・Migration実コード等は未決定のまま維持する。
 
 ## D015: Authorization Public Entry Point
 
@@ -203,6 +204,7 @@
 - Consequences：内部で `ActingFor::Authorization.call(...)` 等を使うかは実装時に決める。ホスト向けの入口を保ちながら内部構造を変更できる。Agent AuthenticationやMCPとの既存の責務境界は維持する。本決定は内部Serviceの実装を開始する指示ではない。
 - 正式本文：[Authorization Entry Point](public_api_v0_1.md#3-authorization-entry-point)。
 - 根拠：ユーザーが提示したStep 5 Decision 1と設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：内部Serviceの配置はD028のActingFor::Internal配下に決定。Public Entry Pointは維持し、内部の具体的実装は未決定。
 
 ## D016: authorize Arguments
 
@@ -356,6 +358,27 @@
 - Consequences：READMEへの反映によりStep 6設計を完了とする。Gem実装完了やRunnable Quick Start完了ではない。Step 5は10 / 10完了のまま仕様を変更せず、D014のmatching・immutable・require_approval > allow等とD018〜D025を維持する。D026のProvisioningと既存の未決定詳細も追加確定しない。
 - 正式本文：[README Quick Start](../README.md#quick-start)、[Step 6の記録](PROJECT.md#52-step-6-readme-quick-start-design)。
 - 根拠：ユーザーが提示したStep 6 README Quick Start Designの正式決定と、設計ドキュメントのみの更新指示。
+
+## D028: Step 7 Gem Structure Design
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Step 7は **Complete / Design finalized / Not implemented**。
+- Context：Step 4のDomain Model、Step 5のPublic API、Step 6のQuick Startを維持し、Rails Gemとしての最小構成とPublic / Internalの境界を記録する必要がある。
+- Decision（Engine）：Headless `Rails::Engine` と `isolate_namespace ActingFor` を採用する。Routes / Controllers / Views / Assets前提のWeb UIは作らない。EngineがRailtieの役割を含むため独立した `ActingFor::Railtie` は作らない。
+- Decision（Models）：`app/models/acting_for/` にapplication_record.rb、agent.rb、delegation.rb、audit_event.rbを配置する設計。対応する `ActingFor::ApplicationRecord` を共通親クラスとし、`ActingFor::Agent` / `ActingFor::Delegation` / `ActingFor::AuditEvent` を置く。
+- Decision（Internal）：`app/services/acting_for/internal/` にauthorization.rbとconstraint_evaluator.rbを置き、`ActingFor::Internal::Authorization` / `ActingFor::Internal::ConstraintEvaluator` とする。Public APIではなく、具体的実装・内部構造は将来変更可能。
+- Decision（Decision）：`ActingFor::Decision` は `lib/acting_for/decision.rb` に置くPublic Value Object。ActiveRecord ModelでもServiceでもない。D018のstatus / allowed? / denied? / approval_required?を維持する。
+- Decision（Migration / Tables）：Gem側の `db/migrate/` で3つの主要ModelのMigrationを管理し、Rails Engine標準方式でHost Applicationへコピー・DBに適用する。独自Migration DSL・DBセットアップ機構は作らない。テーブル名は `acting_for_agents` / `acting_for_delegations` / `acting_for_audit_events` とし、全て `acting_for_` prefixを持つ。具体的なカラム型・実コードは未決定、taskのコマンド名はRails実装時に確認する。
+- Decision（Generator）：v0.1では独自Generatorを作らない。acting_for:install / acting_for:agent / acting_for:config等は提供しない。将来の追加は可能だがv0.1の約束には含めない。
+- Decision（Entry Point / Load）：`lib/acting_for.rb` はauthorize / delegateの薄いPublic Entry Pointとする。libはGem Entry Point / Public Ruby API、appはRails Components。version / decision / engine等の必要最小限を明示的に読み込み、app/models / app/servicesはRails / Zeitwerkのautoloadに任せる。
+- Decision（Tests）：最低限 `test/dummy/` を想定するDummy Rails Appを持ち、Engine、ActiveRecord、Migration、autoload、Hostとのintegrationを実際のRails環境で検証できる構成とする。Minitest / RSpecとTest Strategy詳細はStep 8で決定し、今回着手しない。
+- Decision（Configuration）：必須設定が未確定のため、現時点でconfiguration.rbとconfig/initializers/acting_for.rbを作らず、空のConfiguration APIをPublic化しない。Audit Sanitizerを理由に追加しない。
+- Decision（Dependencies）：rails meta-gem全体に依存せず、最小のRails component単位とする。設計対象はactiverecord / railties / activesupport。Pundit、CanCanCan、Action Policy、MCP関連Gem、OAuth / OIDC関連Gem、OpenAI / Claude / Gemini SDKには依存しない。version constraintと対応Ruby / Rails versionは未決定。
+- Decision（Boundary）：PublicはActingFor.authorize / ActingFor.delegate / ActingFor::Decision / ActingFor::Agent / ActingFor::Delegation / ActingFor::AuditEvent。InternalはActingFor::Internal::*で利用者向けAPIではなく、READMEでは原則利用例に示さない。delegateの全引数・default・validation、delegate!の有無は追加確定しない。
+- Rationale：Hostとの名前・テーブル衝突を避け、所有コンポーネントと公開境界を明確にする。Rails標準機能を利用して保守対象と依存を最小限にし、内部実装の変更余地を残す。Dummy Rails AppでRailsとの統合を検証できる構成にする。
+- Consequences：Step 7正本にv0.1 Minimal Gem Structureを記録するが、実装ファイルは作成・変更しない。Step 4〜6の仕様を維持し、GemはNot implemented / Not released。次はStep 8 Test Strategy（今回は未着手）。従来の進行順でStep 9だったテスト方針をStep 8へ更新し、セキュリティモデル設計の後続の順番は固定しない。Exception class名、reason_code、Audit Sanitizer Public API、Approval Workflow、各Adapter等の未決定詳細は維持する。
+- 正式本文：[Gem Structure Design](gem_structure_v0_1.md)、[Step 7の記録](PROJECT.md#53-step-7-gem-structure-design)、[README](../README.md#project-documents)。
+- 根拠：ユーザーが提示したStep 7 Gem Structure Designの正式決定と、設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

@@ -504,7 +504,9 @@ Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10�
 - Filter / SanitizerのPublic API
 - DB schemaの細かな型・制約、resource_idの正式DB型
 - Ruby / Rails対応バージョン
-- migration / generator構成
+- Migrationの実コード・taskの具体的なコマンド名
+
+Gem構成・配置、Rails標準Migration方式、v0.1での独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で決定した。Domain Modelの仕様は変更せず、Gemは未実装のままとする。
 
 ### 既存認可とContextの後続決定（D024・D025）
 

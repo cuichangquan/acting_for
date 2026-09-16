@@ -12,7 +12,7 @@
 
 - PrincipalとAgentを別主体として明示し、Delegationを中心概念にする。
 - ActingForはAgent Authenticationを担当せず、ホストアプリで認証済みのAgentを受け取る。
-- Public APIと内部実装を分離する。内部Serviceの具体構成は未確定。
+- Public APIと内部実装を分離する。内部Serviceの配置は[Step 7の正本](gem_structure_v0_1.md)（D028）を参照。
 - CoreはMCPに依存せず、MCP Tool名とActingFor Actionを同一概念にしない。
 - Step 4のAction完全一致、Resourceのnilの意味、Constraint評価、DecisionとAuditEventの責務を維持する。
 - 汎用Policy Engineへ拡大せず、v0.1で過剰設計しない。
@@ -45,7 +45,7 @@ Railsアプリから短く書け、認可という責務とAgent / Principal / A
 | `agent.authorized_to?(:purchase)` | 誰の代理かを示すPrincipalが見えにくい |
 | `principal.authorize_agent(...)` | Principal ModelへActingForのAuthorization責務を持ち込まない |
 
-Publicは `ActingFor.authorize(...)`。Internalは未確定。内部で `ActingFor::Authorization.call(...)` 等を使う可能性はあるが、実装時に決める。
+Publicは `ActingFor.authorize(...)`。後続のStep 7（D028）で内部Serviceを `ActingFor::Internal::Authorization` / `ActingFor::Internal::ConstraintEvaluator` として配置する設計を決定した。具体的実装は未決定で、内部構造は将来変更可能。Public APIの仕様は変更しない。
 
 ## 4. authorize Arguments
 
@@ -400,7 +400,7 @@ v0.1では `trusted_context:` / `untrusted_context:` の別APIや、`TrustedCont
 
 Step 5の10項目は完了。決定範囲外の詳細として、Exception class名、Delegation作成のvalidation APIと `delegate!` の有無、Decision追加属性、reason_code正式一覧、Filter / SanitizerのPublic APIも未決定のまま残す。
 
-DB型、migration / generator構成、対応Ruby / Rails等の後続設計は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
+Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。DB型、Migration実コード・taskの確認、対応Ruby / Rails等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
 
 ## 15. Step 5 Progress
 
