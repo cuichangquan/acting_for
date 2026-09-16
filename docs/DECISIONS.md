@@ -1,6 +1,6 @@
 # ActingFor 決定記録
 
-更新日：2026-09-15
+更新日：2026-09-16
 
 このファイルは、決定内容と理由を残す。現在の開発範囲は[PROJECT](PROJECT.md)、紹介文の本文は[README](../README.md)を参照する。
 
@@ -58,6 +58,7 @@
 - 後続決定（2026-09-15）：D013でDecisionをValue Objectとする方針を確定。メソッド名や詳細ルールは未確定。
 - 後続決定（2026-09-15）：D014で複数一致時のrequire_approval > allowを確定。Decisionの具体クラス・API、エラーの具体的な扱いは引き続き未確定。
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
+- 後続決定（2026-09-16）：D018でDecision Public API、D019でdeny / Exceptionの境界を確定。Step 5は8 / 10決定済み、項目9・10は未決定。
 
 ## D006: READMEの紹介文
 
@@ -85,12 +86,13 @@
 ## D008: v0.1の競合判定とfail-closed原則
 
 - 日付：2026-09-14
-- 状態：**提案（共有会話では未決定）**
+- 状態：**変更済み（D013・D014・D019・D023）。以下の決定案は当時の提案であり、現行仕様ではない。**
 - 決定案：入力が妥当で評価可能な場合だけ自動許可できる。該当なし、必須入力欠落、不正値、条件評価不能は `deny` とする。複数のDelegationが一致した場合は `deny`、`require_approval`、`allow` の順に優先する。
 - 理由：障害や曖昧さによる権限昇格を避け、結果をDelegationの追加順やDB取得順に依存させないため。
 - 補足：reason codeと、プログラミングエラーを例外として扱う境界はPublic API設計で決める。
 - 後続決定（2026-09-15）：D013で一致なしのdefault denyを確定し、explicit deny Delegationはv0.1対象外とした。旧3値のDelegation優先順位案は置き換え、require_approval優先の方向とする。入力欠落・不正値・評価不能時の扱いは引き続き提案。
 - 後続決定（2026-09-15）：D014でmatching、Constraint不成立・invalid constraintの除外、default deny、require_approval > allow、判断できなければallowしないfail closedを確定。旧3値優先順位案は現行仕様ではない。例外等のPublic APIとAudit failure policyは未確定。
+- 後続決定（2026-09-16）：D019でAPI誤用・設定不正・内部異常をdenyへ変換せずExceptionとする境界、D023でAudit保存失敗時のExceptionを確定。必須入力欠落・不正値を一律denyとする旧案は採用しない。D014のConstraint不成立・invalid constraintをmatchさせないルールは維持する。
 
 ## D009: v0.1のApproval責任分界
 
@@ -110,6 +112,7 @@
 - 根拠：D007と同じ共有会話。
 - 後続決定（2026-09-15）：D013で専用AuditEventテーブルへの永続化、基本append-only、ContextのFilter / Sanitizer経由の記録を確定。識別子、フィルタ仕様、記録失敗時の扱いは未確定。
 - 後続決定（2026-09-15）：D014で業務処理結果を監査対象外とする責務、agent_identifierとmatched_delegation_idsを含む基本情報、allowlist優先方針を確定。reason_code正式一覧、Filter / Sanitizer API、DB型、Audit failure policyは未確定。
+- 後続決定（2026-09-16）：D022でauthorize内部のAudit自動記録、D023で保存失敗時にDecisionを返さずExceptionとする方針を確定。reason_code正式一覧、Filter / Sanitizer API、DB型は引き続き未決定。
 
 ## D011: ActingFor v0.1の正式用語
 
@@ -125,6 +128,7 @@
 - 根拠：Step 3「用語定義」でユーザーが確定した内容。
 - 後続決定（2026-09-15）：Railsモデル、DecisionのValue Object化、Audit Eventの保存方式の基本方針はD013で確定。DBスキーマとPublic APIの詳細は未確定。
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
+- 後続決定（2026-09-16）：D018〜D023でStep 5項目4〜8を確定。最新の進捗は8 / 10で、項目9・10は未決定。
 
 ## D012: ActingForとMCPの正式な責務境界
 
@@ -184,6 +188,7 @@
 - 次工程：Step 5「Public API設計」。
 - 根拠：ユーザーが2026-09-15に提示したStep 4の正式決定と設計ドキュメント更新指示。
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
+- 後続決定（2026-09-16）：D018〜D023でDecision Public API、deny / Exception、authorize!非提供、Delegation専用API、自動Auditと保存失敗時Exceptionを確定。ドメインモデルは変更しない。Step 5は8 / 10決定済み。
 
 ## D015: Authorization Public Entry Point
 
@@ -208,6 +213,7 @@
 - Consequences：位置引数は採用しない。Action正規化からConstraint値の暗黙変換を認めるものではない。入力不正と例外の境界は項目5、Contextの信頼境界とホストの値確認要件は項目10で決める。本決定では確定しない。
 - 正式本文：[authorize Arguments](public_api_v0_1.md#4-authorize-arguments)。
 - 根拠：ユーザーが提示したStep 5 Decision 2と設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-16）：入力不正と例外の境界はD019で確定。具体的なException class名とContextの信頼境界は未決定。
 
 ## D017: Decision Value Object
 
@@ -220,6 +226,73 @@
 - Consequences：DecisionはActiveRecord Modelや直接DB保存するModelにしない。必要な認可判定情報をAuditEventへ記録する。`allowed?` / `denied?` / `approval_required?` 等は項目4の候補に留める。例外は項目5、Audit呼び出しと失敗時方針は項目8、既存認可との具体的な接続は項目9で決める。Approval Workflowはv0.1の責務外。
 - 正式本文：[Decision](public_api_v0_1.md#5-decision)。Step 5は項目1〜3が決定済み、4〜10は未決定で進行中。
 - 根拠：ユーザーが提示したStep 5 Decision 3と設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-16）：4つのDecision Public APIはD018、deny / ExceptionはD019、Audit呼び出しと保存失敗時方針はD022・D023で確定。Step 5は8 / 10決定済み、項目9・10は未決定。
+
+## D018: Decision Public API
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目4。
+- Context：D017のValue Objectに対し、呼び出し側が3状態を明確に区別できるAPIが必要である。
+- Decision：`decision.status`、`decision.allowed?`、`decision.denied?`、`decision.approval_required?` を正式採用する。statusは `:allow` / `:deny` / `:require_approval`。各predicateは対応するstatusの場合にtrueとなり、require_approvalの場合の `allowed?` は必ずfalseとする。
+- Rationale：承認が必要な状態を実行許可と混同せず、最小のAPIで3状態を表現するため。
+- Consequences：v0.1では `success?`、`permitted?`、`executable?` を作らない。Decisionの追加属性は未決定。
+- 正式本文：[Decision Public API](public_api_v0_1.md#6-decision-public-api)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+
+## D019: deny vs Exception
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目5。
+- Context：通常の権限不成立とAuthorization処理そのものの異常を区別する必要がある。
+- Decision：Authorizationとして正常に判定できたが権限が成立しない場合はdenyとする。有効なmatching Delegationなし、expired、revoked、Constraint不成立、Resource / Action不一致などが該当する。処理そのものが成立しない場合はExceptionとし、`agent: nil`、`principal: nil`、`action: nil`、`context: "invalid"`、API誤用・設定不正・内部異常をdenyへ潰さない。
+- Rationale：権限がないという正常な判定と、API・システムの異常を混同しないため。
+- Consequences：「Authorizationとして判断できた → Decision」「処理そのものが成立しない → Exception」を基本原則とする。D014のmatching / Constraintルールは維持する。具体的なException class名は未決定。
+- 正式本文：[deny vs Exception](public_api_v0_1.md#7-deny-vs-exception)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+
+## D020: authorize!をv0.1では提供しない
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目6。
+- Context：AuthorizationのPublic APIにBang APIを加えるか判断する必要がある。
+- Decision：v0.1では `ActingFor.authorize!(...)` を提供しない。Public Authorization APIは `ActingFor.authorize(...)` のみとする。
+- Rationale：allow / deny / require_approvalの3状態を持ち、Bang APIはdeny / require_approvalをどのようにExceptionへ変換するかという追加の意味付けを必要とするため。
+- Consequences：必要性が明確になった場合にv0.2以降で再検討できる。本決定から `delegate!` の採否を推測しない。
+- 正式本文：[authorize!をv0.1では提供しない](public_api_v0_1.md#8-bang-api)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+
+## D021: Delegation専用Public API
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目7。
+- Context：D014ではDelegationの認可内容は原則immutable、権限変更は旧Delegationのrevoke + 新Delegationのcreateとした。
+- Decision：作成・取消はActiveRecord直接操作をPublic APIの基本とせず、専用APIを提供する方向とする。作成用専用Public APIを用意し、基本案は `ActingFor.delegate(agent: agent, principal: user, action: :purchase, resource: product, constraints: [...], effect: :allow)`。revokeの基本形は `delegation.revoke!` とする。
+- Rationale：ActiveRecordの直接操作を基本にするとLifecycleルールを壊しやすいため。
+- Consequences：hard deleteではなくrevocationとして無効化し、権限変更はrevoke + createで行う。作成APIの細かな引数・validation APIと `delegate!` の有無は未決定であり、例から確定しない。
+- 正式本文：[Delegation専用Public API](public_api_v0_1.md#9-delegation-api)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+
+## D022: Auditをauthorize内で自動記録
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目8（Audit）。
+- Context：認可判定のAudit記録を呼び出し側がどのように行うか決める必要がある。
+- Decision：AuditEvent生成・保存は `ActingFor.authorize(...)` 内部で自動的に行う。Authorization → Decision生成 → AuditEvent保存 → Decisionを返す、の順とする。`ActingFor.audit(decision)` のような追加呼び出しをRails開発者へ要求しない。
+- Rationale：Audit記録忘れを防ぐため。
+- Consequences：D014のAudit責務・append-only・ContextのFilter / Sanitizer方針は維持する。保存失敗時はD023に従う。reason_code正式一覧とFilter / SanitizerのPublic APIは未決定。
+- 正式本文：[Auditをauthorize内で自動記録](public_api_v0_1.md#10-audit)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+
+## D023: Audit保存失敗時はException
+
+- 日付：2026-09-16
+- Status：**確定（設計のみ・未実装）**。Step 5項目8（Audit failure）。
+- Context：Authorization結果がallowでもAuditEvent INSERTに失敗する場合の扱いが必要である。
+- Decision：AuditEvent保存に失敗した場合はExceptionとして処理を中断する。allowを返さず、denyへ変換せず、Decisionを返さず、Business Logicへ進ませない。
+- Rationale：「権限がない」というAuthorization結果ではなく、「ActingForのAuthorization処理を正常に完了できなかった」というシステム異常だから。
+- Consequences：D019のdeny / Exception境界をAudit保存にも適用する。具体的なException class名は未決定。既存認可との関係（項目9）とContextの信頼境界（項目10）は本決定では確定しない。
+- 正式本文：[Audit保存失敗時はException](public_api_v0_1.md#10-audit)。
+- 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
 
 ## 追記する際の項目
 

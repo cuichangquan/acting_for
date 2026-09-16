@@ -1,6 +1,6 @@
 # ActingFor v0.1 Domain Model Design
 
-更新日：2026-09-15
+更新日：2026-09-16
 
 Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIの後続決定は[Step 5の正本](public_api_v0_1.md)を参照。残る未確定事項は第22節に記録する。
 
@@ -310,7 +310,7 @@ Decision
 AuditEvent
 ```
 
-基本原則はfail closed。ActingForがauthorityを明確に確認できない場合はallowしない。Audit記録失敗時の扱いは別途未確定（第22節）。
+基本原則はfail closed。ActingForがauthorityを明確に確認できない場合はallowしない。後続決定D023により、Audit記録失敗時はDecisionを返さずExceptionで中断する（第22節）。
 
 ActingForは業務処理を実行せず、ホストアプリがDecisionを適用する。`require_approval` は実行許可を意味しない。
 
@@ -318,15 +318,16 @@ ActingForは業務処理を実行せず、ホストアプリがDecisionを適用
 
 DecisionはDB Modelにせず、Authorization結果を表すValue Objectとする。種類は `allow` / `deny` / `require_approval`。
 
-将来のAPIイメージ（未確定）：
+後続決定D018で確定したPublic API（設計のみ・未実装）：
 
 ```ruby
+decision.status
 decision.allowed?
 decision.denied?
 decision.approval_required?
 ```
 
-後続決定D017で、戻り値クラスは `ActingFor::Decision`、概念上の `decision.status` は `:allow` / `:deny` / `:require_approval` と確定した（未実装）。上記メソッド等の具体的なDecision APIはStep 5項目4で決める。永続化が必要なDecision情報はAuditEventへ記録する。
+後続決定D017で、戻り値クラスは `ActingFor::Decision`、概念上の `decision.status` は `:allow` / `:deny` / `:require_approval` と確定した（未実装）。上記4つのPublic APIはD018で確定し、require_approvalの場合の `allowed?` は必ずfalseとする。永続化が必要なDecision情報はAuditEventへ記録する。
 
 ## 13. Delegationが複数一致した場合
 
@@ -492,17 +493,17 @@ AuditEvent
 
 ## 22. 次に決めること
 
-Step 4は完了。Step 5「Public API Design」は進行中で、項目1〜3はD015〜D017で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
+Step 4は完了。Step 5「Public API Design」は進行中で、進捗は8 / 10、項目1〜8はD015〜D023で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
 
-- Public APIの残り（Step 5項目4〜10）と例外の具体的な扱い
-- Decisionの具体的なAPIと追加属性（第12節のpredicateメソッドは候補）
+- Public APIの残り（Step 5項目9〜10）と具体的なException class名
+- Decisionの追加属性
+- Delegation作成の細かなvalidation APIと `delegate!` の有無
 - reason_codeの正式一覧（第14節の一覧は候補）
-- Audit failure policy
 - Filter / SanitizerのPublic API
 - DB schemaの細かな型・制約、resource_idの正式DB型
 - Ruby / Rails対応バージョン
 - migration / generator構成
 
-### Audit失敗時の扱い（未確定）
+### Auditの後続決定（D022・D023）
 
-Authorizationの判定がallowでも、AuditEvent INSERTに失敗した場合に、allowを維持するか、denyへ倒すか、例外にするかは未確定。v0.1の仕様としてここでは固定せず、Step 5以降で検討する。
+AuditEventは `ActingFor.authorize(...)` 内部で自動生成・保存し、保存後にDecisionを返す。保存失敗時はallowを返さず、denyへ変換せず、Decisionを返さず、Exceptionで処理を中断してBusiness Logicへ進ませない。具体的なException class名は未決定。詳細は[Step 5のAudit設計](public_api_v0_1.md#10-audit)を参照する。

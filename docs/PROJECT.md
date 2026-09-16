@@ -1,11 +1,11 @@
 # ActingFor 開発方針
 
-更新日：2026-09-15
+更新日：2026-09-16
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Step 5「Public API Design」進行中。項目1〜3は決定済み、4〜10は未決定。以下は実装済み機能の一覧ではない。
+- 現在の段階：Step 5「Public API Design」進行中。進捗は8 / 10。項目1〜8は決定済み、9〜10は未決定。以下は実装済み機能の一覧ではない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -192,7 +192,7 @@ decision = ActingFor.authorize(
 
 ### 4.1 v0.1で成立させる利用経路
 
-ホストRailsアプリが認証済みのPrincipalとAgent、要求するactionとresource、判定に必要なcontextを渡す。ActingForはDelegationと条件を評価し、statusが `:allow` / `:deny` / `:require_approval` の `ActingFor::Decision` を返し、認可判定をAudit logへ記録する。ホストアプリは判定を受けて業務処理を実行または停止する。
+ホストRailsアプリが認証済みのPrincipalとAgent、要求するactionとresource、判定に必要なcontextを渡す。ActingForはDelegationと条件を評価し、statusが `:allow` / `:deny` / `:require_approval` の `ActingFor::Decision` を生成し、authorize内部でAuditEventを自動保存してから返す。Audit保存に失敗した場合はDecisionを返さずExceptionで中断する（D022・D023）。ホストアプリは判定を受けて業務処理を実行または停止する。
 
 ```text
 host authentication
@@ -249,9 +249,9 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。以下は引き続き未確定。
 
-- Public APIの残り（Step 5項目4〜10）、例外の具体的な扱い
-- Decisionの具体的なAPIと追加属性、reason_code正式一覧（クラスは `ActingFor::Decision`、概念上の `status` と3種類の値はD017で決定済み）
-- Audit failure policy（Audit INSERT失敗時にallowを維持するか、denyにするか、例外にするか）
+- Public APIの残り（Step 5項目9〜10）、具体的なException class名
+- Decisionの追加属性、reason_code正式一覧（クラス・statusはD017、4つのPublic APIはD018で決定済み）
+- Delegation作成の細かなvalidation APIと `delegate!` の有無
 - Filter / SanitizerのPublic API
 - DB schemaの細かな型・制約、resource_idの正式DB型
 - migration / generator構成
@@ -268,7 +268,7 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 2 | v0.1スコープを正式確定 | 完了。本文とD007に記録 |
 | 3 | 用語定義 | 完了。本文とD011に記録 |
 | 4 | ドメインモデル設計 | 完了。基本方針D013と詳細ルールD014を[設計書](domain_model_v0_1.md)に記録 |
-| 5 | Public API設計 | 進行中。項目1〜3はD015〜D017で決定済み、4〜10は未決定。[正本](public_api_v0_1.md) |
+| 5 | Public API設計 | 進行中。進捗は8 / 10。項目1〜8はD015〜D023で決定済み、9〜10は未決定。[正本](public_api_v0_1.md) |
 | 6 | README Quick Start作成 | API設計後 |
 | 7 | Gem内部構成設計 | 未着手 |
 | 8 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する |
@@ -286,15 +286,15 @@ MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013
 | 1 | Authorization entry point | 決定済み（D015） |
 | 2 | authorizeの引数仕様 | 決定済み（D016） |
 | 3 | Decisionの形 | 決定済み（D017） |
-| 4 | Decision API | 未決定 |
-| 5 | denyとExceptionの境界 | 未決定 |
-| 6 | Bang API（authorize!）の要否 | 未決定 |
-| 7 | Delegation操作API | 未決定 |
-| 8 | Auditの扱いとAudit失敗時方針 | 未決定 |
+| 4 | Decision Public API | 決定済み（D018） |
+| 5 | denyとExceptionの境界 | 決定済み（D019） |
+| 6 | Bang API（authorize!） | 決定済み（D020：v0.1では提供しない） |
+| 7 | Delegation操作API | 決定済み（D021） |
+| 8 | Audit / Audit failure | 決定済み（D022・D023） |
 | 9 | 既存認可（Pundit / CanCanCan等）との関係 | 未決定 |
 | 10 | Contextの信頼境界 | 未決定 |
 
-入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。次は項目4を検討し、まだ実装は開始しない。
+入口は `ActingFor.authorize(agent:, principal:, action:, resource: nil, context: {})`。keyword argumentsのみとし、戻り値は `ActingFor::Decision`。詳細と未決定事項は[Step 5の正本](public_api_v0_1.md)に記録する。Step 5 progress = **8 / 10**。次はStep 5-9「既存認可（Pundit / CanCanCan等）との関係」を検討し、まだ実装は開始しない。
 
 ## 6. Issue化する候補
 
@@ -304,10 +304,10 @@ MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013
 | --- | --- |
 | v0.1の完了条件を確定する | 4.2の完了条件と4.3のDefinition of Doneをレビューする |
 | Principal自身の権限とDelegationの関係を決める | 委任で本人の権限を超えないための、既存認可との接続方法を決める |
-| 判定・取消のPublic APIを設計する | D014のmatching、競合、期限切れ、revoke + createを前提に、API、例外、判定から実行までの変更の扱いを決める |
+| Public APIの残る詳細を設計する | D018〜D023を前提に、具体的なException class、Delegation作成のvalidation API等を決める |
 | Constraint入力の信頼境界を決める | Agentの申告値に依存せず、金額・通貨・対象を確認する方法を決める |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
-| AuditのPublic APIと失敗時方針を決める | D014の監査責務と基本情報を前提に、reason_code正式一覧、Filter / Sanitizer API、Audit failure policyを決める |
+| Auditの残る詳細を決める | D022・D023の自動記録・保存失敗時Exceptionを前提に、reason_code正式一覧とFilter / Sanitizer APIを決める |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
 
@@ -332,8 +332,8 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Step 5項目4「Decision API」から検討を続ける。項目1〜3はD015〜D017で決定済み、4〜10は未決定。実装は開始しない。
-2. reason_code正式一覧、Audit failure policy、Filter / SanitizerのPublic APIを検討する。
+1. Step 5-9「既存認可（Pundit / CanCanCan等）との関係」から検討を続ける。進捗は8 / 10。項目1〜8はD015〜D023で決定済み、9〜10は未決定。実装は開始しない。
+2. Step 5-10「Contextの信頼境界」を検討する。reason_code正式一覧、Filter / SanitizerのPublic API等の詳細も未決定のまま残す。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、migration / generator構成、対応Ruby/Rails、ライセンスを決め、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠
