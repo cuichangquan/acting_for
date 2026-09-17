@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D056で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
+- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D059で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -251,15 +251,25 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.3 v0.1全体のDefinition of Done
 
-**状態：Proposal / 提案。** Ruby / Rails・CI matrixはD046、LicenseはD048で確定したが、static analysis、Runnable Quick Start、Release notes等が未決定のため、Step 8完了後も全体は正式決定しない。以下はv0.1実装完了条件の提案である。
+**状態：全体はProposal / 提案を維持。** Ruby / Rails・CI matrixはD046、LicenseはD048、必須static analysis・Runnable Quick Start・Release NotesはD057〜D059で確定した。今回の3件の承認をDefinition of Done全体の承認とは扱わない。以下の全体提案のうち、今回確定した要件は4.3.1に区別して記録する。実装・成果物作成は未完了。
 
 1. 4.2の全項目と境界ケースが自動テストされ、対応対象と決めたRuby/Railsの組み合わせでCIが成功する。
-2. サンプルRailsアプリまたは統合テストで、Delegation作成から判定、Audit記録までを再現できる。
+2. サンプルRailsアプリまたは統合テストで、Delegation作成から判定、Audit記録までを再現できる。独立したサンプルRailsアプリの提供はv0.1必須要件ではない（D058）。
 3. READMEに、実行可能なインストール手順、Quick Start、Agent認証との責任分界、Constraint、Expiration、Approvalの責任分界を記載する。
 4. セキュリティ上の主要な失敗ケースを、テストまたは設計文書で扱う。
 5. Public API、永続化方式、対応Ruby/Rails、ライセンスをDECISIONSで確定し、破壊的変更の可能性をv0.1のリリースノートに明記する。
-6. `bundle exec rake` 相当の一つの公開コマンドで、単体・統合テストと静的検査を再現できる。
+6. 一つの公開コマンドで、単体・統合テストと静的検査を再現できる。必須static analysisはRuboCop（D057）。コマンド・rake taskの具体名、CI組み込み方法は未決定。
 7. 未実装機能をREADMEで利用可能と表現せず、対象外と既知の制約を明記する。
+
+### 4.3.1 v0.1必須の検査と公開成果物（D057〜D059）
+
+**確定（設計のみ・未実装）。**
+
+- **Static Analysis（D057）：** v0.1の必須static analysisは **RuboCop** とする。Sorbet、Steep、Brakeman、独自security scannerはv0.1必須要件に含めない。RuboCopのversion、具体的configuration、rule set、plugin、CIへの具体的組み込み方法、rake taskの具体名は未決定とし、実装工程で決める。
+- **Runnable Quick Start（D058）：** v0.1ではREADMEの **実行可能な最小Quick Start** を必須成果物とする。対象はGem導入、Migration適用、Agent作成、Delegation作成、`ActingFor.authorize(...)`、`ActingFor::Decision` の結果確認。Approval Workflow、MCP、OAuth / OIDC、Agent Authentication実装、UI、独立したサンプルRailsアプリは含めない。独立したサンプルアプリの提供はv0.1必須要件としない。
+- **Release Notes（D059）：** v0.1公開時には **Release Notes** を必須とする。最低限、v0.1の主要機能、対応Ruby / Rails / DB、Public API、v0.1対象外機能、既知の制約、0.xであり破壊的変更の可能性があることを記載する。自動CHANGELOG生成、詳細な変更履歴生成基盤、Release Notes自動生成システムはv0.1必須要件としない。
+
+今回はRuboCop設定ファイル、READMEのRunnableコード、Release Notes本文を作成しない。既存READMEはDesign-stageのままであり、実行可能という意味ではない。具体的設定・コマンド・配置等の未決定事項は4.5に記録する。
 
 ### 4.4 v0.1の対象外
 
@@ -280,8 +290,11 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D056でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
-以下は引き続き未確定。
+D057〜D059で必須static analysisの選定、Runnable Quick Startの範囲、Release Notesの最低限の内容を解消した。以下は引き続き未確定。
 
+- RuboCop version / configuration / rule set / plugin、rake task名、CI workflow・組み込み方法の詳細
+- README Quick Startの具体的コマンド、Release Notesのファイル名・配置方法、CHANGELOG方式
+- Gem実装詳細
 - Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
 - Migrationの実コード・taskの具体的なコマンド名
 - [Security Modelに残る詳細](security_model_v0_1.md#27-今回決めないこと)
@@ -318,7 +331,7 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 | 7 | Gem Structure Design | 完了（Complete / Design finalized / Not implemented）。D028、[正本](gem_structure_v0_1.md) |
 | 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
 | 未採番 | Security Model Design | 完了（Complete / Design finalized / Not implemented）。D030、[正本](security_model_v0_1.md) |
-| 未採番 | 未決定事項の詰め | 進行中。D031〜D056で詳細化。未決定事項は残り、実装開始には進まない |
+| 未採番 | 未決定事項の詰め | 進行中。D031〜D059で詳細化。未決定事項は残り、実装開始には進まない |
 | 10 | 実装開始 | 設計後 |
 
 MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
@@ -381,6 +394,8 @@ D030時点では具体的実装方式やPublic APIは追加確定せず、次工
 
 ### 5.6 未決定事項の詳細化（進行中）
 
+D057〜D059で必須static analysis（RuboCop）、READMEのRunnable Quick Start、公開時のRelease Notesを確定した。詳細は4.3.1を参照。設定・本文・実装はまだ作成しない。
+
 後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
 D031でAudit Contextのaudit_context_keysと4つのException class、D032でResource identityとDelegation API / validation、D033でAgent validation、D034でAuditEventのreason_code / decision / matched_delegation_ids / sanitized contextを設計確定した。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Security Model](security_model_v0_1.md)を参照する。
@@ -425,8 +440,8 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D056で進行中。Gemは未実装で、実装には進まない。
-2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D056の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
+1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D059で進行中。Gemは未実装で、実装には進まない。
+2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D059の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、Migration実コード・taskや具体的Model / Service実装の確認等を後続工程で扱い、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠

@@ -311,10 +311,11 @@ Security Model Designの完了条件は次のとおり。本書によりすべ�
 
 D030時点の未決定事項のうち、Exception / Audit ContextはD031、Resource / DelegationはD032、Agent validationはD033、AuditEvent詳細はD034で確定した。
 
-D035〜D048でClock、transaction / locking / isolation、TOCTOU API非提供、retry、cache / replica、Audit retention / delete API、固定上限非設定、timeout、DB schemaの一部、BigDecimal、対応環境・CI matrix・ライセンスの保留を解消した。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
+D035〜D048でClock、transaction / locking / isolation、TOCTOU API非提供、retry、cache / replica、Audit retention / delete API、固定上限非設定、timeout、DB schemaの一部、BigDecimal、対応環境・CI matrix・ライセンスの保留を解消した。後続D057〜D059で必須static analysis（RuboCop）、Runnable Quick Start、Release Notesの要件も確定した（[PROJECT 4.3.1](PROJECT.md#43-v01全体のdefinition-of-done)）。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
 
 - 確定したModel validation / DB制約の具体的実装、未決定のcallback、revoke!の競合制御の具体実装等
-- static analysis、Migration実コード・task名、Runnable Quick Start、Release notes
+- RuboCop version / config / rule set / plugin、rake task名、CI組み込み方法・workflow詳細
+- Migration実コード・task名、README Quick Startの具体的コマンド、Release Notesのファイル名・配置方法、CHANGELOG方式
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 
 Configuration / Initializer、Generatorも今回新設・追加設計しない。[D028の既存方針](gem_structure_v0_1.md)である「現時点でConfiguration / Initializerを作らない」「v0.1では独自Generatorを作らない」は維持し、将来の具体設計を今回決めない。Approval Workflowや各Adapterも既存の責務・スコープ境界を維持する。

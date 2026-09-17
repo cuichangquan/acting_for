@@ -378,6 +378,8 @@
 - 根拠：ユーザーが提示したStep 6 README Quick Start Designの正式決定と、設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
+- 後続決定（2026-09-17追加）：D058でREADMEのRunnable Quick Startをv0.1必須成果物とし、対象範囲を確定。上記はDesign-stageの履歴であり、Runnable本文は未作成。
+
 ## D028: Step 7 Gem Structure Design
 
 - 日付：2026-09-17
@@ -422,6 +424,8 @@
 - 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 - 後続決定（2026-09-17追加）：D035・D043・D045・D046・D048で該当する保留を解消。上記の未決定表記は当時の履歴であり、現在の仕様は後続決定に従う。
 
+- 後続決定（2026-09-17追加）：D057〜D059でstatic analysis（RuboCop）、Runnable Quick Start、Release Notesの必須要件を確定。上記の該当する未決定表記は当時の履歴。具体的設定・コマンド・配置は未決定。
+
 ## D030: v0.1 Security Model Design
 
 - 日付：2026-09-17
@@ -447,6 +451,8 @@
 - 後続決定（2026-09-17追加）：D035〜D048で該当する保留を解消。上記の未決定表記は当時の履歴。特にD030のサイズ制限・競合・stale state要件はD036・D037・D039・D041・D042のv0.1保証範囲に従う。
 
 - 後続決定（2026-09-17追加）：D049〜D056でcaller境界、主要schema、Model-level immutability / append-only、revoke! concurrency、complexityの保留を解消。
+
+- 後続決定（2026-09-17追加）：D057で必須static analysisをRuboCopと確定。具体的設定・CI組み込み方法は未決定。
 
 ## D031: Audit Context allowlist / Exception classes
 
@@ -825,6 +831,42 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
 - 正式本文：[詳細設計](domain_model_v0_1.md#15-auditeventの方針)。
 - 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D057: v0.1 Static Analysis
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D029・D030とPROJECTのstatic analysis選定の保留を解消する。
+- Decision：v0.1の必須static analysisは **RuboCop** とする。Sorbet、Steep、Brakeman、独自security scannerはv0.1必須要件に含めない。RuboCopのversion、具体的configuration、rule set、plugin、CIへの具体的組み込み方法、rake taskの具体名は未決定とし、実装工程で決める。
+- Rationale：必須の静的検査を明確にし、v0.1の必須要件を限定する。
+- 未決定：RuboCop version / config / rule set / plugin、CI組み込み方法、rake task名。Gem実装詳細は今回決めない。
+- Consequences：設計文書のみ更新する。Gem / Test / CI / Migration実装、RuboCop設定ファイル、README Runnable Quick Startコード、Release Notes本文は作成しない。Definition of Done全体を追加承認するものではない。
+- 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
+- 根拠：ユーザー承認済みの追加正式決定。
+
+## D058: Runnable Quick Start
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D027のDesign-stage Quick Start完了は維持し、D029とPROJECTで保留していたRunnable Quick Startの必須成果物・対象範囲を確定する。
+- Decision：v0.1ではREADMEの **実行可能な最小Quick Start** を必須成果物とする。対象はGem導入、Migration適用、Agent作成、Delegation作成、`ActingFor.authorize(...)`、`ActingFor::Decision` の結果確認。Approval Workflow、MCP、OAuth / OIDC、Agent Authentication実装、UI、独立したサンプルRailsアプリは含めない。独立したサンプルアプリの提供はv0.1必須要件としない。
+- Rationale：最小の導入から判定結果確認までの利用経路を実行可能な形で示すため。
+- 未決定：README Quick Startの具体的コマンド、Migration実コード・task名。Gem実装詳細は今回決めない。
+- Consequences：設計文書のみ更新する。Gem / Test / CI / Migration実装、RuboCop設定ファイル、README Runnable Quick Startコード、Release Notes本文は作成しない。Definition of Done全体を追加承認するものではない。
+- 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
+- 根拠：ユーザー承認済みの追加正式決定。
+
+## D059: v0.1 Release Notes
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D029とPROJECTのRelease Notes要件の保留を解消する。
+- Decision：v0.1公開時には **Release Notes** を必須とする。最低限、v0.1の主要機能、対応Ruby / Rails / DB、Public API、v0.1対象外機能、既知の制約、0.xであり破壊的変更の可能性があることを記載する。自動CHANGELOG生成、詳細な変更履歴生成基盤、Release Notes自動生成システムはv0.1必須要件としない。
+- Rationale：公開時の提供範囲・対応環境・制約・互換性の注意を利用者へ伝えるため。
+- 未決定：Release Notesのファイル名・配置方法、CHANGELOG方式。Gem実装詳細は今回決めない。
+- Consequences：設計文書のみ更新する。Gem / Test / CI / Migration実装、RuboCop設定ファイル、README Runnable Quick Startコード、Release Notes本文は作成しない。Definition of Done全体を追加承認するものではない。
+- 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
+- 根拠：ユーザー承認済みの追加正式決定。
 
 ## 追記する際の項目
 
