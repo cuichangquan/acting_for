@@ -183,7 +183,9 @@ DecisionはActiveRecord ModelでもDBへ直接永続化するModelでもない�
 
 ## 6. Decision Public API
 
-**確定：D018 / Step 5項目4。** 次の4つを正式採用する。
+**確定：D018 / Step 5項目4、後続D050。** 次の4つだけを正式Public APIとする。
+
+v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
 
 ```ruby
 decision.status
@@ -302,7 +304,11 @@ keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resour
 
 類似Delegationの存在は新規作成を禁止しない。各delegate呼び出しで独立した新しいDelegationを作り、dedup / upsert / semantic uniqueness / duplicate detectionは導入しない。
 
-caller Authenticationと作成・取消のHost Authorizationは引き続きHost責務であり、その具体APIは今回決めない。
+ActingFor v0.1はDelegation作成・取消callerのAuthentication / Authorizationを提供しない。Host Applicationが事前に認証・認可してから `ActingFor.delegate(...)` / `delegation.revoke!` を呼ぶ。caller authorization用の `actor:` / `current_user:` 等のPublic APIは追加しない（D049）。
+
+persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、具体的なcallback・validationのRuby実装は未決定（D053）。
+
+`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。具体的なActiveRecord / Ruby / SQL実装は未決定（D054）。
 
 ## 10. Audit
 
@@ -366,7 +372,7 @@ String / Symbolの暗黙変換やindifferent accessは行わない。対象は�
 
 v0.1ではcustom Audit Filter、custom Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定を提供しない。選択方法は `audit_context_keys:` のみ。
 
-sanitized contextはJSON objectとして保存し、対象なしは `{}`。JSONBは必須ではなく、DB schemaは `json` / `default: {}` / `null: false` とし、全体としてnilは保存しない（D043）。reason_code、decisionとの整合性、matched_delegation_idsの保存要件は[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)（D034）に従う。
+正式column名は `sanitized_context` とし、raw Authorization Context用の `context` columnは作らない（D052）。sanitized contextはJSON objectとして保存し、対象なしは `{}`。JSONBは必須ではなく、DB schemaは `json` / `default: {}` / `null: false` とし、全体としてnilは保存しない（D043）。reason_code、decisionとの整合性、matched_delegation_idsの保存要件は[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)（D034）に従う。
 
 ## 11. MCP Boundary
 
@@ -531,11 +537,15 @@ v0.1はAuthorization専用timeout設定・timeout APIを提供しない。DB / r
 
 AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを提供しない。固定retention period、自動削除、自動アーカイブは設けない。保持期間・削除・アーカイブはHost Applicationの運用責務で、サービスのセキュリティ要件・法令・社内規程等に応じて決定する（D040）。
 
+v0.1ではConstraint complexity score、深さ制限、動的complexity判定、complexity engineを提供しない。固定Constraint件数上限・固定byte上限・Authorization専用timeoutを設けない既存方針を維持する。eq / lt / lte / gt / gte / in、nested pathなし、任意Ruby codeなし、複数ConstraintはANDという小さい言語で複雑性を抑え、Hostには必要最小限のConstraint利用を推奨する（D055）。
+
+persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。具体的なModel実装は未決定（D056）。
+
 ## 14. Open Questions
 
-Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。Decision追加属性・constructor等は引き続き未決定。
+Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
-Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。DB型、Migration実コード・taskの確認、確定済み範囲以外のDB制約等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
+Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。Migration実コード・taskの確認、Model validation・callback、revoke!やAuthorization queryの具体実装等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
 
 ## 15. Step 5 Progress
 

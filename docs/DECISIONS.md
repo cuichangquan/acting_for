@@ -255,6 +255,8 @@
 - 正式本文：[Decision Public API](public_api_v0_1.md#6-decision-public-api)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
 
+- 後続決定（2026-09-17追加）：D050でDecision Public APIを4つだけに限定し、追加属性非提供・constructor非保証を確定。
+
 ## D019: deny vs Exception
 
 - 日付：2026-09-16
@@ -444,6 +446,8 @@
 - 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D033（Agent validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 - 後続決定（2026-09-17追加）：D035〜D048で該当する保留を解消。上記の未決定表記は当時の履歴。特にD030のサイズ制限・競合・stale state要件はD036・D037・D039・D041・D042のv0.1保証範囲に従う。
 
+- 後続決定（2026-09-17追加）：D049〜D056でcaller境界、主要schema、Model-level immutability / append-only、revoke! concurrency、complexityの保留を解消。
+
 ## D031: Audit Context allowlist / Exception classes
 
 - 日付：2026-09-17
@@ -506,6 +510,8 @@
 - 正式本文：[AuditEvent](domain_model_v0_1.md#14-auditevent)、[Audit Context](public_api_v0_1.md#10-audit)、[Security Model](security_model_v0_1.md)。
 - 根拠：ユーザーが提示したv0.1設計決定反映指示のAuditEvent正式決定。
 - 後続決定（2026-09-17追加）：D040・D043〜D045で該当する保留を解消。上記の未決定表記は当時の履歴であり、現在の仕様は後続決定に従う。
+
+- 後続決定（2026-09-17追加）：D052でdecision / reason_codeの各許可値DB CHECKを設ける方針へ変更。上記CHECK非設定は当時の履歴であり、現行仕様ではない。pair用CHECKは設けない。ID型・sanitized_context名等もD051・D052で詳細化。
 
 ## D035: Clock / Trusted Current Time
 
@@ -651,6 +657,8 @@ PostgreSQL固有の `jsonb` は必須としない。Constraint評価はRuby側�
 - 正式本文：[domain_model_v0_1.md](domain_model_v0_1.md)。
 - 根拠：ユーザーが提示した2026-09-17追加正式決定。
 
+- 後続決定（2026-09-17追加）：D051・D052で主要schemaの残る型・NULL・CHECK・index・主キーを詳細化。json / default方針は維持。
+
 ## D044: BigDecimal Audit Serialization
 
 - 日付：2026-09-17
@@ -729,6 +737,94 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - Consequences：既存Decisionの履歴と未対象の未決定事項を維持する。今回の変更は設計文書のみで、実装は開始しない。
 - 正式本文：[gem_structure_v0_1.md](gem_structure_v0_1.md)。
 - 根拠：ユーザーが提示した2026-09-17追加正式決定。
+
+## D049: Delegation Caller Authorization Boundary
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D021・D030・D032のHost責務を確定し、caller authorization具体APIの保留を解消する。
+- Decision：ActingFor v0.1はDelegation作成・取消callerのAuthentication / Authorizationを提供しない。Host Applicationが事前に認証・認可してから `ActingFor.delegate(...)` / `delegation.revoke!` を呼ぶ。caller authorization用の `actor:` / `current_user:` 等のPublic APIは追加しない（D049）。
+- Rationale：Hostの認証・認可とDelegation操作の責務を分離する。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](public_api_v0_1.md#9-delegation-api)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D050: Decision Public API Final Boundary
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D017・D018・D028の4 APIを維持し、追加属性・constructorのPublic境界の保留を解消する。AuditEventのreason_code等は維持する。
+- Decision：v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
+- Rationale：判定結果のPublic契約を最小限に保つ。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](public_api_v0_1.md#6-decision-public-api)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D051: Agent / Delegation DB Schema
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D032・D033・D043の型・JSON方針を維持し、主要schemaの保留を解消する。通常の無効化はrevoke!とする。
+- Decision：Agent / DelegationはRails標準bigint主キー、UUID切替機構なし。Agentはidentifier string NOT NULL + unique index、name string NULL、両timestamps datetime NOT NULL。長さは既存Model validationのみでDB length CHECKなし。Delegationはagent_id bigint NOT NULL + Agent FK + 単独index、cascade deleteなしで参照中Agent削除を拒否。principal_type / principal_id / actionはstring NOT NULL、resource_type / resource_idはstring NULL、effectはstring NOT NULL、constraintsはjson NOT NULL DEFAULT []、expires_at / revoked_atはdatetime NULL・defaultなし、両timestampsはdatetime NOT NULL。Host Principal / Resource FKなし。ResourceのNULL type + 非NULL IDはModel + DB CHECKで禁止、effectのallow / require_approvalはModel + DB CHECKのみでRails / PostgreSQL enumなし。Action一覧をDB固定せず、constraintsのJSON内部CHECKなし。expires_at / revoked_atにCHECK・単独indexなし。Authorization lookup複合indexは(agent_id, principal_type, principal_id, action, resource_type)でresource_id / expires_at / revoked_atを含めない。追加indexは利用状況・実測から後続検討する。意味・validation・全column表は正本第17節に記録する。
+- Rationale：必要な整合性をDBでも保証し、既存のResource scopeと小さいschemaを維持する。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](domain_model_v0_1.md#17-v01-テーブル構成)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D052: AuditEvent DB Schema / Snapshots
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D034のdecision / reason_codeの許可値DB CHECK非設定を変更する。旧記録は履歴として保持する。D031・D043のAudit選択・json / default方針は維持する。
+- Decision：AuditEventはRails標準bigint主キー、UUID切替機構なし。agent_id bigint NOT NULL / agent_identifier string NOT NULL、principal_type / principal_id / action string NOT NULLをAuthorization時点のsnapshotとして保存し、Foreign Keyは設けない。resource_type / resource_idはstring NULLでDelegationと同じsemanticsとNULL type + 非NULL ID禁止CHECKを持つ。action一覧をDB固定しない。decision / reason_codeはstring NOT NULLで各正式3値をModel validation + DB CHECKで限定し、Rails / PostgreSQL enumは使わない。allow ↔ delegation_allowed、require_approval ↔ delegation_requires_approval、deny ↔ no_matching_delegationの組み合わせはModel validationのみで、pair用DB CHECKなし。matched_delegation_idsはjson NOT NULL DEFAULT []、内部IDはJSON number / Integer、String化しない。Array・Integerのみ・重複なし・順序に意味なし・denyは[]・他2結果は1件以上をModel / Authorization内部で保証し、JSON内部用DB CHECKなし。sanitized_contextを正式column名としjson NOT NULL DEFAULT {}、allowlistとbuilt-in validationを通った値だけを保存する。raw context column・fallbackなし。created_at datetime NOT NULLのみ、更新しないappend-only recordのためupdated_atなし。PK以外の検索indexは追加決定せず、検索API・管理画面・分析要件と利用状況から後続検討する。
+- Rationale：Audit snapshotをrecord lifecycleから分離し、固定値の整合性をDBでも保証する。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](domain_model_v0_1.md#17-v01-テーブル構成)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D053: Delegation Model-level Immutability
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D014・D021・D030のimmutable方針をexpires_atとModelレベルの誤更新防止まで詳細化する。
+- Decision：persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、具体的なcallback・validationのRuby実装は未決定（D053）。
+- Rationale：期限を含む過去の権限内容の意味を保つ。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](domain_model_v0_1.md#10-expiration--revocation)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D054: Concurrent Idempotent Revocation
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D032のidempotencyを並行実行にも明示し、D035の時刻境界を維持する。D036のAuthorization locking / TOCTOU境界は変更しない。
+- Decision：`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。具体的なActiveRecord / Ruby / SQL実装は未決定（D054）。
+- Rationale：並行取消でも最初の取消時刻を保持する。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](public_api_v0_1.md#9-delegation-api)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D055: Constraint Complexity Boundary
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D014の小さいConstraint language、D041・D042の上限・timeout方針を維持し、complexityの保留を解消する。
+- Decision：v0.1ではConstraint complexity score、深さ制限、動的complexity判定、complexity engineを提供しない。固定Constraint件数上限・固定byte上限・Authorization専用timeoutを設けない既存方針を維持する。eq / lt / lte / gt / gte / in、nested pathなし、任意Ruby codeなし、複数ConstraintはANDという小さい言語で複雑性を抑え、Hostには必要最小限のConstraint利用を推奨する（D055）。
+- Rationale：専用complexity機構を増やさず、表現可能な条件を小さく保つ。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](domain_model_v0_1.md#8-constraint)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
+
+## D056: AuditEvent Model-level Append-only
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D014・D030のappend-onlyをModelレベルでも強制する方針に詳細化する。D040のHost retention責務と削除Public API非提供は維持する。
+- Decision：persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。具体的なModel実装は未決定（D056）。
+- Rationale：Authorization履歴の通常操作での書き換え・削除を防ぐ。
+- Consequences：設計文書だけを更新し、Gem / Model / Service / Migration / Test / CI / LICENSE / gemspecを実装しない。今回明示されない具体コード・task名・後続機能は確定しない。
+- 正式本文：[詳細設計](domain_model_v0_1.md#15-auditeventの方針)。
+- 根拠：ユーザー承認済みの2026-09-17追加正式決定。
 
 ## 追記する際の項目
 

@@ -118,13 +118,13 @@ decision.denied?
 decision.approval_required?
 ```
 
-statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow` であり、承認が必要な場合の `allowed?` はfalse。追加属性やAPIは今回決定しない。
+statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow` であり、承認が必要な場合の `allowed?` はfalse。v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
 
 ## 6. Migration / DB Table Names
 
 MigrationはGem側の `db/migrate/` で管理し、第1節の3ファイルを想定する。Rails Engine標準のMigration提供方式を利用し、Host ApplicationのDBへMigrationをコピー・適用する。独自Migration DSLや独自DBセットアップ機構は作らない。
 
-Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。後続D043でAgent string型、principal_id string型、constraints / sanitized context / matched_delegation_idsのjson型・default・NOT NULLを確定した。その他の型・制約とMigration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
+Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。後続D043でAgent string型、principal_id string型、constraints / sanitized context / matched_delegation_idsのjson型・default・NOT NULLを確定した。後続D051・D052で3 Modelの主要DB型・NULL・CHECK・index・主キー、sanitized_contextの正式column名とAuditEventのupdated_at非設定を確定した。詳細は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)を正本とする。Migration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
 
 全テーブルに `acting_for_` prefixを付ける。
 
@@ -223,12 +223,16 @@ Internalは利用者向けAPIではなく、READMEでは原則としてInternal 
 
 この分類はStep 5のPublic APIの細部を追加確定するものではない。Step 7時点で保留していた `ActingFor.delegate(...)` の全引数・default・validationとdelegate!非提供は後続D032で確定した。ModelをPublicに分類することも、DelegationをActiveRecord直接操作中心にする意味ではない。
 
+Public分類はDecision constructorや任意Model更新の保証ではない。D049のcaller認証・認可はHost責務、D053のDelegation immutability、D054のatomic revoke!、D056のAuditEvent update / destroy禁止をModel / Public境界にも適用する。具体コードは未実装。
+
 ## 13. 未決定事項と次工程
+
+後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
 以下は引き続き未決定であり、本書では追加確定しない。
 
-- D032〜D034・D043で確定した範囲以外のDB型・制約、Migrationの実コード・taskの具体的なコマンド名
-- Decisionの追加属性・constructor（ExceptionはD031、Audit reason_codeはD034で確定）
+- Migrationの実コード・taskの具体的なコマンド名
+- Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
 - install generatorの将来設計（v0.1では独自Generatorを作らない）
 - 実装クラスの細かなprivate method構成
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装

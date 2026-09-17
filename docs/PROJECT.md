@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D048で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
+- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D056で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -278,10 +278,11 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.5 スコープ確定後も別途決める設計
 
-Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D048でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。以下は引き続き未確定。
+Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D056でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
-- Decisionの追加属性・constructor（既決定Public APIは維持）
-- D032〜D034・D043で確定した範囲以外のDB schemaの型・制約
+以下は引き続き未確定。
+
+- Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
 - Migrationの実コード・taskの具体的なコマンド名
 - [Security Modelに残る詳細](security_model_v0_1.md#27-今回決めないこと)
 
@@ -317,7 +318,7 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 | 7 | Gem Structure Design | 完了（Complete / Design finalized / Not implemented）。D028、[正本](gem_structure_v0_1.md) |
 | 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
 | 未採番 | Security Model Design | 完了（Complete / Design finalized / Not implemented）。D030、[正本](security_model_v0_1.md) |
-| 未採番 | 未決定事項の詰め | 進行中。D031〜D048で詳細化。未決定事項は残り、実装開始には進まない |
+| 未採番 | 未決定事項の詰め | 進行中。D031〜D056で詳細化。未決定事項は残り、実装開始には進まない |
 | 10 | 実装開始 | 設計後 |
 
 MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
@@ -376,9 +377,11 @@ Testコードはまだ存在しない。4.3のDefinition of Done全体はProposa
 
 **Complete / Design finalized / Not implemented（D030）。** [Security Modelの正本](security_model_v0_1.md)にThreat Model、Trust Boundary、6つのSecurity Invariant、Host Applicationとの責務境界、v0.1のSecurity requirementと未決定事項を記録した。Step 1〜8の決定は維持し、Security Modelの工程番号は追加しない。
 
-D030時点では具体的実装方式やPublic APIは追加確定せず、次工程を「未決定事項の詰め」として未着手だった。後続D031〜D048で一部を詳細化した。Implementation / Testへの反映は後続工程で確認し、Step 8のTest Strategyを再設計しない。GemはNot implemented / Not released。
+D030時点では具体的実装方式やPublic APIは追加確定せず、次工程を「未決定事項の詰め」として未着手だった。後続D031〜D056で一部を詳細化した。Implementation / Testへの反映は後続工程で確認し、Step 8のTest Strategyを再設計しない。GemはNot implemented / Not released。
 
 ### 5.6 未決定事項の詳細化（進行中）
+
+後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
 D031でAudit Contextのaudit_context_keysと4つのException class、D032でResource identityとDelegation API / validation、D033でAgent validation、D034でAuditEventのreason_code / decision / matched_delegation_ids / sanitized contextを設計確定した。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Security Model](security_model_v0_1.md)を参照する。
 
@@ -393,9 +396,8 @@ D031でAudit Contextのaudit_context_keysと4つのException class、D032でReso
 | 候補タイトル | 解決したいこと |
 | --- | --- |
 | v0.1の完了条件を確定する | Step 8のTest上のAcceptance Criteriaを前提に、未決定事項を含む4.3のDefinition of Done全体をレビューする |
-| Public APIの残る詳細を設計する | D031〜D032の後続決定を前提に、Decision追加属性等の残る詳細を検討する |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
-| 残る実装詳細を確認する | 確定済み設計を前提に、残るDB型・制約やMigration task等を確認する。実装開始は今回の対象外 |
+| 残る実装詳細を確認する | 確定済み設計を前提に、Migration実コード・taskやModel validation等を確認する。実装開始は今回の対象外 |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
 
@@ -423,9 +425,9 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D048で進行中。Gemは未実装で、実装には進まない。
-2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D048の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
-3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、確定済み範囲以外のDB型・制約、Migration実コード・taskの確認等を後続工程で扱い、v0.1の完了条件をレビューする。
+1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D056で進行中。Gemは未実装で、実装には進まない。
+2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D056の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
+3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、Migration実コード・taskや具体的Model / Service実装の確認等を後続工程で扱い、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠
 

@@ -44,7 +44,7 @@ Host側の停止・実行可能・Approval Workflowへ渡す境界は最小の�
 | `:deny` | `false` | `true` | `false` |
 | `:require_approval` | `false` | `false` | `true` |
 
-必須Security Invariantは **`require_approval != allow`**。特にstatusが `:require_approval` の場合、`allowed? == false`、`approval_required? == true` を必須Testとする。constructor等の未決定の生成方法は固定しない。
+必須Security Invariantは **`require_approval != allow`**。特にstatusが `:require_approval` の場合、`allowed? == false`、`approval_required? == true` を必須Testとする。D050によりconstructorはPublic APIとして保証しない。Public利用ではauthorizeの戻り値を取得し、Unit Test内部の生成方法は固定しない。
 
 ## 5. ConstraintEvaluator Unit Test
 
@@ -204,7 +204,7 @@ System failure → Exception
 
 [PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)全体は引き続き **Proposal / 提案**。Ruby / Rails・CI matrixはD046、LicenseはD048で確定した。static analysis、Runnable Quick Start、Release notes等は未決定であり、全体の完了条件は追加確定しない。
 
-Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。Decision constructor / 追加属性、確定済み範囲以外のDB型・制約、Migration実コード・task名、内部method・constructor・class構造は引き続き未決定。
+Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。 Migration実コード・task名、内部method・constructor・class構造、具体的validation / callback / queryコードは引き続き未決定。
 
 Step 8は **Complete / Design finalized / Not implemented**。次工程の番号・順序は新たに決めず、Security Model Design等をStep 9に採番しない。Gem / Test / Migration / Model / Service / Decision / AuditEvent / Generator / Dummy Rails Appの実装、Configuration追加、CI構築、releaseには進まない。
 

@@ -4,7 +4,7 @@
 
 **Security Model Design: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Security Model Designの正本とする（[D030](DECISIONS.md#d030-v01-security-model-design)）。Gem全体は **Not implemented / Not released**。Quick Startはまだ実行できない。
 
-Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D048で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
+Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D056で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
 
 ## 1. 目的とThreat Model Boundary
 
@@ -125,7 +125,7 @@ new authority → create new Delegation
 権限変更 = revoke + create
 ```
 
-過去の権限状態を追跡しやすくし、Auditとの整合性を保ち、後からDelegation内容を書き換えるリスクを抑える。通常操作でhard deleteを前提としない。後続決定D032のPublic入力validationを適用するが、immutableを強制するcallback等の具体的実装は決めない。
+過去の権限状態を追跡しやすくし、Auditとの整合性を保ち、後からDelegation内容を書き換えるリスクを抑える。通常操作でhard deleteを前提としない。persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、具体的なcallback・validationのRuby実装は未決定（D053）。
 
 ## 9. Replay / Duplicate Request Boundary
 
@@ -137,7 +137,7 @@ ActingForの責務は「この操作を実行してよいか」のAuthorization�
 
 Delegationを誰でも作成・revokeできてはいけない。誰が作成・revokeしてよいかを認証・認可するのはHost Applicationの責務である。
 
-設計上の `ActingFor.delegate(...)` や `delegation.revoke!` もcaller Authentication / Host Authorizationを代替しない。[Delegation API](public_api_v0_1.md#9-delegation-api)（D021・後続D032）に従う。全引数・default・validationとdelegate!非提供はD032で確定。caller authorizationの具体APIは未決定。
+設計上の `ActingFor.delegate(...)` や `delegation.revoke!` もcaller Authentication / Host Authorizationを代替しない。[Delegation API](public_api_v0_1.md#9-delegation-api)（D021・後続D032）に従う。全引数・default・validationとdelegate!非提供はD032で確定。ActingFor v0.1はDelegation作成・取消callerのAuthentication / Authorizationを提供しない。Host Applicationが事前に認証・認可してから `ActingFor.delegate(...)` / `delegation.revoke!` を呼ぶ。caller authorization用の `actor:` / `current_user:` 等のPublic APIは追加しない（D049）。
 
 ## 11. Principal / Agent Binding
 
@@ -201,6 +201,8 @@ v0.1はAuthorization専用timeout設定・timeout APIを提供しない。DB / r
 
 既存の限定的Constraint構造とfail-closedは維持する。
 
+v0.1ではConstraint complexity score、深さ制限、動的complexity判定、complexity engineを提供しない。固定Constraint件数上限・固定byte上限・Authorization専用timeoutを設けない既存方針を維持する。eq / lt / lte / gt / gte / in、nested pathなし、任意Ruby codeなし、複数ConstraintはANDという小さい言語で複雑性を抑え、Hostには必要最小限のConstraint利用を推奨する（D055）。
+
 ## 17. Authorization Enumeration / Information Leakage
 
 外部Agentへ返すAuthorization情報は必要最小限とし、allow / deny / require_approvalを中心とする。他PrincipalのDelegation有無、matching Delegationの内部詳細、Constraint内部詳細、DB内部情報、internal reasonの詳細、Debug情報を不用意に公開しない。
@@ -214,9 +216,10 @@ OK: deny
 
 ## 18. Audit Tamper Resistance
 
+persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。具体的なModel実装は未決定（D056）。
 AuditEventは通常運用ではappend-onlyとし、通常のActingFor Public APIからupdate / deleteする設計にはしない。Authorization履歴の後書き換えを防ぎ、Security Auditの信頼性を維持する。
 
-後続決定D034によりAudit decision / reason_codeは正式3組のみをModel validationし、各columnはNOT NULL。DB CHECK constraintは設けない。matched_delegation_idsは重複なしのmatch集合で、denyは空配列、allow / require_approvalは実際のmatch IDを1件以上記録する。配列順に依存しない。
+後続決定D034によりAudit decision / reason_codeは正式3組のみをModel validationし、各columnはNOT NULL。後続D052で両columnそれぞれに許可値のDB CHECKを設ける方針へ更新した。組み合わせ用DB CHECKは設けず、Rails enum / PostgreSQL enumも使わない。matched_delegation_idsは重複なしのmatch集合で、denyは空配列、allow / require_approvalは実際のmatch IDを1件以上記録する。配列順に依存しない。
 
 法的削除、Data retention、DB管理者による保守は通常Public APIとは別の運用責務であり、次節と両立する。既存方針どおりDBレベルのWORMや暗号署名等をv0.1の責務には追加しない。
 
@@ -230,7 +233,7 @@ append-onlyは通常のAuthorization Audit APIについての原則であり、R
 
 sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。
 
-Audit sanitized contextは `json` / `default: {}` / `null: false`、matched_delegation_idsは `json` / `default: []` / `null: false`。jsonbを必須とせず、詳細は[Domain Model](domain_model_v0_1.md#14-auditevent)に従う。
+Auditの正式column名は `sanitized_context` とし、raw Context用context columnは作らない（D052）。Audit sanitized contextは `json` / `default: {}` / `null: false`、matched_delegation_idsは `json` / `default: []` / `null: false`。jsonbを必須とせず、詳細は[Domain Model](domain_model_v0_1.md#14-auditevent)に従う。
 
 ## 20. Sensitive Resource / Context Exposure Prevention
 
@@ -256,7 +259,7 @@ Unknown / Invalid / Ambiguous → allowしない
 
 Host ApplicationやDB administratorがPublic APIを迂回してActiveRecord Modelを直接update、SQLで直接update、DBを書き換えることまで完全に防御できるとは保証しない。
 
-通常利用ではPublic API経由を推奨する。Gem内部では可能な範囲で安全なModel制約を持たせる方向だが、D032〜D034・D043で確定したvalidation・DB制約だけを適用する。それ以外のcallback / DB constraint等は未決定。Public APIを迂回した操作はHost側の責務境界とする。
+通常利用ではPublic API経由を推奨する。D051〜D056に従い、主要DB制約、DelegationのModel-level immutability、AuditEventのModel-level append-onlyを適用する設計とする。DB triggerで強制せず、具体的なcallback / validationコードは未決定。Public APIを迂回した操作はHost側の責務境界とする。
 
 ## 24. Concurrency / Race Condition
 
@@ -265,6 +268,8 @@ Host ApplicationやDB administratorがPublic APIを迂回してActiveRecord Mode
 v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
 
 v0.1ではAuthorization / Delegation作成 / AuditEvent保存を内部で自動retryしない。失敗は既存Exception方針で呼び出し元へ伝える。Hostがretryする場合、古いDecisionを再利用せず、必要に応じauthorizeから再評価する。delegateは呼ぶたび新規Delegationを作るため、内部自動retryによるduplicate Delegation作成を避ける（D038）。
+
+`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。具体的なActiveRecord / Ruby / SQL実装は未決定（D054）。
 
 ## 25. Stale State / Cache / Replica Lag
 
@@ -296,21 +301,19 @@ Security Model Designの完了条件は次のとおり。本書によりすべ�
 - 具体的実装方式とSecurity requirementが分離されている。
 - 未決定事項が明示されている。
 
-**Security Model Design = Complete / Design finalized / Not implemented。** D030時点で次工程とした「未決定事項の詰め」はD031〜D048により進行中。すべての未決定事項が完了したわけではなく、実装開始には進まない。
+**Security Model Design = Complete / Design finalized / Not implemented。** D030時点で次工程とした「未決定事項の詰め」はD031〜D056により進行中。すべての未決定事項が完了したわけではなく、実装開始には進まない。
 
 [Step 8 Test Strategy](test_strategy_v0_1.md)の完了状態・確定仕様を維持する。本書のSecurity requirementのImplementation / Testへの反映は後続工程で確認する。今回Test設計を再オープンせず、Test項目の大量追加や実装は行わない。v0.1全体のDefinition of Doneも引き続きProposal / 提案である。
 
 ## 27. 今回決めないこと
 
+後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
+
 D030時点の未決定事項のうち、Exception / Audit ContextはD031、Resource / DelegationはD032、Agent validationはD033、AuditEvent詳細はD034で確定した。
 
 D035〜D048でClock、transaction / locking / isolation、TOCTOU API非提供、retry、cache / replica、Audit retention / delete API、固定上限非設定、timeout、DB schemaの一部、BigDecimal、対応環境・CI matrix・ライセンスの保留を解消した。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
 
-- Decisionの追加属性・constructor
-- 確定済み範囲以外のDB schemaの型・制約
-- Delegation creation / revocation caller authorizationの具体API
 - 確定したModel validation / DB制約の具体的実装、未決定のcallback、revoke!の競合制御の具体実装等
-- Constraint complexityの具体的な扱い（固定件数・byte上限と専用timeout非提供は確定済み）
 - static analysis、Migration実コード・task名、Runnable Quick Start、Release notes
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 

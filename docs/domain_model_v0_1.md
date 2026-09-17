@@ -8,6 +8,7 @@ Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基�
 
 - 2026-09-15 / D013：モデル構成、関連、委任・監査の基本方針を記録。
 - 2026-09-15 / D014：matching、Resourceのnilの意味、Constraint、複数一致、Lifecycle、Audit詳細を確定。従来の単一 `delegation_id` 案は、複数一致を記録する `matched_delegation_ids` へ変更した。旧方針と理由はDECISIONSのD013と後続決定で追跡する。
+- 2026-09-17 / D049〜D056：Public境界、主要DB schema、immutability、revoke! concurrency、Constraint complexity、Audit append-onlyを確定。D034の許可値CHECK非設定をD052で更新。設計のみ・未実装。
 - 2026-09-17 / D031〜D034：Step 4完了後の詳細化としてAudit Context、Exception、Resource identity、Delegation / Agent validation、AuditEvent詳細を確定。実装は行わない。
 
 ## 1. 目的
@@ -154,6 +155,8 @@ updated_at
 
 resourceは第7節、constraintsは第8節、期限・取消は第10節に従う。成功時はpersist済みDelegationを返す。類似委任も許可し、各呼び出しは独立した新規Delegationを作る。dedup / upsert / semantic uniqueness / duplicate detectionは導入しない。詳細な入力とExceptionの契約は[Delegation API](public_api_v0_1.md#9-delegation-api)を正本とする。
 
+ActingFor v0.1はDelegation作成・取消callerのAuthentication / Authorizationを提供しない。Host Applicationが事前に認証・認可してから `ActingFor.delegate(...)` / `delegation.revoke!` を呼ぶ。caller authorization用の `actor:` / `current_user:` 等のPublic APIは追加しない（D049）。
+
 ## 5. Principal
 
 PrincipalはActingFor内部専用Modelを作らず、ホストRailsアプリ側のModelを利用する。例は `User`、`Organization`、`Team`、`ServiceAccount`。
@@ -284,6 +287,8 @@ Ruby Procや任意コードをDBへ保存しない。たとえば次のコード
 
 v0.1ではConstraintを小さく保つ。OR、NOT、nested expressions、nested object access、regex、custom functions、arbitrary Ruby code、database query、resource traversal、cross-resource conditions、wildcardは作らない。
 
+v0.1ではConstraint complexity score、深さ制限、動的complexity判定、complexity engineを提供しない。固定Constraint件数上限・固定byte上限・Authorization専用timeoutを設けない既存方針を維持する。eq / lt / lte / gt / gte / in、nested pathなし、任意Ruby codeなし、複数ConstraintはANDという小さい言語で複雑性を抑え、Hostには必要最小限のConstraint利用を推奨する（D055）。
+
 ## 9. Delegation Effect
 
 Delegationに保存するEffectは `allow` / `require_approval` とし、v0.1ではexplicit deny Delegationを作らない。**default deny**を採用する。denyはDecisionとして存在するが、Delegation effectとしては保存しない。
@@ -326,13 +331,13 @@ AND
 
 後続決定D032：作成時のexpires_atはnil / Time / ActiveSupport::TimeWithZoneのみ。String / Date / Integer等から暗黙parse・変換しない。指定時はActingFor trusted current timeより未来でなければInvalidRequestError。同時刻・過去は不正、nilは無期限。
 
-作成APIはrevoked_atを受け付けず、新規時は必ずnil。通常Public APIの取消は `delegation.revoke!` のみでidempotent。初回にtrusted current timeを設定し、既にrevoked済みならExceptionにせず、最初のtimestampを保持して更新しない。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。 Authorizationのtransaction / locking / isolationはD036、TOCTOU境界はD037に従う。revoke!自体の競合制御の具体実装は追加決定しない。
+作成APIはrevoked_atを受け付けず、新規時は必ずnil。通常Public APIの取消は `delegation.revoke!` のみでidempotent。初回にtrusted current timeを設定し、既にrevoked済みならExceptionにせず、最初のtimestampを保持して更新しない。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。 Authorizationのtransaction / locking / isolationはD036、TOCTOU境界はD037に従う。`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。具体的なActiveRecord / Ruby / SQL実装は未決定（D054）。
 
 `starts_at` はv0.1では導入しない。
 
 ### Delegation lifecycle
 
-Delegationの認可内容は原則immutableとして扱う。principal、agent、action、resource scope、constraints、effectを直接UPDATEしない。
+persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、具体的なcallback・validationのRuby実装は未決定（D053）。
 
 ```text
 権限変更 = 旧Delegationをrevoke + 新Delegationをcreate
@@ -398,6 +403,8 @@ decision.approval_required?
 
 後続決定D017で、戻り値クラスは `ActingFor::Decision`、概念上の `decision.status` は `:allow` / `:deny` / `:require_approval` と確定した（未実装）。上記4つのPublic APIはD018で確定し、require_approvalの場合の `allowed?` は必ずfalseとする。永続化が必要なDecision情報はAuditEventへ記録する。
 
+v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
+
 ## 13. Delegationが複数一致した場合
 
 正式な優先順位は次のとおり。
@@ -439,7 +446,7 @@ AuditEventは、**ActingForがどのAuthorization Decisionを行ったか**を�
 
 ID重複は許可しない。`[12, 18]` は有効、`[12, 12, 18]` は不正。match集合として扱い、配列順序に意味はない。`[12, 18]` と `[18, 12]` は同じ集合を表し、利用者は順序に依存しない。
 
-JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。後続D043でDB schemaは `json` / `default: []` / `null: false` とする。Delegation ID自体のDB型は追加決定しない。
+JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。後続D043でDB schemaは `json` / `default: []` / `null: false` とする。後続D051・D052によりDelegation主キーはbigint、配列内部IDはJSON number / Integerとし、Stringへ変換しない。Array・Integerのみ・重複なし・Decisionとの件数整合性はModel / Authorization内部ロジックで保証し、JSON内部用DB CHECKは設けない。
 
 ### reason_code
 
@@ -453,19 +460,21 @@ reason_codeは最終Authorization Decisionがなぜその結果になったか�
 | `"require_approval"` | `delegation_requires_approval` |
 | `"deny"` | `no_matching_delegation` |
 
-正常に保存されるAuthorization AuditEventでは両項目を必須とし、nilや未知の値を許可しない。Model validationを行い、両DB columnはNOT NULLとする。許可値を固定するDB CHECK constraintは設けない。
+正常に保存されるAuthorization AuditEventでは両項目を必須とし、nilや未知の値を許可しない。Model validationを行い、両DB columnはNOT NULLとする。後続D052によりdecision / reason_codeそれぞれに許可値3値を固定するDB CHECK constraintを設ける。Rails enum / PostgreSQL enumは使わない。D034のCHECK非設定はこの2項目について更新された。組み合わせ用DB CHECKは設けない。
 
 decision / reason_codeの組み合わせもModel validationで上表の3組だけを許可する。`allow` と `no_matching_delegation` 等はvalidation error。Public `ActingFor::Decision#status` のSymbol表現は変更せず、Audit DB表現だけStringとする。
 
 個々のDelegationがmatchしなかった理由（expired / resource mismatch / constraint mismatch等）は単一reason_codeとして記録しない。API misuse / InternalError / AuditPersistenceError等のExceptionもDecision reason_codeの責務外。旧候補一覧はD014時点の履歴であり、D034の正式一覧へ置き換える。
 
-### sanitized context（後続決定D031・D034）
+### sanitized_context（後続決定D031・D034・D052）
+
+正式column名は `sanitized_context`。raw Authorization Context用の `context` columnは作らない。
 
 Audit用に選択したContextをJSON objectとして保存する。例は `{"amount": 12000, "currency": "JPY"}`。保存対象なしは `{}` としraw Contextへfallbackしない。JSONBは必須としない。後続D043でDB schemaは `json` / `default: {}` / `null: false` とし、全体としてnilは保存しない。選択・型・禁止keyの規則は第16節に従う。
 
 ## 15. AuditEventの方針
 
-AuditEventは基本的にappend-onlyとする。通常利用ではINSERTを中心とし、通常APIとしてupdate / destroyを前提にしない。Authorizationの結果を書き換えるのではなく、新しいAuditEventを追加して履歴を残す。DBレベルのWORMや暗号署名等まではv0.1で担当しない。
+persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。具体的なModel実装は未決定（D056）。
 
 AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを提供しない。固定retention period、自動削除、自動アーカイブは設けない。保持期間・削除・アーカイブはHost Applicationの運用責務で、サービスのセキュリティ要件・法令・社内規程等に応じて決定する（D040）。
 
@@ -491,17 +500,76 @@ acting_for_audit_events
 
 Action、Resource、Constraint、Decisionなどのために個別テーブルを増やさない。
 
-### DB schemaの後続決定（D043）
+### DB schema詳細の正本（D043・D051・D052）
 
-| 対象 | DB type | default | NULL / 補足 |
+以下は概念schemaであり、Migration実コードではない。3 Modelの `id` はRails標準のbigint primary keyとし、v0.1ではUUID切替機構を提供しない。表で明記したdefault以外のdefaultは追加決定しない。
+
+#### acting_for_agents
+
+| Column | DB type | NULL | default / 補足 |
 | --- | --- | --- | --- |
-| Agent#identifier / Agent#name | `string` | 今回追加決定なし | Model validationは指定時1..255文字。identifierのDB unique indexを維持し、DB-level length CHECK constraintは追加しない |
-| Delegation#principal_id | `string` | 今回追加決定なし | persist済みPrincipalのIDを文字列として扱う |
-| Delegation#constraints | `json` | `[]` | `null: false` |
-| AuditEventのsanitized context | `json` | `{}` | `null: false`。全体としてnilを保存しない |
-| AuditEvent#matched_delegation_ids | `json` | `[]` | `null: false`。denyは[]、allow / require_approvalは1件以上 |
+| id | bigint | 不可 | primary key |
+| identifier | string | 不可 | unique index |
+| name | string | 可 | duplicate可 |
+| created_at | datetime | 不可 | Rails timestamp |
+| updated_at | datetime | 不可 | Rails timestamp |
 
-PostgreSQL固有の `jsonb` は必須としない。Constraint評価はRuby側で行い、JSON内部をDB queryすることをv0.1 Public契約にしない。Principal IDはbigint `123` → `"123"`、UUID → `"550e8400-e29b-41d4-a716-446655440000"` のように扱い、特定主キー型へ固定しない。異なるPrincipal ID型とのassociation / Authorization動作はIntegration Testで確認する設計とする（D043）。
+identifierはrequired / uniqueでModel validation 1..255文字。nameはoptionalで指定時1..255文字。両者にDB length CHECKは設けない。第3節の既存validationを維持する。
+
+#### acting_for_delegations
+
+| Column | DB type | NULL | default / 補足 |
+| --- | --- | --- | --- |
+| id | bigint | 不可 | primary key |
+| agent_id | bigint | 不可 | FK → acting_for_agents.id、単独index |
+| principal_type | string | 不可 | Host polymorphic model |
+| principal_id | string | 不可 | Principal IDの文字列表現 |
+| action | string | 不可 | String完全一致 |
+| resource_type | string | 可 | 第7節のResource scope |
+| resource_id | string | 可 | Resource IDの文字列表現 |
+| effect | string | 不可 | allow / require_approval |
+| constraints | json | 不可 | `[]` |
+| expires_at | datetime | 可 | defaultなし。NULLは無期限 |
+| revoked_at | datetime | 可 | defaultなし。NULLは未取消、日時ありは取消済み |
+| created_at | datetime | 不可 | Rails timestamp |
+| updated_at | datetime | 不可 | Rails timestamp。revoke!でrevoked_at変更時も更新 |
+
+- agent_idのForeign Keyにcascade deleteを使わない。Delegationが存在するAgentの削除はDB Foreign Keyで拒否し、Agent削除に伴うDelegation自動削除はしない。通常の権限無効化は `delegation.revoke!` を使う。
+- PrincipalはHostのpolymorphic model。bigint `123` → `"123"`、UUID → UUID Stringとして保存し、Host Principal tableへのDB Foreign Keyは設けない。
+- action一覧をDB enum / DB CHECKで固定せず、Model / Public APIで有効性を検証する。
+- Resourceは `"Product" / "123"`（specific）、`"Product" / NULL`（型全体）、`NULL / NULL`（Resource不要Action）が有効。`resource_type IS NULL AND resource_id IS NOT NULL` はModel validationとDB CHECKで禁止する。Resource tableへのDB Foreign Keyは設けない。
+- effectはModel validation + DB CHECKでallow / require_approvalの2値のみ許可する。Rails enum / PostgreSQL enumは使わない。
+- constraintsのArray形式・field / operator / value構造等はModel / Public APIで検証し、JSON内部構造用DB CHECKは設けない。jsonbを必須としない。
+- expires_at / revoked_atにDB CHECKや単独indexは追加しない。期限判定は `expires_at == nil OR expires_at > ActingFor.current_time` を維持し、同時刻はexpired。
+- Authorization lookup用複合indexは **(agent_id, principal_type, principal_id, action, resource_type)**。resource_id / expires_at / revoked_atは含めない。追加indexは先回りせず、必要時に利用状況・実測をもとに後続検討する。
+
+#### acting_for_audit_events
+
+| Column | DB type | NULL | default / 補足 |
+| --- | --- | --- | --- |
+| id | bigint | 不可 | primary key |
+| agent_id | bigint | 不可 | Authorization時点のsnapshot |
+| agent_identifier | string | 不可 | Authorization時点のsnapshot |
+| principal_type | string | 不可 | Authorization時点のidentity snapshot |
+| principal_id | string | 不可 | Authorization時点のidentity snapshot |
+| action | string | 不可 | Authorization時点のsnapshot |
+| resource_type | string | 可 | Resource snapshot |
+| resource_id | string | 可 | Resource snapshot |
+| decision | string | 不可 | allow / deny / require_approval |
+| reason_code | string | 不可 | 第14節の正式3値 |
+| matched_delegation_ids | json | 不可 | `[]`。内部IDはJSON number / Integer |
+| sanitized_context | json | 不可 | `{}` |
+| created_at | datetime | 不可 | Authorization時点のappend-only record |
+
+- updated_atは持たない。作成後更新されない記録のためである。
+- Foreign Keyは設けない。Agent情報はsnapshotとして保存し、Agent record lifecycleとAudit履歴を強く結合しない。Host Principal / Resource tableへのForeign Keyも設けない。
+- action一覧をDB enum / DB CHECKで固定しない。
+- Resource semanticsはDelegationと同じ。`"Product" / "123"`、`"Product" / NULL`、`NULL / NULL` を許可し、`NULL / "123"` はModel validation + DB CHECKで禁止する。
+- decisionはModel validation + DB CHECKでallow / deny / require_approvalの3値のみ許可。reason_codeもdelegation_allowed / delegation_requires_approval / no_matching_delegationの3値のみ許可。Rails enum / PostgreSQL enumは使わない。D034の両columnの許可値CHECK非設定をD052で更新した。
+- decision / reason_codeの正式3組は第14節のModel validationで保証し、組み合わせ用DB CHECKは設けない。
+- matched_delegation_idsはStringへ変換せず `[12, 18, 25]` のように保存する。Array・Integerのみ・重複なし・順序に意味なし・denyは[]・allow / require_approvalは1件以上という要件はModel / Authorization内部ロジックで保証する。JSON内部用DB CHECKは設けない。
+- sanitized_contextには `audit_context_keys:` allowlistとbuilt-in validationを通った値だけを保存する。raw Context用context columnやraw Contextへのfallbackは設けない。jsonbを必須としない。
+- v0.1設計段階でprimary key以外の検索用indexを追加決定しない。agent_id、principal_type + principal_id、decision、created_at等にも先回りで付けず、Audit検索API・管理画面・分析要件と利用状況の確認後に検討する。
 
 ## 18. Model関連
 
@@ -515,8 +583,8 @@ Delegation
 Principal（ホストRailsアプリ）
 
 AuditEvent
-    ├─ Agent
-    ├─ Principal
+    ├─ Agent snapshot（DB Foreign Keyなし）
+    ├─ Principal snapshot（DB Foreign Keyなし）
     └─ matched_delegation_ids（複数一致を配列で記録）
 ```
 
@@ -586,10 +654,11 @@ AuditEvent
 
 Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。後続決定D031〜D034でException、Audit Context、Resource、Delegation、Agent validation、AuditEvent詳細を確定した。
 
-D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。次の事項は引き続き**未確定**。
+D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
 
-- Decisionの追加属性・constructor
-- D032〜D034・D043で確定した範囲以外のDB schemaの型・制約
+次の事項は引き続き**未確定**。
+
+- Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
 - Migrationの実コード・taskの具体的なコマンド名
 - その他の[残るSecurity詳細](security_model_v0_1.md#27-今回決めないこと)
 
