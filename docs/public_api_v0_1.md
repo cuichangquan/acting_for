@@ -4,7 +4,7 @@
 
 **状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gemは未実装であり、本更新では実装を開始しない。
 
-Step 5完了後のv0.1仕様詳細化としてD031〜D034を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。
+Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。
 
 ## 1. Purpose
 
@@ -48,6 +48,26 @@ Railsアプリから短く書け、認可という責務とAgent / Principal / A
 | `principal.authorize_agent(...)` | Principal ModelへActingForのAuthorization責務を持ち込まない |
 
 Publicは `ActingFor.authorize(...)`。後続のStep 7（D028）で内部Serviceを `ActingFor::Internal::Authorization` / `ActingFor::Internal::ConstraintEvaluator` として配置する設計を決定した。具体的実装は未決定で、内部構造は将来変更可能。Public APIの仕様は変更しない。
+
+### Authorizationの実行境界（D036〜D039）
+
+**Security Contract（D036・D037・D039）**
+
+- `ActingFor::Decision` はauthorize実行時点の判定結果であり、再利用可能なauthorization token / capability / 権限証明ではない。過去のDecisionを保存・再利用して「認可済み」と扱わない。
+- Host Applicationは保護対象Business Logicの実行に可能な限り近い時点でauthorizeする。
+- cached Decisionを権限証明として再利用せず、cached Delegationを権限判定・authorization proofに使わない。
+- Authorizationに必要なDelegation状態は、最新状態を期待できるauthoritative data sourceから読む。非同期Read Replicaはreplication lagによりstale Delegationを返す可能性があり、その安全性はActingForの保証範囲外。
+- ActingForはBusiness Logicとのatomicity、DB locking / isolation levelによるTOCTOU防止を保証しない。v0.1ではDecision binding token / atomic execution APIを提供しない。
+
+`ActingFor.authorize(...)` 自身は明示的なDB transactionを開始しない。概念上の順序はDelegation lookup → Authorization evaluation → Decision生成 → AuditEvent保存 → Decision return。保存失敗時は `ActingFor::AuditPersistenceError` をraiseし、Decisionを返さない。Host側Business Logicのtransaction管理はHost Applicationの責務。
+
+v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
+
+v0.1ではAuthorization / Delegation作成 / AuditEvent保存を内部で自動retryしない。失敗は既存Exception方針で呼び出し元へ伝える。Hostがretryする場合、古いDecisionを再利用せず、必要に応じauthorizeから再評価する。delegateは呼ぶたび新規Delegationを作るため、内部自動retryによるduplicate Delegation作成を避ける（D038）。
+
+ActingFor v0.1はAuthorization DecisionとDelegation lookup結果を内部cacheせず、Authorizationごとに現在の永続化状態を参照する。Host独自cacheの安全性は保証範囲外。Read Replica routing機能は提供しない（D039）。
+
+詳細は[Security Model](security_model_v0_1.md#13-toctou-boundary)を参照。
 
 ## 4. authorize Arguments
 
@@ -258,7 +278,7 @@ keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resour
 | `constraints:` | `Array<Constraint>`。条件なしは `[]` | 明示的nil、Array以外 |
 | `expires_at:` | nil / Time / ActiveSupport::TimeWithZone。指定時はActingFor trusted current timeより未来 | String、Date、Integer等、現在と同時刻、過去 |
 
-`expires_at: nil` は無期限。暗黙のparse / conversionは行わない。Clock injectionの具体APIは決めない。explicit deny Delegationは作らない。
+`expires_at: nil` は無期限。暗黙のparse / conversionは行わない。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。explicit deny Delegationは作らない。
 
 ### Constraint validation
 
@@ -333,7 +353,7 @@ ActingFor.authorize(
 
 String / Symbolの暗黙変換やindifferent accessは行わない。対象はトップレベルkeyのみで、`:"order.amount"` をnested pathとして解釈しない。nested path構文や判定規則は新設しない。
 
-選択されたkeyの保存可能valueは **String / Integer / Float / BigDecimal / TrueClass / FalseClass / nil** のみ。Hash / Array / その他structured・unsupported valueが選択された場合はsilent ignoreせずInvalidRequestErrorとする。BigDecimalのJSON上の最終serialization表現は未決定。Audit用の型規則からConstraint値の対応型を拡大しない。
+選択されたkeyの保存可能valueは **String / Integer / Float / BigDecimal / TrueClass / FalseClass / nil** のみ。Hash / Array / その他structured・unsupported valueが選択された場合はsilent ignoreせずInvalidRequestErrorとする。sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。Audit用の型規則からConstraint値の対応型を拡大しない。
 
 以下はbuilt-in forbidden secret keys。contextに存在するかにかかわらず、allowlistへ指定した時点でInvalidRequestErrorとし保存を許可しない。
 
@@ -346,7 +366,7 @@ String / Symbolの暗黙変換やindifferent accessは行わない。対象は�
 
 v0.1ではcustom Audit Filter、custom Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定を提供しない。選択方法は `audit_context_keys:` のみ。
 
-sanitized contextはJSON objectとして保存し、対象なしは `{}`。JSONBは必須ではなく、DB default / NOT NULLは今回決めない。reason_code、decisionとの整合性、matched_delegation_idsの保存要件は[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)（D034）に従う。
+sanitized contextはJSON objectとして保存し、対象なしは `{}`。JSONBは必須ではなく、DB schemaは `json` / `default: {}` / `null: false` とし、全体としてnilは保存しない（D043）。reason_code、decisionとの整合性、matched_delegation_idsの保存要件は[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)（D034）に従う。
 
 ## 11. MCP Boundary
 
@@ -503,11 +523,19 @@ v0.1では `trusted_context:` / `untrusted_context:` の別APIや、`TrustedCont
 
 **ActingForはContext値の真偽を検証するのではなく、ホストアプリが責任を持って確定したContextを受け取る。** API形式の確認とConstraint評価は、この責任分界と区別する。
 
+### 入力規模・実行環境・Audit運用（D040〜D042）
+
+v0.1ではAuthorization context全体とsanitized Audit Contextに固定byte上限をPublic仕様として設けず、1 DelegationあたりのConstraint件数にも固定上限を設けない。HostはAuthorizationに必要な最小限のContextだけを渡し、汎用データ搬送手段として使わないことを推奨する。Auditは `audit_context_keys:` で明示的に選択した必要最小限の値だけを保存し、Constraintも認可に必要な最小限の条件へ保つ（D041）。
+
+v0.1はAuthorization専用timeout設定・timeout APIを提供しない。DB / request / job等のtimeoutはHost Application / 実行環境の責務。ActingFor CoreのAuthorization処理に外部ネットワーク呼び出しを持ち込まない（D042）。
+
+AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを提供しない。固定retention period、自動削除、自動アーカイブは設けない。保持期間・削除・アーカイブはHost Applicationの運用責務で、サービスのセキュリティ要件・法令・社内規程等に応じて決定する（D040）。
+
 ## 14. Open Questions
 
-Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。Decision追加属性・constructor、BigDecimalのJSON serialization、Clock injection、transaction / locking等は引き続き未決定。
+Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。Decision追加属性・constructor等は引き続き未決定。
 
-Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。DB型、Migration実コード・taskの確認、対応Ruby / Rails等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
+Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。DB型、Migration実コード・taskの確認、確定済み範囲以外のDB制約等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
 
 ## 15. Step 5 Progress
 

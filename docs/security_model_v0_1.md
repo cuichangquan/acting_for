@@ -4,7 +4,7 @@
 
 **Security Model Design: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Security Model Designの正本とする（[D030](DECISIONS.md#d030-v01-security-model-design)）。Gem全体は **Not implemented / Not released**。Quick Startはまだ実行できない。
 
-Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D034で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
+Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D048で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
 
 ## 1. 目的とThreat Model Boundary
 
@@ -151,7 +151,7 @@ Expiration判定にAgentや外部callerから渡された任意時刻を信頼�
 
 既存の `expires_at > current_time` を有効とする境界を維持し、`expires_at == current_time` はexpiredとする。期限なし・revokedの扱いも[既存設計](domain_model_v0_1.md#10-expiration--revocation)に従う。
 
-具体的なClock implementation / Time injection方式は未決定。管理されたTest環境で時刻を固定する[Step 8の検証方針](test_strategy_v0_1.md#7-delegation-matching-integration-test)と、外部callerの任意時刻を信頼しない要件は両立する。
+時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。管理されたTest環境で時刻を固定する[Step 8の検証方針](test_strategy_v0_1.md#7-delegation-matching-integration-test)と、外部callerの任意時刻を信頼しない要件は両立する。
 
 ## 13. TOCTOU Boundary
 
@@ -165,7 +165,19 @@ Delegation revoke
 Business Operation → 古いallowを使って実行してはいけない
 ```
 
-具体的なtransaction方式やTOCTOUを解決するtransaction APIは未決定である。
+TOCTOUとは、Authorizationで確認した時点とBusiness Logicを実行する時点の間に状態が変化する問題を指す。
+
+**Security Contract（D036・D037・D039）**
+
+- `ActingFor::Decision` はauthorize実行時点の判定結果であり、再利用可能なauthorization token / capability / 権限証明ではない。過去のDecisionを保存・再利用して「認可済み」と扱わない。
+- Host Applicationは保護対象Business Logicの実行に可能な限り近い時点でauthorizeする。
+- cached Decisionを権限証明として再利用せず、cached Delegationを権限判定・authorization proofに使わない。
+- Authorizationに必要なDelegation状態は、最新状態を期待できるauthoritative data sourceから読む。非同期Read Replicaはreplication lagによりstale Delegationを返す可能性があり、その安全性はActingForの保証範囲外。
+- ActingForはBusiness Logicとのatomicity、DB locking / isolation levelによるTOCTOU防止を保証しない。v0.1ではDecision binding token / atomic execution APIを提供しない。
+
+`ActingFor.authorize(...)` 自身は明示的なDB transactionを開始しない。概念上の順序はDelegation lookup → Authorization evaluation → Decision生成 → AuditEvent保存 → Decision return。保存失敗時は `ActingFor::AuditPersistenceError` をraiseし、Decisionを返さない。Host側Business Logicのtransaction管理はHost Applicationの責務。
+
+v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
 
 ## 14. Resource Identity
 
@@ -181,9 +193,13 @@ ActingForが定義した限定的operatorのみ評価する。未知のoperator�
 
 ## 16. Constraint Complexity / DoS
 
-巨大・複雑なConstraintによってAuthorization処理が過負荷にならない設計にする。Constraint数を無制限と仮定せず、巨大入力を無制限に評価せず、過剰な構造を許容しない。上限を設けられる設計とし、制限超過をallowへ倒さない。
+D030時点の過負荷対策要件をD041・D042で具体化し、v0.1で固定上限や専用timeoutを提供するという意味にはしない。
 
-最大Constraint数、最大Context size、最大JSON size、complexityの具体値、timeout値や具体的実装方法は未決定。これを理由にConfiguration APIを追加しない。失敗の扱いは第3節のAuthorization failure / System failureの区別を維持する。
+v0.1ではAuthorization context全体とsanitized Audit Contextに固定byte上限をPublic仕様として設けず、1 DelegationあたりのConstraint件数にも固定上限を設けない。HostはAuthorizationに必要な最小限のContextだけを渡し、汎用データ搬送手段として使わないことを推奨する。Auditは `audit_context_keys:` で明示的に選択した必要最小限の値だけを保存し、Constraintも認可に必要な最小限の条件へ保つ（D041）。
+
+v0.1はAuthorization専用timeout設定・timeout APIを提供しない。DB / request / job等のtimeoutはHost Application / 実行環境の責務。ActingFor CoreのAuthorization処理に外部ネットワーク呼び出しを持ち込まない（D042）。
+
+既存の限定的Constraint構造とfail-closedは維持する。
 
 ## 17. Authorization Enumeration / Information Leakage
 
@@ -208,7 +224,13 @@ AuditEventは通常運用ではappend-onlyとし、通常のActingFor Public API
 
 Auditには必要最小限の情報だけを保存する。無期限保存をActingForの固定仕様にせず、Retention PolicyはHost Application側で管理可能とする。Hostは法令、Privacy Policy、社内Security Policy等に応じて保持期間を決定できる。
 
-append-onlyは通常のAuthorization Audit APIについての原則であり、Retention / legal deletionは別の運用上の削除として扱う。具体的なRetention期間や削除APIは未決定である。
+append-onlyは通常のAuthorization Audit APIについての原則であり、Retention / legal deletionは別の運用上の削除として扱う。AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを提供しない。固定retention period、自動削除、自動アーカイブは設けない。保持期間・削除・アーカイブはHost Applicationの運用責務で、サービスのセキュリティ要件・法令・社内規程等に応じて決定する（D040）。
+
+### Audit保存表現の後続決定（D043・D044）
+
+sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。
+
+Audit sanitized contextは `json` / `default: {}` / `null: false`、matched_delegation_idsは `json` / `default: []` / `null: false`。jsonbを必須とせず、詳細は[Domain Model](domain_model_v0_1.md#14-auditevent)に従う。
 
 ## 20. Sensitive Resource / Context Exposure Prevention
 
@@ -234,19 +256,33 @@ Unknown / Invalid / Ambiguous → allowしない
 
 Host ApplicationやDB administratorがPublic APIを迂回してActiveRecord Modelを直接update、SQLで直接update、DBを書き換えることまで完全に防御できるとは保証しない。
 
-通常利用ではPublic API経由を推奨する。Gem内部では可能な範囲で安全なModel制約を持たせる方向だが、D032〜D034で確定したvalidation・DB制約だけを適用する。それ以外のcallback / DB constraint等は未決定。Public APIを迂回した操作はHost側の責務境界とする。
+通常利用ではPublic API経由を推奨する。Gem内部では可能な範囲で安全なModel制約を持たせる方向だが、D032〜D034・D043で確定したvalidation・DB制約だけを適用する。それ以外のcallback / DB constraint等は未決定。Public APIを迂回した操作はHost側の責務境界とする。
 
 ## 24. Concurrency / Race Condition
 
-同時実行や状態競合によって、古い状態を根拠に権限が拡大しない設計にする。特にrevokeとの競合、expiration境界、Authorizationと状態更新の競合で誤ってallow側へ倒れないようにする。
+`ActingFor.authorize(...)` 自身は明示的なDB transactionを開始しない。概念上の順序はDelegation lookup → Authorization evaluation → Decision生成 → AuditEvent保存 → Decision return。保存失敗時は `ActingFor::AuditPersistenceError` をraiseし、Decisionを返さない。Host側Business Logicのtransaction管理はHost Applicationの責務。
 
-DB lock、optimistic locking、pessimistic locking、transaction isolation / DB isolation level、retry方式は決定しない。これはSecurity requirementであり、第13節のBusiness Logicとの完全な原子性を保証するものではない。
+v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
+
+v0.1ではAuthorization / Delegation作成 / AuditEvent保存を内部で自動retryしない。失敗は既存Exception方針で呼び出し元へ伝える。Hostがretryする場合、古いDecisionを再利用せず、必要に応じauthorizeから再評価する。delegateは呼ぶたび新規Delegationを作るため、内部自動retryによるduplicate Delegation作成を避ける（D038）。
 
 ## 25. Stale State / Cache / Replica Lag
 
-Authorizationには権限判断に十分新しいDelegation状態を使用する。古いcache、read replica、stale objectによってrevoked Delegation / expired Delegationを再度allowしない。
+ActingFor v0.1はAuthorization DecisionとDelegation lookup結果を内部cacheせず、Authorizationごとに現在の永続化状態を参照する。Host独自cacheの安全性は保証範囲外。Read Replica routing機能は提供しない（D039）。
 
-Security requirementのみを確定し、cache architecture、primary DB強制、replica利用禁止、cache TTL、invalidation方式等は決めない。
+Authorizationには最新状態を期待できるauthoritative data sourceを使う。cached Decisionを再利用可能な権限証明として扱わず、cached Delegationを権限判定へ利用しない。非同期Read Replicaでは次のstale readが起こり得る。
+
+```text
+Delegation revoked on authoritative DB
+↓
+Replicaにはまだ旧状態（replication lag）
+↓
+authorize
+↓
+allow
+```
+
+このstale readによる安全性はActingForでは保証しない。D030の要件をD039で詳細化したもので、Replicaの鮮度やBusiness Logicとのatomicityを保証するものではない。
 
 ## 26. 完了条件と後続工程
 
@@ -260,30 +296,22 @@ Security Model Designの完了条件は次のとおり。本書によりすべ�
 - 具体的実装方式とSecurity requirementが分離されている。
 - 未決定事項が明示されている。
 
-**Security Model Design = Complete / Design finalized / Not implemented。** D030時点で次工程とした「未決定事項の詰め」はD031〜D034により進行中。すべての未決定事項が完了したわけではなく、実装開始には進まない。
+**Security Model Design = Complete / Design finalized / Not implemented。** D030時点で次工程とした「未決定事項の詰め」はD031〜D048により進行中。すべての未決定事項が完了したわけではなく、実装開始には進まない。
 
 [Step 8 Test Strategy](test_strategy_v0_1.md)の完了状態・確定仕様を維持する。本書のSecurity requirementのImplementation / Testへの反映は後続工程で確認する。今回Test設計を再オープンせず、Test項目の大量追加や実装は行わない。v0.1全体のDefinition of Doneも引き続きProposal / 提案である。
 
 ## 27. 今回決めないこと
 
-D030時点の未決定事項のうち、Exception / Audit ContextはD031、Resource / DelegationはD032、Agent validationはD033、AuditEvent詳細はD034で確定した。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
+D030時点の未決定事項のうち、Exception / Audit ContextはD031、Resource / DelegationはD032、Agent validationはD033、AuditEvent詳細はD034で確定した。
+
+D035〜D048でClock、transaction / locking / isolation、TOCTOU API非提供、retry、cache / replica、Audit retention / delete API、固定上限非設定、timeout、DB schemaの一部、BigDecimal、対応環境・CI matrix・ライセンスの保留を解消した。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
 
 - Decisionの追加属性・constructor
-- BigDecimalのJSON serialization表現
-- Audit retention期間、Audit削除API
-- Constraint最大件数、Context最大size、JSON最大size、Constraint complexity具体値、timeout値
-- Clock implementation、Time injection方式
-- transaction方式、locking方式、DB isolation level、retry方式
-- cache方式、replica方式、cache TTL、invalidation方式
-- 確定済み範囲以外のDB schemaの型・制約、DB adapter正式対応範囲
-- Agent name / identifierのDB column length constraint
-- Audit sanitized contextのDB default / NOT NULL
-- Constraint JSON / JSONBの最終DB型
+- 確定済み範囲以外のDB schemaの型・制約
 - Delegation creation / revocation caller authorizationの具体API
-- TOCTOUを解決するtransaction API、Decisionをbindingするtoken等
-- 確定したModel validation / DB制約の具体的実装、未決定のcallback等
-- Ruby対応version、Rails対応version、CI matrix、static analysis、License
-- Migration実コード・task名、Runnable Quick Start、Release notes
+- 確定したModel validation / DB制約の具体的実装、未決定のcallback、revoke!の競合制御の具体実装等
+- Constraint complexityの具体的な扱い（固定件数・byte上限と専用timeout非提供は確定済み）
+- static analysis、Migration実コード・task名、Runnable Quick Start、Release notes
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 
 Configuration / Initializer、Generatorも今回新設・追加設計しない。[D028の既存方針](gem_structure_v0_1.md)である「現時点でConfiguration / Initializerを作らない」「v0.1では独自Generatorを作らない」は維持し、将来の具体設計を今回決めない。Approval Workflowや各Adapterも既存の責務・スコープ境界を維持する。

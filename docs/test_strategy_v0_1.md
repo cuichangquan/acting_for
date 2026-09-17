@@ -202,8 +202,27 @@ System failure → Exception
 
 ## 14. 未決定事項と完了状態
 
-[PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)全体は引き続き **Proposal / 提案**。対応Ruby version、対応Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notesが未決定であり、Step 8完了を理由に確定しない。
+[PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)全体は引き続き **Proposal / 提案**。Ruby / Rails・CI matrixはD046、LicenseはD048で確定した。static analysis、Runnable Quick Start、Release notes等は未決定であり、全体の完了条件は追加確定しない。
 
 Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。Decision constructor / 追加属性、確定済み範囲以外のDB型・制約、Migration実コード・task名、内部method・constructor・class構造は引き続き未決定。
 
 Step 8は **Complete / Design finalized / Not implemented**。次工程の番号・順序は新たに決めず、Security Model Design等をStep 9に採番しない。Gem / Test / Migration / Model / Service / Decision / AuditEvent / Generator / Dummy Rails Appの実装、Configuration追加、CI構築、releaseには進まない。
+
+## 15. 後続決定に対応する検証設計（D035・D043〜D046）
+
+v0.1の正式対応DB adapterは **PostgreSQLのみ**。他adapterを意図的に排除する設計にはしないが、正式サポート・動作保証対象外とする。CI / Integration Testで検証したDBだけを正式サポートとする（D045）。
+
+正式サポート対象は **Ruby 3.4 / 4.0、Rails 8.0 / 8.1**。Ruby 3.3以下、Rails 7.2以下は対象外。正式CI matrixは以下の4組で、DBはいずれもPostgreSQL。正式サポートはこのmatrixで実際に検証した組み合わせのみ（D046）。
+
+| Ruby | Rails | DB |
+| --- | --- | --- |
+| 3.4 | 8.0 | PostgreSQL |
+| 3.4 | 8.1 | PostgreSQL |
+| 4.0 | 8.0 | PostgreSQL |
+| 4.0 | 8.1 | PostgreSQL |
+
+Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。これは設計上の対象であり、現在検証済み・リリース済みという意味ではない。CIはまだ実装しない。
+
+時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。
+
+Integration Testではbigint / UUID等の異なるPrincipal ID型について、stringのDelegation#principal_idを介したassociationとAuthorization動作を確認する。Model / Migration検証はD043のjson型・default・NOT NULLとAgent string型・unique indexに従い、AuditではBigDecimalの10進数String保存による精度維持を確認する設計とする。これは検証方針だけであり、Test / Dummy App / Migration / CI workflowを実装しない。

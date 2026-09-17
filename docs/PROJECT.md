@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D034で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
+- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。「未決定事項の詰め」を進行中（D031〜D048で詳細化）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -233,7 +233,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 | Agent representation | Rails内部で操作主体となるAgentをPrincipalと別に表現する。最小属性は `id`、必須・一意の `identifier`、任意の `name`、timestamps。PrincipalとはDelegationを介して関連付ける（D013）。Gemは本人確認を行わない | 同じPrincipalでもAgentが異なれば別の主体として扱われ、認証済みAgent情報をホストから受け取れることを自動テストで示す |
 | Delegation | PrincipalからAgentへの委任として、`principal`、`agent`、`action`、Resource識別情報、`effect`、`constraints`、`expires_at`、`revoked_at` を表現する。認可内容は原則immutableで、変更はrevoke + createとする（D014） | 指定したPrincipal / Agent / action / resourceだけが一致し、別主体・別action・別resourceには適用されないことを自動テストで示す |
 | Authorization | ActingForの中心機能として、委任された操作を実行してよいか判定する。全matching条件を満たす委任を評価し、結果は `allow` / `deny` / `require_approval` の3種類。一致なしはdeny、require_approvalをallowより優先し、判断できなければallowしない（D014） | 3種類すべてとDelegationが存在しない場合を自動テストし、呼び出し側が結果を区別できる |
-| Constraint | JSON / JSONBのfield / operator / value配列をAND評価する。ContextのトップレベルKeyのみ参照し、6 operatorと型ルールに従う。暗黙変換をせず、不成立・不正なConstraintはmatchさせない（D014） | Contextに対する条件について、条件内・境界値・条件外を自動テストする。Resource matchingはDelegation matching側で扱う。Constraint形式と評価ルールはD014で確定済み。Public APIの決定はStep 5の正本を参照 |
+| Constraint | jsonのfield / operator / value配列をAND評価する。ContextのトップレベルKeyのみ参照し、6 operatorと型ルールに従う。暗黙変換をせず、不成立・不正なConstraintはmatchさせない（D014） | Contextに対する条件について、条件内・境界値・条件外を自動テストする。Resource matchingはDelegation matching側で扱う。Constraint形式と評価ルールはD014で確定済み。Public APIの決定はStep 5の正本を参照 |
 | Expiration | Delegationに `expires_at` と `revoked_at` を持たせ、期限切れ・取消済みを有効対象から除外する（D013） | 有効期限なし・期限内は他の条件に従って評価し、現在時刻と等しい期限・期限切れ・取消済みのDelegationが除外されることを時刻固定テストで示す。有効な一致がなければ `deny` となる |
 | Approval判定 | 自動許可できない操作に `require_approval` を返す。ActingForは「承認が必要」と判断するところまでを担当する | `require_approval` が `allow` と区別され、それだけでは実行許可にならないことを文書とテストで示す。承認依頼、通知、画面、承認後の再実行は含めない |
 | Audit log | 認可判定を専用AuditEventテーブルへ基本append-onlyで記録する。Agent（agent_id / agent_identifier）、Principal、action、resource、matched_delegation_ids、reason_code、フィルタ済みcontext、decision、created_atを扱う。業務処理の成功・失敗は対象外（D014） | 3種類の判定について必要項目を追跡できることを自動テストで示す。allowlist優先のFilter / Sanitizerによる必要最小限のcontext記録を検証する。自動記録と保存失敗時ExceptionはD022・D023で確定済み。D031のaudit_context_keysによるallowlistとD034のAuditEvent詳細に従う |
@@ -251,7 +251,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.3 v0.1全体のDefinition of Done
 
-**状態：Proposal / 提案。** 対応Ruby version、対応Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notesが未決定のため、Step 8完了後も全体は正式決定しない。以下はv0.1実装完了条件の提案である。
+**状態：Proposal / 提案。** Ruby / Rails・CI matrixはD046、LicenseはD048で確定したが、static analysis、Runnable Quick Start、Release notes等が未決定のため、Step 8完了後も全体は正式決定しない。以下はv0.1実装完了条件の提案である。
 
 1. 4.2の全項目と境界ケースが自動テストされ、対応対象と決めたRuby/Railsの組み合わせでCIが成功する。
 2. サンプルRailsアプリまたは統合テストで、Delegation作成から判定、Audit記録までを再現できる。
@@ -278,15 +278,31 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.5 スコープ確定後も別途決める設計
 
-Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D034でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。以下は引き続き未確定。
+Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D048でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。以下は引き続き未確定。
 
-- Decisionの追加属性・constructor（クラス・statusはD017、4つのPublic APIはD018で決定済み）
-- 確定済み範囲以外のDB schemaの型・制約、DB adapter正式対応範囲
-- AgentのDB column length、Audit sanitized contextのDB default / NOT NULL、Constraint JSON / JSONBの最終DB型
-- BigDecimalのJSON serialization、Clock injection、transaction / locking / isolation / retry、cache / replica、Audit retention等
-- Migrationの実コード・taskの具体的なコマンド名（構成と独自Generator非提供はStep 7 / D028で決定済み）
-- Ruby / Railsの対応バージョン
-- ライセンス
+- Decisionの追加属性・constructor（既決定Public APIは維持）
+- D032〜D034・D043で確定した範囲以外のDB schemaの型・制約
+- Migrationの実コード・taskの具体的なコマンド名
+- [Security Modelに残る詳細](security_model_v0_1.md#27-今回決めないこと)
+
+### 4.6 対応環境・公開方針（D045〜D048）
+
+v0.1の正式対応DB adapterは **PostgreSQLのみ**。他adapterを意図的に排除する設計にはしないが、正式サポート・動作保証対象外とする。CI / Integration Testで検証したDBだけを正式サポートとする（D045）。
+
+正式サポート対象は **Ruby 3.4 / 4.0、Rails 8.0 / 8.1**。Ruby 3.3以下、Rails 7.2以下は対象外。正式CI matrixは以下の4組で、DBはいずれもPostgreSQL。正式サポートはこのmatrixで実際に検証した組み合わせのみ（D046）。
+
+| Ruby | Rails | DB |
+| --- | --- | --- |
+| 3.4 | 8.0 | PostgreSQL |
+| 3.4 | 8.1 | PostgreSQL |
+| 4.0 | 8.0 | PostgreSQL |
+| 4.0 | 8.1 | PostgreSQL |
+
+Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。これは設計上の対象であり、現在検証済み・リリース済みという意味ではない。CIはまだ実装しない。
+
+将来gemspecへ設定するv0.1のversion constraintはRuby `>= 3.4`, `< 4.1`、Rails `>= 8.0`, `< 8.2` とする。dependencyとしてinstall可能であることと正式サポートは区別し、正式サポートはD046のCI matrixで検証済みの組み合わせだけとする。今回はgemspecを作成・変更しない（D047）。
+
+ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを明記するが、今回はLICENSEファイルを作成せず、gemspecも作成・変更しない（D048）。
 
 ## 5. 進行順
 
@@ -301,7 +317,7 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 7 | Gem Structure Design | 完了（Complete / Design finalized / Not implemented）。D028、[正本](gem_structure_v0_1.md) |
 | 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
 | 未採番 | Security Model Design | 完了（Complete / Design finalized / Not implemented）。D030、[正本](security_model_v0_1.md) |
-| 未採番 | 未決定事項の詰め | 進行中。D031〜D034で詳細化。未決定事項は残り、実装開始には進まない |
+| 未採番 | 未決定事項の詰め | 進行中。D031〜D048で詳細化。未決定事項は残り、実装開始には進まない |
 | 10 | 実装開始 | 設計後 |
 
 MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
@@ -360,11 +376,13 @@ Testコードはまだ存在しない。4.3のDefinition of Done全体はProposa
 
 **Complete / Design finalized / Not implemented（D030）。** [Security Modelの正本](security_model_v0_1.md)にThreat Model、Trust Boundary、6つのSecurity Invariant、Host Applicationとの責務境界、v0.1のSecurity requirementと未決定事項を記録した。Step 1〜8の決定は維持し、Security Modelの工程番号は追加しない。
 
-D030時点では具体的実装方式やPublic APIは追加確定せず、次工程を「未決定事項の詰め」として未着手だった。後続D031〜D034で一部を詳細化した。Implementation / Testへの反映は後続工程で確認し、Step 8のTest Strategyを再設計しない。GemはNot implemented / Not released。
+D030時点では具体的実装方式やPublic APIは追加確定せず、次工程を「未決定事項の詰め」として未着手だった。後続D031〜D048で一部を詳細化した。Implementation / Testへの反映は後続工程で確認し、Step 8のTest Strategyを再設計しない。GemはNot implemented / Not released。
 
 ### 5.6 未決定事項の詳細化（進行中）
 
 D031でAudit Contextのaudit_context_keysと4つのException class、D032でResource identityとDelegation API / validation、D033でAgent validation、D034でAuditEventのreason_code / decision / matched_delegation_ids / sanitized contextを設計確定した。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Security Model](security_model_v0_1.md)を参照する。
+
+2026-09-17追加決定D035〜D048により、時刻・実行境界・TOCTOU・retry・cache / replica・監査運用・入力上限・timeout・DB schemaの一部・BigDecimal・対応環境・version constraint・MIT Licenseも確定した。
 
 未決定事項のすべてが完了したわけではなく、実装開始可能・実装完了を意味しない。既存Step番号と完了履歴を維持する。Resource matchingは型全体へのDelegationを維持すると確認済み。type指定・ID nilは型全体scope、specific Resourceの識別値は厳密比較とし、単純なtuple完全一致には変更しない（D032）。
 
@@ -377,7 +395,7 @@ D031でAudit Contextのaudit_context_keysと4つのException class、D032でReso
 | v0.1の完了条件を確定する | Step 8のTest上のAcceptance Criteriaを前提に、未決定事項を含む4.3のDefinition of Done全体をレビューする |
 | Public APIの残る詳細を設計する | D031〜D032の後続決定を前提に、Decision追加属性等の残る詳細を検討する |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
-| Auditの残る詳細を決める | D031・D034を前提に、BigDecimal serialization、Retention等の残る詳細を検討する |
+| 残る実装詳細を確認する | 確定済み設計を前提に、残るDB型・制約やMigration task等を確認する。実装開始は今回の対象外 |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
 
@@ -405,9 +423,9 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D034で進行中。Gemは未実装で、実装には進まない。
-2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D034の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
-3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、Migration実コード・taskの確認、対応Ruby/Rails、ライセンス等を後続工程で扱い、v0.1の完了条件をレビューする。
+1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。「未決定事項の詰め」はD031〜D048で進行中。Gemは未実装で、実装には進まない。
+2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D048の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
+3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、確定済み範囲以外のDB型・制約、Migration実コード・taskの確認等を後続工程で扱い、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠
 

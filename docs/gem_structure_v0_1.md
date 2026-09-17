@@ -97,6 +97,14 @@ AuditEvent
 
 内部のクラス名・構造・具体的実装は将来変更可能。private method構成等は確定しない。Step 5の自動Auditを維持し、AuditEvent保存後にDecisionを返す。保存失敗時はDecisionを返さずExceptionで中断する。
 
+時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。
+
+`ActingFor.authorize(...)` 自身は明示的なDB transactionを開始しない。概念上の順序はDelegation lookup → Authorization evaluation → Decision生成 → AuditEvent保存 → Decision return。保存失敗時は `ActingFor::AuditPersistenceError` をraiseし、Decisionを返さない。Host側Business Logicのtransaction管理はHost Applicationの責務。
+
+v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
+
+v0.1ではAuthorization / Delegation作成 / AuditEvent保存を内部で自動retryしない。失敗は既存Exception方針で呼び出し元へ伝える。Hostがretryする場合、古いDecisionを再利用せず、必要に応じauthorizeから再評価する。delegateは呼ぶたび新規Delegationを作るため、内部自動retryによるduplicate Delegation作成を避ける（D038）。
+
 ## 5. Decision Value Object
 
 `ActingFor::Decision` は `lib/acting_for/decision.rb` に配置する。ActiveRecord ModelでもServiceでもなく、Public APIとして利用されるValue Objectである。
@@ -116,7 +124,7 @@ statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow`
 
 MigrationはGem側の `db/migrate/` で管理し、第1節の3ファイルを想定する。Rails Engine標準のMigration提供方式を利用し、Host ApplicationのDBへMigrationをコピー・適用する。独自Migration DSLや独自DBセットアップ機構は作らない。
 
-Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。その他の型・制約とMigration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
+Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。後続D043でAgent string型、principal_id string型、constraints / sanitized context / matched_delegation_idsのjson型・default・NOT NULLを確定した。その他の型・制約とMigration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
 
 全テーブルに `acting_for_` prefixを付ける。
 
@@ -185,7 +193,22 @@ Audit Sanitizer等の将来候補を理由にConfiguration APIを追加しない
 
 Pundit、CanCanCan、Action Policy、MCP関連Gem、OAuth / OIDC関連Gem、OpenAI SDK、Claude SDK、Gemini SDKには依存しない。ホスト認可、接続・認証、LLMとの既存の責務境界を維持する。
 
-Gem version constraint、対応Ruby / Rails versionは未決定。gemspecの実装変更は行わない。
+v0.1の正式対応DB adapterは **PostgreSQLのみ**。他adapterを意図的に排除する設計にはしないが、正式サポート・動作保証対象外とする。CI / Integration Testで検証したDBだけを正式サポートとする（D045）。
+
+正式サポート対象は **Ruby 3.4 / 4.0、Rails 8.0 / 8.1**。Ruby 3.3以下、Rails 7.2以下は対象外。正式CI matrixは以下の4組で、DBはいずれもPostgreSQL。正式サポートはこのmatrixで実際に検証した組み合わせのみ（D046）。
+
+| Ruby | Rails | DB |
+| --- | --- | --- |
+| 3.4 | 8.0 | PostgreSQL |
+| 3.4 | 8.1 | PostgreSQL |
+| 4.0 | 8.0 | PostgreSQL |
+| 4.0 | 8.1 | PostgreSQL |
+
+Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。これは設計上の対象であり、現在検証済み・リリース済みという意味ではない。CIはまだ実装しない。
+
+将来gemspecへ設定するv0.1のversion constraintはRuby `>= 3.4`, `< 4.1`、Rails `>= 8.0`, `< 8.2` とする。dependencyとしてinstall可能であることと正式サポートは区別し、正式サポートはD046のCI matrixで検証済みの組み合わせだけとする。今回はgemspecを作成・変更しない（D047）。
+
+ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを明記するが、今回はLICENSEファイルを作成せず、gemspecも作成・変更しない（D048）。
 
 ## 12. Public / Internal Boundary
 
@@ -204,12 +227,9 @@ Internalは利用者向けAPIではなく、READMEでは原則としてInternal 
 
 以下は引き続き未決定であり、本書では追加確定しない。
 
-- Rails / Ruby対応version、Gem version constraint
-- D032〜D034で確定した範囲以外のDB型・制約、Migrationの実コード・taskの具体的なコマンド名
+- D032〜D034・D043で確定した範囲以外のDB型・制約、Migrationの実コード・taskの具体的なコマンド名
 - Decisionの追加属性・constructor（ExceptionはD031、Audit reason_codeはD034で確定）
-- Audit BigDecimalのJSON serialization（選択APIはD031で確定。custom Sanitizer / Configuration / Initializerは追加しない）
 - install generatorの将来設計（v0.1では独自Generatorを作らない）
-- Clock injection、transaction / locking / retry等の具体的実装
 - 実装クラスの細かなprivate method構成
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 

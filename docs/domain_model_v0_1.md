@@ -99,7 +99,7 @@ identifierは必須。nil、空文字、whitespace-only、String以外、255文�
 
 nameは任意だが、空文字、whitespace-only、String以外、255文字超過はvalidation error。自動trimは行わない。identifierが異なる `agent-001` / `agent-002` が同じname `"Shopping Agent"` を持ってよい。Agent Identityの一意性はidentifierのみで保証する。
 
-長さはModel validation上の決定であり、DB columnのlimitやDB-level length constraintは未決定。一意性のDB unique indexは確定しているが、具体的なDB adapter対応・実装方式は今回決めない。
+後続D043でidentifier / nameのDB型は `string` と確定。Model validationは1..255文字、identifierのDB unique indexを維持する。v0.1ではDB-level length CHECK constraintを追加しない。正式対応DBはPostgreSQLのみ（D045）。
 
 ### Principalとの関係
 
@@ -168,7 +168,7 @@ belongs_to :principal, polymorphic: true
 
 ### 主キー型の制約
 
-`principal_type` / `principal_id` で参照するため、`principal_id` の型は共通になる。たとえば `User` がbigint、`Organization` がUUIDなど、Principal候補ごとに主キー型が異なるアプリでは注意が必要。v0.1では万能化せず、この制約をドキュメントで明示する方向とする。
+後続D043により `Delegation#principal_id` はDB上で `string` とする。persist済みPrincipalのbigint `123` は `"123"`、UUIDはその文字列として扱い、特定主キー型へ固定しない。異なるPrincipal ID型とのassociation / AuthorizationはIntegration Testで検証する設計とする。
 
 ## 6. Action
 
@@ -233,7 +233,9 @@ specific ResourceへのDelegationはresource_typeとresource_idの両方が厳�
 
 ## 8. Constraint
 
-Constraint専用テーブルは作らず、DelegationのJSON / JSONBとして保存する。Constraintの最終DB型は未決定であり、AuditEventのJSON保存とは別に扱う。
+Constraint専用テーブルは作らず、`Delegation#constraints` は `json` / `default: []` / `null: false` とする。Ruby側で評価し、JSON内部のDB queryはPublic契約にしない。jsonbは必須としない（D043）。
+
+v0.1ではAuthorization context全体とsanitized Audit Contextに固定byte上限をPublic仕様として設けず、1 DelegationあたりのConstraint件数にも固定上限を設けない。HostはAuthorizationに必要な最小限のContextだけを渡し、汎用データ搬送手段として使わないことを推奨する。Auditは `audit_context_keys:` で明示的に選択した必要最小限の値だけを保存し、Constraintも認可に必要な最小限の条件へ保つ（D041）。
 
 正式な基本形式は `Array<Constraint>` とし、各Constraintは `field`、`operator`、`value` を持つ。
 
@@ -324,7 +326,7 @@ AND
 
 後続決定D032：作成時のexpires_atはnil / Time / ActiveSupport::TimeWithZoneのみ。String / Date / Integer等から暗黙parse・変換しない。指定時はActingFor trusted current timeより未来でなければInvalidRequestError。同時刻・過去は不正、nilは無期限。
 
-作成APIはrevoked_atを受け付けず、新規時は必ずnil。通常Public APIの取消は `delegation.revoke!` のみでidempotent。初回にtrusted current timeを設定し、既にrevoked済みならExceptionにせず、最初のtimestampを保持して更新しない。Clock injection・競合制御の具体方式は未決定。
+作成APIはrevoked_atを受け付けず、新規時は必ずnil。通常Public APIの取消は `delegation.revoke!` のみでidempotent。初回にtrusted current timeを設定し、既にrevoked済みならExceptionにせず、最初のtimestampを保持して更新しない。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。 Authorizationのtransaction / locking / isolationはD036、TOCTOU境界はD037に従う。revoke!自体の競合制御の具体実装は追加決定しない。
 
 `starts_at` はv0.1では導入しない。
 
@@ -375,9 +377,15 @@ AuditEvent
 
 ActingForは業務処理を実行せず、ホストアプリがDecisionを適用する。`require_approval` は実行許可を意味しない。
 
+`ActingFor.authorize(...)` 自身は明示的なDB transactionを開始しない。概念上の順序はDelegation lookup → Authorization evaluation → Decision生成 → AuditEvent保存 → Decision return。保存失敗時は `ActingFor::AuditPersistenceError` をraiseし、Decisionを返さない。Host側Business Logicのtransaction管理はHost Applicationの責務。
+
+v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なDB lockを取得しない。Decisionは実行時点で観測した状態に基づき、返却後からBusiness Logic実行までDelegationの有効性を保証しない。独自のtransaction isolation levelを要求・変更せず、READ COMMITTED / REPEATABLE READ / SERIALIZABLEを強制しない。Host Application / DB設定に従い、特定isolation levelによるatomicity / TOCTOU防止も保証しない（D036）。
+
+ActingFor v0.1はAuthorization DecisionとDelegation lookup結果を内部cacheせず、Authorizationごとに現在の永続化状態を参照する。Host独自cacheの安全性は保証範囲外。Read Replica routing機能は提供しない（D039）。
+
 ## 12. Decision
 
-DecisionはDB Modelにせず、Authorization結果を表すValue Objectとする。種類は `allow` / `deny` / `require_approval`。
+DecisionはDB Modelにせず、Authorization実行時点の結果を表すValue Objectとする。再利用可能な権限証明ではない（D037）。種類は `allow` / `deny` / `require_approval`。
 
 後続決定D018で確定したPublic API（設計のみ・未実装）：
 
@@ -431,7 +439,7 @@ AuditEventは、**ActingForがどのAuthorization Decisionを行ったか**を�
 
 ID重複は許可しない。`[12, 18]` は有効、`[12, 12, 18]` は不正。match集合として扱い、配列順序に意味はない。`[12, 18]` と `[18, 12]` は同じ集合を表し、利用者は順序に依存しない。
 
-JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。Delegation ID自体のDB型や新しい制約は追加決定しない。
+JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。後続D043でDB schemaは `json` / `default: []` / `null: false` とする。Delegation ID自体のDB型は追加決定しない。
 
 ### reason_code
 
@@ -453,11 +461,13 @@ decision / reason_codeの組み合わせもModel validationで上表の3組だ�
 
 ### sanitized context（後続決定D031・D034）
 
-Audit用に選択したContextをJSON objectとして保存する。例は `{"amount": 12000, "currency": "JPY"}`。保存対象なしは `{}` としraw Contextへfallbackしない。JSONBは必須としない。sanitized contextのDB default / NOT NULLは今回決めない。選択・型・禁止keyの規則は第16節に従う。
+Audit用に選択したContextをJSON objectとして保存する。例は `{"amount": 12000, "currency": "JPY"}`。保存対象なしは `{}` としraw Contextへfallbackしない。JSONBは必須としない。後続D043でDB schemaは `json` / `default: {}` / `null: false` とし、全体としてnilは保存しない。選択・型・禁止keyの規則は第16節に従う。
 
 ## 15. AuditEventの方針
 
 AuditEventは基本的にappend-onlyとする。通常利用ではINSERTを中心とし、通常APIとしてupdate / destroyを前提にしない。Authorizationの結果を書き換えるのではなく、新しいAuditEventを追加して履歴を残す。DBレベルのWORMや暗号署名等まではv0.1で担当しない。
+
+AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを提供しない。固定retention period、自動削除、自動アーカイブは設けない。保持期間・削除・アーカイブはHost Applicationの運用責務で、サービスのセキュリティ要件・法令・社内規程等に応じて決定する（D040）。
 
 ## 16. Audit Contextの安全性
 
@@ -467,7 +477,7 @@ Authorization Contextを無条件に保存しない。後続決定D031により�
 
 password、password_confirmation、token、access_token、refresh_token、api_key、secret、client_secret、credentialのSymbolはbuilt-in forbidden secret keys。allowlistへ指定した時点でInvalidRequestError。完全一致のみで判定し、token_count等をsubstring / regex / 推測で禁止しない。Hostは機密情報を選択しない責務を維持する。
 
-custom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定はv0.1で提供しない。BigDecimalのJSON serialization表現は未決定。正式な入力例と詳細は[Audit Context selection](public_api_v0_1.md#10-audit)に従う。
+custom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定はv0.1で提供しない。sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。正式な入力例と詳細は[Audit Context selection](public_api_v0_1.md#10-audit)に従う。
 
 ## 17. v0.1 テーブル構成
 
@@ -480,6 +490,18 @@ acting_for_audit_events
 ```
 
 Action、Resource、Constraint、Decisionなどのために個別テーブルを増やさない。
+
+### DB schemaの後続決定（D043）
+
+| 対象 | DB type | default | NULL / 補足 |
+| --- | --- | --- | --- |
+| Agent#identifier / Agent#name | `string` | 今回追加決定なし | Model validationは指定時1..255文字。identifierのDB unique indexを維持し、DB-level length CHECK constraintは追加しない |
+| Delegation#principal_id | `string` | 今回追加決定なし | persist済みPrincipalのIDを文字列として扱う |
+| Delegation#constraints | `json` | `[]` | `null: false` |
+| AuditEventのsanitized context | `json` | `{}` | `null: false`。全体としてnilを保存しない |
+| AuditEvent#matched_delegation_ids | `json` | `[]` | `null: false`。denyは[]、allow / require_approvalは1件以上 |
+
+PostgreSQL固有の `jsonb` は必須としない。Constraint評価はRuby側で行い、JSON内部をDB queryすることをv0.1 Public契約にしない。Principal IDはbigint `123` → `"123"`、UUID → `"550e8400-e29b-41d4-a716-446655440000"` のように扱い、特定主キー型へ固定しない。異なるPrincipal ID型とのassociation / Authorization動作はIntegration Testで確認する設計とする（D043）。
 
 ## 18. Model関連
 
@@ -546,7 +568,7 @@ AuditEvent
 3. PrincipalはホストRailsアプリ側のModelを利用し、polymorphic associationで参照する。
 4. Action専用Modelを作らず、文字列として扱う。
 5. Resource専用Modelを作らず、`resource_type` / `resource_id` で識別する。
-6. Constraint専用Modelを作らず、JSON / JSONBで保存する。
+6. Constraint専用Modelを作らず、jsonで保存する（D043）。
 7. Constraintには任意Rubyコードを保存しない。
 8. v0.1ではConstraint Languageを小さく保つ。
 9. DelegationのEffectは `allow` / `require_approval` とする。
@@ -562,14 +584,14 @@ AuditEvent
 
 ## 22. 次に決めること
 
-Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。後続決定D031〜D034でException、Audit Context、Resource、Delegation、Agent validation、AuditEvent詳細を確定した。次の事項は引き続き**未確定**。
+Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。後続決定D031〜D034でException、Audit Context、Resource、Delegation、Agent validation、AuditEvent詳細を確定した。
 
-- Decisionの追加属性
-- D032〜D034で確定した範囲以外のDB schemaの型・制約（AgentのDB column length、Audit sanitized contextのDB default / NOT NULL、Constraint JSON / JSONBの最終DB型を含む）
-- BigDecimalのJSON serialization、DB adapter正式対応範囲
-- Clock injection、transaction / locking / isolation / retry、cache / replica、Retention等の[残るSecurity詳細](security_model_v0_1.md#27-今回決めないこと)
-- Ruby / Rails対応バージョン
+D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。次の事項は引き続き**未確定**。
+
+- Decisionの追加属性・constructor
+- D032〜D034・D043で確定した範囲以外のDB schemaの型・制約
 - Migrationの実コード・taskの具体的なコマンド名
+- その他の[残るSecurity詳細](security_model_v0_1.md#27-今回決めないこと)
 
 Gem構成・配置、Rails標準Migration方式、v0.1での独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で決定した。Domain Modelの仕様は変更せず、Gemは未実装のままとする。
 
