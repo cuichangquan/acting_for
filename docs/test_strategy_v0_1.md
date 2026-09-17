@@ -107,7 +107,7 @@ AuditEventは `ActingFor.authorize(...)` 経由で検証する。allow / deny / 
 - 複数matchでは該当Delegationを追跡できること。
 - ContextはFilter / Sanitizerを経由し、allowlist優先で必要最小限を保存する既存方針に従う。生のContextをそのまま保存する契約にしない。
 - 記録するのはAuthorization Decision。Business operation success / failureは対象外。
-- reason_code正式一覧、Filter / Sanitizer Public APIは未決定のままとし、Test Contractで固定しない。
+- Step 8時点で未決定だったAudit Context選択APIは後続D031、reason_code正式一覧とAuditEvent詳細はD034で確定した。現行仕様は各正本を参照し、Testへの詳細反映は後続工程で確認する。
 
 ### Audit保存失敗
 
@@ -120,7 +120,7 @@ Exceptionで中断する
 Business Logicへ進ませない
 ```
 
-AuthorizationとしてのdenyとAudit / System failureは異なる。Audit保存失敗はSystem Errorであり、具体的なException class名は固定しない。
+AuthorizationとしてのdenyとAudit / System failureは異なる。Audit保存失敗はSystem Errorであり、Step 8時点で未固定だったclassは後続D031のAuditPersistenceErrorに従う。lower-level persistence exceptionのcauseを保持する。
 
 ## 9. Migration / Engine Integration Test
 
@@ -204,6 +204,6 @@ System failure → Exception
 
 [PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)全体は引き続き **Proposal / 提案**。対応Ruby version、対応Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notesが未決定であり、Step 8完了を理由に確定しない。
 
-Exception class名、reason_code正式一覧、Filter / Sanitizer Public API、Decision constructor / 追加属性、`delegate!` の有無とDelegation APIの全引数・default・validation、DB columnの最終型、Migration実コード・task名、内部method・constructor・class構造も本書で固定しない。
+Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。Decision constructor / 追加属性、確定済み範囲以外のDB型・制約、Migration実コード・task名、内部method・constructor・class構造は引き続き未決定。
 
 Step 8は **Complete / Design finalized / Not implemented**。次工程の番号・順序は新たに決めず、Security Model Design等をStep 9に採番しない。Gem / Test / Migration / Model / Service / Decision / AuditEvent / Generator / Dummy Rails Appの実装、Configuration追加、CI構築、releaseには進まない。

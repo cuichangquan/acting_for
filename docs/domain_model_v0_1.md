@@ -8,6 +8,7 @@ Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基�
 
 - 2026-09-15 / D013：モデル構成、関連、委任・監査の基本方針を記録。
 - 2026-09-15 / D014：matching、Resourceのnilの意味、Constraint、複数一致、Lifecycle、Audit詳細を確定。従来の単一 `delegation_id` 案は、複数一致を記録する `matched_delegation_ids` へ変更した。旧方針と理由はDECISIONSのD013と後続決定で追跡する。
+- 2026-09-17 / D031〜D034：Step 4完了後の詳細化としてAudit Context、Exception、Resource identity、Delegation / Agent validation、AuditEvent詳細を確定。実装は行わない。
 
 ## 1. 目的
 
@@ -87,6 +88,19 @@ identifier: shopping-agent-abc123
 name: Shopping Agent
 ```
 
+### Agent validation（後続決定D033）
+
+| 属性 | 許可する値 | 長さ（Model validation） | 一意性 |
+| --- | --- | --- | --- |
+| identifier | whitespace characterを一切含まないnon-blank String | 1..255文字 | ActiveRecord validation + DB unique index |
+| name | nil、またはnon-blank String | 指定時1..255文字 | 不要。同名Agentを許可 |
+
+identifierは必須。nil、空文字、whitespace-only、String以外、255文字超過、途中や前後にwhitespaceを含む値はvalidation error。implicit conversion、自動trim、downcase等は行わず、case-sensitive exact identityとする。`"shopping-agent"` / `"Shopping-Agent"` は有効で別identity、`"shopping agent"` / `" shopping-agent"` / `"shopping-agent "` は不正。
+
+nameは任意だが、空文字、whitespace-only、String以外、255文字超過はvalidation error。自動trimは行わない。identifierが異なる `agent-001` / `agent-002` が同じname `"Shopping Agent"` を持ってよい。Agent Identityの一意性はidentifierのみで保証する。
+
+長さはModel validation上の決定であり、DB columnのlimitやDB-level length constraintは未決定。一意性のDB unique indexは確定しているが、具体的なDB adapter対応・実装方式は今回決めない。
+
 ### Principalとの関係
 
 Agent自身にはPrincipalを直接持たせない。`Agent belongs_to :principal` や `Agent belongs_to :user` という設計にはしない。
@@ -134,6 +148,12 @@ created_at
 updated_at
 ```
 
+### Delegation作成のvalidation（後続決定D032）
+
+作成は `ActingFor.delegate(agent:, principal:, action:, resource: nil, constraints: [], effect:, expires_at: nil)` のみで、delegate!は提供しない。agentはpersist済みActingFor::Agent、principalはpersist済みActiveRecord model instanceとする。actionはString / SymbolをStringへ正規化し、nil・空文字・その他typeはInvalidRequestError。effectはString / Symbolのallow / require_approvalだけで、必須・defaultなし。
+
+resourceは第7節、constraintsは第8節、期限・取消は第10節に従う。成功時はpersist済みDelegationを返す。類似委任も許可し、各呼び出しは独立した新規Delegationを作る。dedup / upsert / semantic uniqueness / duplicate detectionは導入しない。詳細な入力とExceptionの契約は[Delegation API](public_api_v0_1.md#9-delegation-api)を正本とする。
+
 ## 5. Principal
 
 PrincipalはActingFor内部専用Modelを作らず、ホストRailsアプリ側のModelを利用する。例は `User`、`Organization`、`Team`、`ServiceAccount`。
@@ -174,13 +194,46 @@ Resource専用テーブルは作らず、Delegationの `resource_type` / `resour
 | `resource_type: nil`, `resource_id: nil` | Resourceを必要としないAction |
 | `resource_type: nil`, `resource_id: "123"` | 不正 |
 
-`resource_type: nil` は「全Resource」を意味しない。例の文字列表記はDB型の決定ではなく、`resource_id` の正式DB型は未確定。
+`resource_type: nil` は「全Resource」を意味しない。後続決定D032で `resource_id` の正式保存型を **String** とする。
 
 ResourceはActiveRecord polymorphic associationにはせず、**Authorization用の識別情報**として扱う。将来、Virtual ResourceやExternal Resource等を扱える余地を残す。
 
+### Public resourceからの正規化（後続決定D032）
+
+Rails / ActiveModel-style Resource ClassまたはInstance、またはnilを受け付ける。String / HashをResource identifierとして直接渡すAPIは採用しない。
+
+| Public入力 | resource_type | resource_id |
+| --- | --- | --- |
+| Resource instance | `resource.class.model_name.name` | `resource.id.to_s` |
+| Resource Class | `resource.model_name.name` | nil |
+| nil | nil | nil |
+
+Classはmodel_nameを持つ必要がある。Instanceはclassからmodel_nameを解決でき、idを持ち、そのidがnilではなく、id.to_sが空文字でないことが必要。必要interfaceを持たないobject、instanceのidがnil / id.to_sが空文字の場合は `ActingFor::InvalidRequestError`。
+
+IDはPublic API境界で1回だけto_sする。resource_typeは正規化後の文字列をcase-sensitiveで比較し、specific Resourceのresource_idも正規化後のStringを完全一致で比較する。case normalization、numeric coercion / conversion、追加のimplicit coercion、fuzzy matchingは行わない。
+
+### Resource matchingのscope（D032の確認済み補足）
+
+`resource: Product` はProduct型全体への委任という既存設計を維持する。Delegationのresource_typeが指定されresource_idがnilの場合、nilとの一致を要求するのではなく、そのresource_type全体を表すscopeとして扱う。同じ型の個別Resourceにもmatchし、異なる型にはmatchしない。
+
+specific ResourceへのDelegationはresource_typeとresource_idの両方が厳密に一致した場合にmatchする。Delegationの両方がnilならResource-less Actionのscopeであり、Requestの両方がnilの場合にmatchする。全Resourceへの委任ではない。
+
+以下はResource matchingのみの例。他のDelegation matching条件もすべて満たす必要がある。
+
+| Delegation resource_type | Delegation resource_id | Request resource_type | Request resource_id | Resource match |
+| --- | --- | --- | --- | --- |
+| `"Product"` | `"123"` | `"Product"` | `"123"` | match |
+| `"Product"` | `"123"` | `"Product"` | `"456"` | no match |
+| `"Product"` | nil | `"Product"` | `"123"` | match |
+| `"Product"` | nil | `"Product"` | `"456"` | match |
+| `"Product"` | nil | `"Order"` | `"123"` | no match |
+| nil | nil | nil | nil | match |
+
+「完全一致」はscope内で比較する識別値の規則を表す。Resource matching全体を `(resource_type, resource_id)` の単純なtuple完全一致へ変更するものではない。
+
 ## 8. Constraint
 
-Constraint専用テーブルは作らず、DelegationのJSON / JSONBとして保存する。
+Constraint専用テーブルは作らず、DelegationのJSON / JSONBとして保存する。Constraintの最終DB型は未決定であり、AuditEventのJSON保存とは別に扱う。
 
 正式な基本形式は `Array<Constraint>` とし、各Constraintは `field`、`operator`、`value` を持つ。
 
@@ -207,15 +260,17 @@ ContextのトップレベルKeyのみ参照できる。`order.amount`、`items[0
 | --- | --- |
 | `eq` | String / Integer / Boolean |
 | `lt` / `lte` / `gt` / `gte` | Integer |
-| `in` | Context側はscalar、Constraint側valueはArray |
+| `in` | Context側はscalar、Constraint側valueはString / Integer / BooleanのArray（D032） |
 
 暗黙の型変換は禁止する。たとえばContextのamountが `"8900"`、Constraintが `amount <= 10000` の場合、文字列を整数に変換せずConstraint不成立とする。
 
 - missing field、nilはConstraint不成立。
 - invalid constraintはmatchさせない。
 - fail closedを基本原則とする。
-- 空Constraintは `[]` とする。NULLと `[]` を使い分けず `[]` へ統一する方向とする。
+- 空Constraintは `[]`。作成APIの省略時も `[]` であり、明示的 `constraints: nil` はInvalidRequestError（D032）。
 - Floatはv0.1のConstraint値として積極的に扱わず、金額等はInteger表現を推奨する。
+
+作成時の後続決定D032：constraintsはArrayのみで、各要素はfield / operator / valueだけを必須keyとするHash。非Hash、必須key不足、extra keyはInvalidRequestError。keyはString / SymbolをStringへ正規化し、正規化後の重複は不正。fieldはnon-empty StringまたはSymbol、operatorは既定6種類のString / Symbolで、両者ともStringへ正規化する。valueは上表の型のみで暗黙変換しない。nested path検出用regex・命名規則は追加決定しない。これはPublic入力validationであり、Authorization時に保存済みのinvalid constraintをmatchさせない方針とは区別する。
 
 Ruby Procや任意コードをDBへ保存しない。たとえば次のコードをDelegationへ保存する設計は採用しない。
 
@@ -266,6 +321,10 @@ AND
 `expires_at` が現在時刻と等しい場合は期限切れとなる。`revoked_at` が設定されていれば有効対象から除外する。
 
 有効期限前でもDelegationを即時無効化できるようにする。Agentが侵害された場合などに停止でき、DELETEするよりもrevocationとして記録を残す方がAudit上も扱いやすい。
+
+後続決定D032：作成時のexpires_atはnil / Time / ActiveSupport::TimeWithZoneのみ。String / Date / Integer等から暗黙parse・変換しない。指定時はActingFor trusted current timeより未来でなければInvalidRequestError。同時刻・過去は不正、nilは無期限。
+
+作成APIはrevoked_atを受け付けず、新規時は必ずnil。通常Public APIの取消は `delegation.revoke!` のみでidempotent。初回にtrusted current timeを設定し、既にrevoked済みならExceptionにせず、最初のtimestampを保持して更新しない。Clock injection・競合制御の具体方式は未決定。
 
 `starts_at` はv0.1では導入しない。
 
@@ -366,23 +425,35 @@ AuditEventは、**ActingForがどのAuthorization Decisionを行ったか**を�
 
 ### matched_delegation_ids
 
-従来の単一 `delegation_id` 案は廃止し、複数Delegationが同時にmatchするため `matched_delegation_ids` に置き換える（D014）。新しい中間テーブルは作らず、v0.1ではJSON / JSONB等の配列で十分とする方針。
+**後続決定D034。**
 
-```text
-複数一致: matched_delegation_ids: [12, 18]
-一致なしのdeny: matched_delegation_ids: []
-```
+単一delegation_id案を廃止し複数一致を記録するD014を維持する。常にArrayとしnilは禁止。denyでは必ず `[]`、allow / require_approvalでは1件以上の実際にmatchしたDelegation IDを保存する。
+
+ID重複は許可しない。`[12, 18]` は有効、`[12, 12, 18]` は不正。match集合として扱い、配列順序に意味はない。`[12, 18]` と `[18, 12]` は同じ集合を表し、利用者は順序に依存しない。
+
+JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。Delegation ID自体のDB型や新しい制約は追加決定しない。
 
 ### reason_code
 
-Auditでreason_codeを利用する。正式一覧は**未確定**。以下は候補例であり、確定仕様ではない。
+**後続決定D034：decisionとの整合性も含む。**
 
-- `delegation_matched`
-- `no_matching_delegation`
-- `authorization_error`
-- `invalid_constraint`
+reason_codeは最終Authorization Decisionがなぜその結果になったかを表す。正式一覧と有効な組み合わせは以下の3組のみ。
 
-Public API / Audit詳細設計で最終決定する。
+| AuditEvent decision（DB String） | reason_code |
+| --- | --- |
+| `"allow"` | `delegation_allowed` |
+| `"require_approval"` | `delegation_requires_approval` |
+| `"deny"` | `no_matching_delegation` |
+
+正常に保存されるAuthorization AuditEventでは両項目を必須とし、nilや未知の値を許可しない。Model validationを行い、両DB columnはNOT NULLとする。許可値を固定するDB CHECK constraintは設けない。
+
+decision / reason_codeの組み合わせもModel validationで上表の3組だけを許可する。`allow` と `no_matching_delegation` 等はvalidation error。Public `ActingFor::Decision#status` のSymbol表現は変更せず、Audit DB表現だけStringとする。
+
+個々のDelegationがmatchしなかった理由（expired / resource mismatch / constraint mismatch等）は単一reason_codeとして記録しない。API misuse / InternalError / AuditPersistenceError等のExceptionもDecision reason_codeの責務外。旧候補一覧はD014時点の履歴であり、D034の正式一覧へ置き換える。
+
+### sanitized context（後続決定D031・D034）
+
+Audit用に選択したContextをJSON objectとして保存する。例は `{"amount": 12000, "currency": "JPY"}`。保存対象なしは `{}` としraw Contextへfallbackしない。JSONBは必須としない。sanitized contextのDB default / NOT NULLは今回決めない。選択・型・禁止keyの規則は第16節に従う。
 
 ## 15. AuditEventの方針
 
@@ -390,17 +461,13 @@ AuditEventは基本的にappend-onlyとする。通常利用ではINSERTを中�
 
 ## 16. Audit Contextの安全性
 
-Authorization時に渡されたContextを、そのままAuditEventへ保存してはいけない。password、access token、credit card information、email body、personal information、secretなどが含まれる可能性があるためである。
+Authorization Contextを無条件に保存しない。後続決定D031により、保存項目の選択は `ActingFor.authorize(..., audit_context_keys: [])` のallowlistのみとする。省略時はContextを保存せず `{}`。raw contextへのfallbackは禁止。
 
-```text
-Authorization Context
-    ↓
-Audit Filter / Sanitizer
-    ↓
-AuditEvent Context
-```
+`Array<Symbol>`だけを許可し、重複Symbolは内部で除去する。ContextのトップレベルSymbol keyと完全一致し、String / Symbol変換・indifferent access・nested path解釈をしない。存在しないkeyは無視する。選択されたvalueはString / Integer / Float / BigDecimal / TrueClass / FalseClass / nilのみ。Hash / Array等のunsupported valueはsilent ignoreせずInvalidRequestErrorとする。
 
-AuditEventには必要最小限の情報だけを保存する。例は `amount`、`currency`、`order_id`。Audit機能そのものが情報漏洩リスクにならない設計とする。基本方針はallowlist方式を優先し、保存してよい項目だけを選択する方向とする。全項目を保存して危険項目を削除する方式を基本にしない。Filter / SanitizerのPublic APIは未確定。
+password、password_confirmation、token、access_token、refresh_token、api_key、secret、client_secret、credentialのSymbolはbuilt-in forbidden secret keys。allowlistへ指定した時点でInvalidRequestError。完全一致のみで判定し、token_count等をsubstring / regex / 推測で禁止しない。Hostは機密情報を選択しない責務を維持する。
+
+custom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定はv0.1で提供しない。BigDecimalのJSON serialization表現は未決定。正式な入力例と詳細は[Audit Context selection](public_api_v0_1.md#10-audit)に従う。
 
 ## 17. v0.1 テーブル構成
 
@@ -495,14 +562,12 @@ AuditEvent
 
 ## 22. 次に決めること
 
-Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。次の事項は引き続き**未確定**。
+Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。後続決定D031〜D034でException、Audit Context、Resource、Delegation、Agent validation、AuditEvent詳細を確定した。次の事項は引き続き**未確定**。
 
-- 具体的なException class名
 - Decisionの追加属性
-- Delegation作成の細かなvalidation APIと `delegate!` の有無
-- reason_codeの正式一覧（第14節の一覧は候補）
-- Filter / SanitizerのPublic API
-- DB schemaの細かな型・制約、resource_idの正式DB型
+- D032〜D034で確定した範囲以外のDB schemaの型・制約（AgentのDB column length、Audit sanitized contextのDB default / NOT NULL、Constraint JSON / JSONBの最終DB型を含む）
+- BigDecimalのJSON serialization、DB adapter正式対応範囲
+- Clock injection、transaction / locking / isolation / retry、cache / replica、Retention等の[残るSecurity詳細](security_model_v0_1.md#27-今回決めないこと)
 - Ruby / Rails対応バージョン
 - Migrationの実コード・taskの具体的なコマンド名
 
@@ -516,4 +581,4 @@ Context値の正確性・信頼性はホストの責務であり、Agent申告�
 
 ### Auditの後続決定（D022・D023）
 
-AuditEventは `ActingFor.authorize(...)` 内部で自動生成・保存し、保存後にDecisionを返す。保存失敗時はallowを返さず、denyへ変換せず、Decisionを返さず、Exceptionで処理を中断してBusiness Logicへ進ませない。具体的なException class名は未決定。詳細は[Step 5のAudit設計](public_api_v0_1.md#10-audit)を参照する。
+AuditEventは `ActingFor.authorize(...)` 内部で自動生成・保存し、保存後にDecisionを返す。保存失敗時はallowを返さず、denyへ変換せず、Decisionを返さず、Exceptionで処理を中断してBusiness Logicへ進ませない。後続決定D031でAudit保存失敗は `ActingFor::AuditPersistenceError` とし、lower-level persistence exceptionをwrapしてcauseを保持する。詳細は[Step 5のAudit設計](public_api_v0_1.md#10-audit)を参照する。

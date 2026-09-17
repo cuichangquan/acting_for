@@ -116,7 +116,7 @@ statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow`
 
 MigrationはGem側の `db/migrate/` で管理し、第1節の3ファイルを想定する。Rails Engine標準のMigration提供方式を利用し、Host ApplicationのDBへMigrationをコピー・適用する。独自Migration DSLや独自DBセットアップ機構は作らない。
 
-具体的なMigration内容・実コード・DB columnの最終型は今回確定しない。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
+Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。その他の型・制約とMigration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
 
 全テーブルに `acting_for_` prefixを付ける。
 
@@ -173,7 +173,7 @@ Step 7時点では `test/` という構造のみを決め、Test Frameworkは未
 
 v0.1では現時点で `lib/acting_for/configuration.rb` と `config/initializers/acting_for.rb` を作らない。必須Configurationが確定していないため、空のConfiguration APIを先にPublic化しない。将来必要になった時点で追加できる。
 
-Audit Sanitizer等の将来候補を理由にConfiguration APIを追加しない。既存のAudit Filter / Sanitizer方針を維持し、そのPublic APIは未決定のままとする。
+Audit Sanitizer等の将来候補を理由にConfiguration APIを追加しない。後続D031によりAudit Contextの選択はaudit_context_keysのみとし、custom Filter / Sanitizer・global config・initializer設定はv0.1で提供しない。
 
 ## 11. Runtime Dependencies
 
@@ -196,18 +196,20 @@ Gem version constraint、対応Ruby / Rails versionは未決定。gemspecの実�
 
 Internalは利用者向けAPIではなく、READMEでは原則としてInternal APIを利用例に示さない。Public APIから内部実装を分離し、内部クラス名・構造を将来変更可能にする。
 
-この分類はStep 5のPublic APIの細部を追加確定するものではない。特に `ActingFor.delegate(...)` の全引数・default・validation、`delegate!` の有無は未決定のまま維持する。ModelをPublicに分類することも、DelegationをActiveRecord直接操作中心にする意味ではない。
+後続D031のPublic Exceptionは `ActingFor::Error` / `ActingFor::InvalidRequestError` / `ActingFor::InternalError` / `ActingFor::AuditPersistenceError`。具体的ファイル配置は今回追加決定しない。
+
+この分類はStep 5のPublic APIの細部を追加確定するものではない。Step 7時点で保留していた `ActingFor.delegate(...)` の全引数・default・validationとdelegate!非提供は後続D032で確定した。ModelをPublicに分類することも、DelegationをActiveRecord直接操作中心にする意味ではない。
 
 ## 13. 未決定事項と次工程
 
 以下は引き続き未決定であり、本書では追加確定しない。
 
 - Rails / Ruby対応version、Gem version constraint
-- DB columnの最終型、Migrationの実コード・taskの具体的なコマンド名
-- Exception class名、reason_code一覧、Decisionの追加属性
-- Audit Sanitizer Public API、Configuration API、Initializerの具体設計
+- D032〜D034で確定した範囲以外のDB型・制約、Migrationの実コード・taskの具体的なコマンド名
+- Decisionの追加属性・constructor（ExceptionはD031、Audit reason_codeはD034で確定）
+- Audit BigDecimalのJSON serialization（選択APIはD031で確定。custom Sanitizer / Configuration / Initializerは追加しない）
 - install generatorの将来設計（v0.1では独自Generatorを作らない）
-- `delegate!`、Delegation APIの全引数・default・validation
+- Clock injection、transaction / locking / retry等の具体的実装
 - 実装クラスの細かなprivate method構成
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 

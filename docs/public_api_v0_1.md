@@ -4,6 +4,8 @@
 
 **状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gemは未実装であり、本更新では実装を開始しない。
 
+Step 5完了後のv0.1仕様詳細化としてD031〜D034を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。
+
 ## 1. Purpose
 
 完了済みの[Step 4 Domain Model Design](domain_model_v0_1.md)を前提に、RailsアプリがDelegationに基づく認可を要求するPublic APIを定義する。決定の理由と履歴は[DECISIONS](DECISIONS.md)で管理する。
@@ -49,7 +51,7 @@ Publicは `ActingFor.authorize(...)`。後続のStep 7（D028）で内部Service
 
 ## 4. authorize Arguments
 
-**確定：D016 / Step 5項目2。** Public APIの引数形は次のとおり（シグネチャの設計表記）。
+**D016 / Step 5項目2を後続決定D031・D032で詳細化。** Public APIの引数形は次のとおり（シグネチャの設計表記）。
 
 ```ruby
 ActingFor.authorize(
@@ -57,7 +59,8 @@ ActingFor.authorize(
   principal:,
   action:,
   resource: nil,
-  context: {}
+  context: {},
+  audit_context_keys: []
 )
 ```
 
@@ -75,10 +78,11 @@ ActingFor.authorize(agent, principal, :purchase, product, context)
 | `action:` | 必須 | 要求するAction |
 | `resource:` | 任意 / `nil` | 特定Resource、Resource type全体、またはResource不要のAction |
 | `context:` | 任意 / `{}` | 認可判定時の情報を持つHash |
+| `audit_context_keys:` | 任意 / `[]` | Auditへ保存するContext項目のallowlist（`Array<Symbol>`）。第10節参照 |
 
 ### action
 
-`action: :purchase` のようにSymbolで自然に書けるようにする。String（`action: "purchase"`）も受け付ける方向とし、内部では `:purchase` → `"purchase"` のように同一のActionとして正規化する。
+String / Symbolを受け付け、Symbolは `:purchase` → `"purchase"` のようにStringへ正規化する。nil、空文字、String / Symbol以外は `ActingFor::InvalidRequestError`（D032）。
 
 Action matchingはStep 4どおり完全一致。wildcard、regex、hierarchy、`purchase.*`、`orders:*` はv0.1では扱わない。このAction正規化は、Constraint値の暗黙の型変換を認めるものではない。
 
@@ -91,6 +95,22 @@ Action matchingはStep 4どおり完全一致。wildcard、regex、hierarchy、`
 | `resource: nil` | Resourceを必要としないAction |
 
 **`resource: nil` は「すべてのResource」を意味しない。** Step 4のResource識別情報の設計を維持する。
+
+### Public resourceからの正規化（後続決定D032）
+
+Rails / ActiveModel-style Resource ClassまたはInstance、またはnilを受け付ける。String / HashをResource identifierとして直接渡すAPIは採用しない。
+
+| Public入力 | resource_type | resource_id |
+| --- | --- | --- |
+| Resource instance | `resource.class.model_name.name` | `resource.id.to_s` |
+| Resource Class | `resource.model_name.name` | nil |
+| nil | nil | nil |
+
+Classはmodel_nameを持つ必要がある。Instanceはclassからmodel_nameを解決でき、idを持ち、そのidがnilではなく、id.to_sが空文字でないことが必要。必要interfaceを持たないobject、instanceのidがnil / id.to_sが空文字の場合は `ActingFor::InvalidRequestError`。
+
+IDはPublic API境界で1回だけto_sする。resource_typeは正規化後の文字列をcase-sensitiveで比較し、specific Resourceのresource_idも正規化後のStringを完全一致で比較する。case normalization、numeric coercion / conversion、追加のimplicit coercion、fuzzy matchingは行わない。
+
+Delegationのresource_typeが指定されresource_idがnilなら、その型全体へのscopeとして同じ型の個別Resourceにもmatchする。specific Resourceへの委任はtypeとIDの両方を厳密比較する。両方nilのDelegationはResource-less Requestにmatchする。「完全一致」は識別値の比較規則であり、Resource matching全体を単純なtuple完全一致にはしない。[Domain ModelのResource scopeと6例](domain_model_v0_1.md#7-resource)を参照。
 
 ### context
 
@@ -176,7 +196,27 @@ Authorization処理そのものが成立しない → Exception
 
 認可不成立は正常系であり、`decision.denied?` がtrueとなる。API誤用や内部異常をdenyへ潰さない。Step 4のmatching / Constraint評価ルール（D014）は維持する。たとえばinvalid constraintはmatchさせず、有効な一致がなければdenyとする。
 
-具体的なException class名は未決定であり、本書では確定しない。
+### Exception classes（後続決定D031）
+
+v0.1でActingFor自身が定義するException classは以下の4つだけとする（設計のみ）。
+
+```ruby
+ActingFor::Error < StandardError
+ActingFor::InvalidRequestError < ActingFor::Error
+ActingFor::InternalError < ActingFor::Error
+ActingFor::AuditPersistenceError < ActingFor::InternalError
+```
+
+| Class | 用途 |
+| --- | --- |
+| `ActingFor::Error` | ActingFor定義Exceptionの共通基底 |
+| `ActingFor::InvalidRequestError` | Public APIの入力・形式・利用方法の不正。不正action / effect / constraints / resource / audit_context_keys等 |
+| `ActingFor::InternalError` | ActingFor自身が検出した内部・system-level errorの共通class |
+| `ActingFor::AuditPersistenceError` | AuditEvent保存失敗専用。lower-level persistence exceptionをwrapし、Rubyの `cause` を保持する |
+
+外部 / lower-layer exceptionは原則そのままraiseさせる。すべてをInternalErrorへ変換せず、明示的に設計決定されたものだけwrapする。Audit保存失敗ではDecisionを返さず、denyへ変換せず、Business Logicへ進ませない。ConstraintError / DelegationError / ConfigurationError等はv0.1では追加しない。
+
+作成APIに不正なConstraintを渡す場合はInvalidRequestError（D032）。保存済みConstraintをAuthorization時に評価して不正・評価不能だった場合にmatchさせない既存ルールとは区別する。Model validation errorや外部例外を一律にInvalidRequestError / InternalErrorへwrapする決定ではない。
 
 ## 8. Bang API
 
@@ -186,36 +226,63 @@ ActingForはallow / deny / require_approvalの3状態を持つため、Bang API�
 
 ## 9. Delegation API
 
-**確定：D021 / Step 5項目7。** Delegationの作成・取消はActiveRecordの直接操作をPublic APIの基本とせず、専用APIを提供する方向とする。
+**D021の専用API方針を後続決定D032で詳細化（設計のみ・未実装）。** 作成Public APIは `ActingFor.delegate(...)` のみ。v0.1では `ActingFor.delegate!` を提供しない。認可内容はimmutableで、変更はrevoke + createとする。
 
-Step 4でDelegationの認可内容は原則immutable、権限変更は旧Delegationのrevoke + 新Delegationのcreateと決定した。直接操作を基本にすると、このLifecycleルールを壊しやすいためである。
-
-### 作成
-
-正式決定は「Delegation作成用の専用Public APIを用意する」こと。次は基本Public API案であり、全引数・default・validationの詳細を確定するものではない。
+### 作成シグネチャ
 
 ```ruby
-delegation = ActingFor.delegate(
-  agent: agent,
-  principal: user,
-  action: :purchase,
-  resource: product,
-  constraints: [...],
-  effect: :allow
+ActingFor.delegate(
+  agent:,
+  principal:,
+  action:,
+  resource: nil,
+  constraints: [],
+  effect:,
+  expires_at: nil
 )
 ```
 
-細かなvalidation APIと `delegate!` の有無は未決定。
+keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resource:` / `expires_at:` は省略時nil、`constraints:` は省略時 `[]`。成功時は **persist済み `ActingFor::Delegation`** を返し、unsaved recordを成功として返さない。
 
-### revoke
+### 入力validation
 
-基本形は次のとおり。
+次の要件に反する入力は `ActingFor::InvalidRequestError` とする。
 
-```ruby
-delegation.revoke!
-```
+| 引数 | 許可する入力 / 正規化 | 不正例 |
+| --- | --- | --- |
+| `agent:` | persist済み `ActingFor::Agent` | nil、別class、unsaved Agent |
+| `principal:` | persist済みActiveRecord model instance | nil、非ActiveRecord object、unsaved record |
+| `action:` | String / Symbol。SymbolをStringへ正規化し完全一致 | nil、空文字、String / Symbol以外 |
+| `resource:` | 第4節のRails / ActiveModel-style Class / Instance、またはnil | String / Hashの直接識別子、必要interfaceなし、instanceのidがnil / id.to_sが空文字 |
+| `effect:` | String / Symbolのallow / require_approvalのみ。内部で正規化 | deny、nil、未知の値、その他type |
+| `constraints:` | `Array<Constraint>`。条件なしは `[]` | 明示的nil、Array以外 |
+| `expires_at:` | nil / Time / ActiveSupport::TimeWithZone。指定時はActingFor trusted current timeより未来 | String、Date、Integer等、現在と同時刻、過去 |
 
-hard deleteではなくrevocationとして無効化する。権限変更はrevoke + 新Delegation作成で行う。
+`expires_at: nil` は無期限。暗黙のparse / conversionは行わない。Clock injectionの具体APIは決めない。explicit deny Delegationは作らない。
+
+### Constraint validation
+
+各Constraintは `field` / `operator` / `value` の3つだけを必須keyとするHash。非Hash、必須key不足、未知のextra keyはInvalidRequestError。Hash keyはSymbol / Stringを受け付け、内部でStringへ正規化する。ただし `{ field: "amount", "field" => "price", ... }` のような正規化後の重複keyはInvalidRequestErrorとする。
+
+| 項目 | 許可する入力 / 正規化 |
+| --- | --- |
+| `field` | non-empty StringまたはSymbol。内部ではString。nested path非対応 |
+| `operator` | String / Symbolのeq / lt / lte / gt / gte / inのみ。内部ではString |
+| `value`（eq） | String / Integer / Boolean |
+| `value`（lt / lte / gt / gte） | Integer |
+| `value`（in） | String / Integer / BooleanのArray |
+
+表のtype・値以外はInvalidRequestError。valueの暗黙型変換はしない。nested path判定のregexやfield命名規則は追加決定しない。ConstraintのAND評価とAuthorization時のfail-closedは維持する。
+
+### Revocation / duplicate Delegation
+
+`ActingFor.delegate(...)` は `revoked_at:` を引数として受け付けず、新規Delegationは必ず `revoked_at = nil` で開始する。通常Public APIでの取消は `delegation.revoke!` のみ。
+
+`revoke!` はidempotent。初回はActingFor trusted current timeをrevoked_atへ設定する。既にrevoked済みならExceptionにせず、2回目以降は更新せずに最初のrevocation timestampを保持する。
+
+類似Delegationの存在は新規作成を禁止しない。各delegate呼び出しで独立した新しいDelegationを作り、dedup / upsert / semantic uniqueness / duplicate detectionは導入しない。
+
+caller Authenticationと作成・取消のHost Authorizationは引き続きHost責務であり、その具体APIは今回決めない。
 
 ## 10. Audit
 
@@ -237,9 +304,49 @@ Decisionを返す
 
 AuditEvent保存に失敗した場合はExceptionとして処理を中断する。Authorization結果がallowでも、AuditEvent INSERTに失敗した場合はallowを返さず、denyへ変換せず、Decisionを返さず、Business Logicへ進ませない。
 
-これは「権限がない」という判定ではなく、「ActingForのAuthorization処理を正常に完了できなかった」というシステム異常である。具体的なException class名は未決定。
+これは権限不足ではなくシステム異常であり、後続決定D031により `ActingFor::AuditPersistenceError` をraiseする。lower-level persistence exceptionをwrapし、Rubyのcauseを保持する。allow / deny / require_approvalの全結果に同じ方針を適用する。
 
-Step 4のAudit責務、append-only、ContextのFilter / Sanitizer経由の保存方針を維持する。reason_code正式一覧とFilter / SanitizerのPublic APIは未決定。
+Step 4のAudit責務とappend-onlyを維持する。後続決定D031でAudit Context選択を、D034でreason_code正式一覧とAuditEvent保存要件を確定した。
+
+### Audit Context selection（後続決定D031）
+
+`audit_context_keys:` はAuditEventへ保存するContext項目を選ぶ唯一のPublic allowlistとする。optional keywordでdefaultは `[]`。省略時・保存対象なしのAudit Contextは `{}` とし、raw `context` をfallbackとして保存しない。Authorizationには元のContextを使い、Audit用の選択と混同しない。
+
+```ruby
+ActingFor.authorize(
+  agent: shopping_agent,
+  principal: current_user,
+  action: :purchase,
+  resource: product,
+  context: { amount: 100, currency: "JPY" },
+  audit_context_keys: [:amount, :currency]
+)
+```
+
+| 入力 / 条件 | 扱い |
+| --- | --- |
+| `Array<Symbol>` | 許可。例：`[:amount, :currency]` |
+| nil、`:amount`、`["amount"]`、`[:amount, "currency"]` | `ActingFor::InvalidRequestError` |
+| 重複Symbol（`[:amount, :amount]`） | 許可し、内部で重複除去。Exceptionにしない |
+| 指定keyがcontextにない | 無視。Exceptionにしない |
+| Symbol keyの完全一致 | `:amount` は `{ amount: 100 }` にmatchし、`{ "amount" => 100 }` にはmatchしない |
+
+String / Symbolの暗黙変換やindifferent accessは行わない。対象はトップレベルkeyのみで、`:"order.amount"` をnested pathとして解釈しない。nested path構文や判定規則は新設しない。
+
+選択されたkeyの保存可能valueは **String / Integer / Float / BigDecimal / TrueClass / FalseClass / nil** のみ。Hash / Array / その他structured・unsupported valueが選択された場合はsilent ignoreせずInvalidRequestErrorとする。BigDecimalのJSON上の最終serialization表現は未決定。Audit用の型規則からConstraint値の対応型を拡大しない。
+
+以下はbuilt-in forbidden secret keys。contextに存在するかにかかわらず、allowlistへ指定した時点でInvalidRequestErrorとし保存を許可しない。
+
+```ruby
+[:password, :password_confirmation, :token, :access_token,
+ :refresh_token, :api_key, :secret, :client_secret, :credential]
+```
+
+判定は完全一致のみ。`:access_token` / `:token` は禁止、`:token_count` は許可されるkey。substring / regex / 推測によるsecret判定は導入しない。Hostは別名keyのvalueを含め、機密情報をAuditへ選択しない責務を引き続き持つ。
+
+v0.1ではcustom Audit Filter、custom Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定を提供しない。選択方法は `audit_context_keys:` のみ。
+
+sanitized contextはJSON objectとして保存し、対象なしは `{}`。JSONBは必須ではなく、DB default / NOT NULLは今回決めない。reason_code、decisionとの整合性、matched_delegation_idsの保存要件は[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)（D034）に従う。
 
 ## 11. MCP Boundary
 
@@ -392,13 +499,13 @@ v0.1では `trusted_context:` / `untrusted_context:` の別APIや、`TrustedCont
 | `context: "hello"` のようにHashではなく、Context形式自体が不正 | Exception。Authorization結果のdenyではない |
 | `context: {}` のように形式は有効だが、Constraintが必要とするamount等のfieldがない | Constraint不成立。そのDelegationはmatchしない |
 
-必要field不足はStep 4のfail closedを維持する。有効なmatching Delegationがなければdenyとなる。Exception class名の正式一覧は今回決定しない。
+必要field不足はStep 4のfail closedを維持する。有効なmatching Delegationがなければdenyとなる。形式不正のPublic入力は後続決定D031のInvalidRequestErrorに従う。
 
 **ActingForはContext値の真偽を検証するのではなく、ホストアプリが責任を持って確定したContextを受け取る。** API形式の確認とConstraint評価は、この責任分界と区別する。
 
 ## 14. Open Questions
 
-Step 5の10項目は完了。決定範囲外の詳細として、Exception class名、Delegation作成のvalidation APIと `delegate!` の有無、Decision追加属性、reason_code正式一覧、Filter / SanitizerのPublic APIも未決定のまま残す。
+Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。Decision追加属性・constructor、BigDecimalのJSON serialization、Clock injection、transaction / locking等は引き続き未決定。
 
 Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。DB型、Migration実コード・taskの確認、対応Ruby / Rails等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
 

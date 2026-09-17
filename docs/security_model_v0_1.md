@@ -4,7 +4,7 @@
 
 **Security Model Design: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Security Model Designの正本とする（[D030](DECISIONS.md#d030-v01-security-model-design)）。Gem全体は **Not implemented / Not released**。Quick Startはまだ実行できない。
 
-Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。具体的な実装方式や新しいPublic APIは本書で決めない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
+Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D034で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
 
 ## 1. 目的とThreat Model Boundary
 
@@ -97,19 +97,23 @@ AuditEvent保存
 Decisionを返す
 ```
 
-Audit保存失敗時は **Decisionを返さず、denyへ変換せず、Exceptionで中断し、Business Logicへ進ませない**。元のAuthorization結果がallow / deny / require_approvalのどれでも同じである（D022・D023・D029）。
+Audit保存失敗時は **Decisionを返さず、denyへ変換せず、ActingFor::AuditPersistenceErrorで中断し、Business Logicへ進ませない**。後続決定D031によりlower-level persistence exceptionをwrapし、Rubyのcauseを保持する。元のAuthorization結果がallow / deny / require_approvalのどれでも同じである（D022・D023・D029）。
 
 Auditはauthorize内部で自動記録する。記録対象はAuthorization Decisionであり、Business Operationの成功・失敗ではない。[既存Audit仕様](public_api_v0_1.md#10-audit)を維持する。
 
 ## 7. Security Invariant 5: Audit Data Confidentiality
 
 ```text
-Raw Context → Filter / Sanitizer → AuditEvent
+Raw Context → audit_context_keys allowlist + built-in validation → AuditEvent
 ```
 
-Raw Contextを無条件にAuditEventへ保存してはいけない。必要最小限だけを保存し、allowlistを優先する。Secretを無条件保存せず、TokenやAPI Keyを保存しない。
+Raw Contextを保存対象へのfallbackにしてはいけない。後続決定D031により `audit_context_keys: []` をdefaultとし、明示allowlistだけを保存する。省略時・対象なしは `{}`。Secretを無条件保存せず、TokenやAPI Keyを保存しない。
 
-[既存Audit Context方針](domain_model_v0_1.md#16-audit-contextの安全性)を維持する。Filter / Sanitizer Public API、Sanitizerの設定方式は未決定であり、Configuration APIを追加しない。HostによるContext値の確認と、Audit保存用のFilter / Sanitizerは異なる責務である。
+`Array<Symbol>`のみを許可し、重複Symbolは除去、ContextのトップレベルSymbol keyと完全一致で選択する。String変換・indifferent access・nested path解釈は行わず、存在しないkeyは無視する。選択valueはString / Integer / Float / BigDecimal / TrueClass / FalseClass / nilのみ。unsupported valueはsilent ignoreせず `ActingFor::InvalidRequestError`。
+
+forbidden secret keysは `:password` / `:password_confirmation` / `:token` / `:access_token` / `:refresh_token` / `:api_key` / `:secret` / `:client_secret` / `:credential`。allowlistへ指定した時点でInvalidRequestError。完全一致のみで、substring / regex / 推測による判定はせず、`:token_count` は禁止keyではない。Hostは別名keyを含め機密情報を選択しない。
+
+v0.1ではcustom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定を提供せず、選択APIはaudit_context_keysのみ。[正式仕様](public_api_v0_1.md#10-audit)に従う。HostによるContext値の確認と、Audit用の項目選択は異なる責務である。
 
 ## 8. Security Invariant 6: Delegation Tamper Resistance
 
@@ -121,7 +125,7 @@ new authority → create new Delegation
 権限変更 = revoke + create
 ```
 
-過去の権限状態を追跡しやすくし、Auditとの整合性を保ち、後からDelegation内容を書き換えるリスクを抑える。通常操作でhard deleteを前提としない。具体的なvalidation / callback / DB constraintは本書で決めない。
+過去の権限状態を追跡しやすくし、Auditとの整合性を保ち、後からDelegation内容を書き換えるリスクを抑える。通常操作でhard deleteを前提としない。後続決定D032のPublic入力validationを適用するが、immutableを強制するcallback等の具体的実装は決めない。
 
 ## 9. Replay / Duplicate Request Boundary
 
@@ -133,11 +137,13 @@ ActingForの責務は「この操作を実行してよいか」のAuthorization�
 
 Delegationを誰でも作成・revokeできてはいけない。誰が作成・revokeしてよいかを認証・認可するのはHost Applicationの責務である。
 
-設計上の `ActingFor.delegate(...)` や `delegation.revoke!` もcaller Authentication / Host Authorizationを代替しない。[Delegation API](public_api_v0_1.md#9-delegation-api)（D021）の決定を維持し、全引数・default・validation、`delegate!` の有無、caller authorizationの具体APIは追加確定しない。
+設計上の `ActingFor.delegate(...)` や `delegation.revoke!` もcaller Authentication / Host Authorizationを代替しない。[Delegation API](public_api_v0_1.md#9-delegation-api)（D021・後続D032）に従う。全引数・default・validationとdelegate!非提供はD032で確定。caller authorizationの具体APIは未決定。
 
 ## 11. Principal / Agent Binding
 
 Authorizationは明示されたagent + principalの組み合わせに対して評価する。別PrincipalのDelegationを流用せず、同じAgentでもPrincipalが違えば別委任として扱う。Principal取り違えによる権限逸脱を許さない。既存Delegation matchingのAgent一致・Principal一致を維持する。
+
+後続決定D033によりAgent identifierはwhitespaceを一切含まない1..255文字のnon-blank Stringとし、暗黙変換・trim・downcaseを行わない。case-sensitive exact identityをActiveRecord validation + DB unique indexで保証する。nameは任意・非一意で、指定時はnon-blank String / 1..255文字。これらのModel validationからDB length constraintを追加決定しない。
 
 ## 12. Time / Expiration Trust Boundary
 
@@ -165,7 +171,7 @@ Business Operation → 古いallowを使って実行してはいけない
 
 Authorization対象Resourceは、曖昧な表示名だけではなく一意に識別可能な情報によって評価する。同名Resourceの取り違えや、別ResourceへのDelegationの流用を防ぐ。Resource識別情報はHostが確定する。
 
-[既存Resource設計](domain_model_v0_1.md#7-resource)の特定Resource / Resource type全体 / Resource不要のActionという区別を維持する。型全体への委任を禁止したり、Resource不要のActionに識別子を必須化したりしない。`resource: nil` は全Resourceを意味しない。具体的なDB型・identifier形式は追加決定しない。
+[既存Resource設計](domain_model_v0_1.md#7-resource)の特定Resource / Resource type全体 / Resource不要のActionという区別を維持する。型全体への委任を禁止したり、Resource不要のActionに識別子を必須化したりしない。`resource: nil` は全Resourceを意味しない。後続決定D032でresource_idはString保存とし、Class / Instanceのmodel_nameとinstanceのid.to_sから正規化する。IDのto_sはPublic境界で1回だけ。resource_typeは正規化後の文字列をcase-sensitiveで比較し、specific ResourceのIDは正規化後のStringを完全一致で比較する。case normalization / numeric coercion・conversion / 追加のimplicit coercion / fuzzy matchingは行わない。Delegationのtype指定・ID nilはその型全体へのscopeとして同じ型の個別Resourceにもmatchする。両方nilはResource-less Actionのscope。「完全一致」を単純なtuple比較にして型全体への委任を失わせない。interface不備・instanceのnil ID / 空文字IDはInvalidRequestError。具体例は[Resource正本](domain_model_v0_1.md#7-resource)を参照。
 
 ## 15. Constraint Injection / Arbitrary Code Execution
 
@@ -177,7 +183,7 @@ ActingForが定義した限定的operatorのみ評価する。未知のoperator�
 
 巨大・複雑なConstraintによってAuthorization処理が過負荷にならない設計にする。Constraint数を無制限と仮定せず、巨大入力を無制限に評価せず、過剰な構造を許容しない。上限を設けられる設計とし、制限超過をallowへ倒さない。
 
-最大Constraint数、最大Context size、最大JSON size、complexityの具体値、timeout値、Configuration APIや具体的実装方法は未決定。失敗の扱いは第3節のAuthorization failure / System failureの区別を維持する。
+最大Constraint数、最大Context size、最大JSON size、complexityの具体値、timeout値や具体的実装方法は未決定。これを理由にConfiguration APIを追加しない。失敗の扱いは第3節のAuthorization failure / System failureの区別を維持する。
 
 ## 17. Authorization Enumeration / Information Leakage
 
@@ -188,11 +194,13 @@ NG: principal_456にはpurchase delegationが存在するが、あなたのagent
 OK: deny
 ```
 
-詳細な判定情報は必要に応じて保護されたAudit側で扱える。[既存Decision Public API](public_api_v0_1.md#6-decision-public-api)を拡張せず、外部Response APIやreason_code正式一覧を追加決定しない。
+詳細な判定情報は必要に応じて保護されたAudit側で扱える。[既存Decision Public API](public_api_v0_1.md#6-decision-public-api)を拡張せず、外部Response APIを追加しない。Audit reason_codeの正式3種類とdecisionとの整合性は後続D034で確定し、[AuditEvent詳細](domain_model_v0_1.md#14-auditevent)に従う。
 
 ## 18. Audit Tamper Resistance
 
 AuditEventは通常運用ではappend-onlyとし、通常のActingFor Public APIからupdate / deleteする設計にはしない。Authorization履歴の後書き換えを防ぎ、Security Auditの信頼性を維持する。
+
+後続決定D034によりAudit decision / reason_codeは正式3組のみをModel validationし、各columnはNOT NULL。DB CHECK constraintは設けない。matched_delegation_idsは重複なしのmatch集合で、denyは空配列、allow / require_approvalは実際のmatch IDを1件以上記録する。配列順に依存しない。
 
 法的削除、Data retention、DB管理者による保守は通常Public APIとは別の運用責務であり、次節と両立する。既存方針どおりDBレベルのWORMや暗号署名等をv0.1の責務には追加しない。
 
@@ -212,7 +220,7 @@ Audit以外への出力も保護対象とし、Audit Filter / Sanitizerだけで
 
 ActingFor内部Exceptionの詳細を外部Agentへそのまま公開しない。stack trace、SQL、DB schema情報、internal class名、file path、sensitive input、implementation detailsを不用意に出さない。
 
-Host Applicationが外部向けの安全なError Responseへ変換する。内部調査用情報は適切に保護されたApplication log / monitoring等で扱い、その場合も第20節の機密情報保護に従う。外部Responseへの変換は、System failureをAuthorization denyへ変換する意味ではない。
+Host Applicationが外部向けの安全なError Responseへ変換する。内部調査用情報は適切に保護されたApplication log / monitoring等で扱い、その場合も第20節の機密情報保護に従う。外部Responseへの変換は、System failureをAuthorization denyへ変換する意味ではない。D031のActingFor定義ExceptionはError / InvalidRequestError / InternalError / AuditPersistenceErrorの4つのみ。lower-layer exceptionは原則そのままraiseし、明示決定されたAudit persistence exception以外を一律InternalErrorへwrapしない。
 
 ## 22. Secure Defaults / Misconfiguration
 
@@ -226,7 +234,7 @@ Unknown / Invalid / Ambiguous → allowしない
 
 Host ApplicationやDB administratorがPublic APIを迂回してActiveRecord Modelを直接update、SQLで直接update、DBを書き換えることまで完全に防御できるとは保証しない。
 
-通常利用ではPublic API経由を推奨する。Gem内部では可能な範囲で安全なModel制約を持たせる方向だが、具体的なvalidation / callback / DB constraintは未決定。Public APIを迂回した操作はHost側の責務境界とする。
+通常利用ではPublic API経由を推奨する。Gem内部では可能な範囲で安全なModel制約を持たせる方向だが、D032〜D034で確定したvalidation・DB制約だけを適用する。それ以外のcallback / DB constraint等は未決定。Public APIを迂回した操作はHost側の責務境界とする。
 
 ## 24. Concurrency / Race Condition
 
@@ -252,26 +260,28 @@ Security Model Designの完了条件は次のとおり。本書によりすべ�
 - 具体的実装方式とSecurity requirementが分離されている。
 - 未決定事項が明示されている。
 
-**Security Model Design = Complete / Design finalized / Not implemented。** 次工程は「未決定事項の詰め」だが、今回は着手しない。
+**Security Model Design = Complete / Design finalized / Not implemented。** D030時点で次工程とした「未決定事項の詰め」はD031〜D034により進行中。すべての未決定事項が完了したわけではなく、実装開始には進まない。
 
 [Step 8 Test Strategy](test_strategy_v0_1.md)の完了状態・確定仕様を維持する。本書のSecurity requirementのImplementation / Testへの反映は後続工程で確認する。今回Test設計を再オープンせず、Test項目の大量追加や実装は行わない。v0.1全体のDefinition of Doneも引き続きProposal / 提案である。
 
 ## 27. 今回決めないこと
 
-以下は未決定のまま残し、Security requirementから具体的実装やPublic APIを推測して追加確定しない。
+D030時点の未決定事項のうち、Exception / Audit ContextはD031、Resource / DelegationはD032、Agent validationはD033、AuditEvent詳細はD034で確定した。以下は引き続き未決定であり、Security requirementから推測して追加確定しない。
 
-- Exception class正式一覧、reason_code正式一覧、Decisionの追加属性・constructor
-- Audit Filter / Sanitizer Public API、Audit Sanitizerの設定方式
+- Decisionの追加属性・constructor
+- BigDecimalのJSON serialization表現
 - Audit retention期間、Audit削除API
 - Constraint最大件数、Context最大size、JSON最大size、Constraint complexity具体値、timeout値
 - Clock implementation、Time injection方式
 - transaction方式、locking方式、DB isolation level、retry方式
 - cache方式、replica方式、cache TTL、invalidation方式
-- Resource identifierのDB型・具体形式、DB schemaの細かな型・制約
-- Delegation validation詳細、作成APIの全引数・default、`delegate!` の有無
+- 確定済み範囲以外のDB schemaの型・制約、DB adapter正式対応範囲
+- Agent name / identifierのDB column length constraint
+- Audit sanitized contextのDB default / NOT NULL
+- Constraint JSON / JSONBの最終DB型
 - Delegation creation / revocation caller authorizationの具体API
 - TOCTOUを解決するtransaction API、Decisionをbindingするtoken等
-- Model validation / callback / DB constraintの具体的実装
+- 確定したModel validation / DB制約の具体的実装、未決定のcallback等
 - Ruby対応version、Rails対応version、CI matrix、static analysis、License
 - Migration実コード・task名、Runnable Quick Start、Release notes
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装

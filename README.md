@@ -6,7 +6,7 @@ ActingFor is a Rails-native delegated authorization gem for controlling what AI 
 
 AI Agentがユーザーの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
-> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its test acceptance criteria are finalized in Step 8; the overall Definition of Done remains a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Step 7 Gem Structure Design is complete (Design finalized / Not implemented). Step 8 Test Strategy is complete (Complete / Design finalized / Not implemented); test code does not exist yet. Security Model Design is complete (Complete / Design finalized / Not implemented). The gem remains Not implemented / Not released. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
+> **Status: design stage.** This README describes the intended project. The v0.1 product scope is decided, but it is not an implemented or released feature set yet. Its test acceptance criteria are finalized in Step 8; the overall Definition of Done remains a proposal. Step 5 Public API design is complete: 10 of 10 items are decided (Design finalized, not implemented). Step 6 README Quick Start design is complete (Design-stage Quick Start finalized). Step 7 Gem Structure Design is complete (Design finalized / Not implemented). Step 8 Test Strategy is complete (Complete / Design finalized / Not implemented); test code does not exist yet. Security Model Design is complete (Complete / Design finalized / Not implemented). Remaining design details are being refined (D031–D034); open questions remain. The gem remains Not implemented / Not released. Supported Ruby/Rails versions and license remain to be finalized. Installation instructions and a runnable Quick Start will follow implementation and verification.
 
 ## Why ActingFor?
 
@@ -54,7 +54,7 @@ The host application authenticates the external agent, or relies on an external 
 
 The Principal grants two Delegations for the `:purchase` Action on the `Product` Resource type. These amounts are example delegation settings, not built-in ActingFor rules. Assume these are the only applicable Delegations, both valid, and prices are Integer amounts in JPY.
 
-A dedicated creation API is planned; `ActingFor.delegate(...)` below illustrates the intended shape. Its complete arguments, defaults, validation, and whether `delegate!` exists remain undecided ([Delegation API](docs/public_api_v0_1.md#9-delegation-api)).
+The designed creation API is `ActingFor.delegate(...)`; the example below is not implemented yet. Its arguments, defaults, and validation are now specified by D032; v0.1 will not provide `delegate!` ([Delegation API](docs/public_api_v0_1.md#9-delegation-api)).
 
 ```ruby
 user = current_user # The Principal in this example
@@ -146,7 +146,7 @@ ActingFor does not fetch prices from the database, validate currency, check owne
 
 ### 8. Audit is automatic
 
-Authorization decisions are automatically recorded as AuditEvents inside `ActingFor.authorize(...)`. No separate audit call is required.
+Authorization decisions are automatically recorded as AuditEvents inside `ActingFor.authorize(...)`. No separate audit call is required. Audit Context defaults to `{}`; only fields explicitly selected with `audit_context_keys:` are saved ([Audit Context](docs/public_api_v0_1.md#10-audit)).
 
 If the AuditEvent cannot be saved, authorization raises an exception and no Decision is returned: it neither returns `allow` nor converts the failure to `deny`. The host must not proceed to business logic.
 
@@ -180,7 +180,7 @@ v0.1 will provide the following delegated-authorization path inside a Rails appl
 4. Generate an `ActingFor::Decision` value object with status `:allow`, `:deny`, or `:require_approval`.
 5. Automatically save an AuditEvent within `authorize` before returning the Decision; raise an exception if saving fails. ActingFor does not execute the business operation.
 
-The Step 8 test acceptance criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. Step 5 public API design is finalized; finer details such as exception class names, database schema details, and the audit filtering API remain undecided. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
+The Step 8 test acceptance criteria require automated coverage of the allow, deny, approval-required, missing-delegation, expired, and constraint-boundary paths in a supported Rails test application. The domain-model foundation defines three ActiveRecord models: Agent, Delegation, and AuditEvent. Delegation matching rules are decided. Step 5 public API design is finalized; subsequent decisions D031–D034 specify Audit Context selection, exception classes, Resource identity, Delegation and Agent validation, and AuditEvent details. Other database schema and implementation details remain undecided. See the [v0.1 domain model design](docs/domain_model_v0_1.md).
 
 The scope deliberately excludes agent authentication, approval workflow and approval UI, general-purpose policy engines, OAuth/OIDC servers, MCP servers, payments, and agent-to-agent communication. See the [v0.1 scope, test acceptance criteria, and proposed Definition of Done](docs/PROJECT.md#4-v01スコープ) and [decision record D007](docs/DECISIONS.md#d007-v01の具体的な範囲) for details and decision status.
 

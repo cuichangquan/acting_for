@@ -84,6 +84,7 @@
 - この決定に含まないもの：項目別完了条件、Public API、具体的なモデルとDBスキーマ、Auditの保存方式、対応Ruby/Rails、ライセンス。これらは下位設計として別途決定する。
 - 根拠：[共有会話「ActingFor問題定義」](https://chatgpt.com/share/6aa7c32e-77b4-83ee-ad35-ae048e8001ef)でのStep 2と、共有会話で決まった内容をローカルへ反映するというユーザー指示。
 - 後続決定（2026-09-15）：D013でドメインモデルとAudit永続化の基本方針を具体化。PROJECTの旧Agent属性案（principal / external_id / provider）はidentifier / name等の最小属性へ置き換えた。
+- 後続決定（2026-09-17）：D033（Agent validation）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D008: v0.1の競合判定とfail-closed原則
 
@@ -95,6 +96,7 @@
 - 後続決定（2026-09-15）：D013で一致なしのdefault denyを確定し、explicit deny Delegationはv0.1対象外とした。旧3値のDelegation優先順位案は置き換え、require_approval優先の方向とする。入力欠落・不正値・評価不能時の扱いは引き続き提案。
 - 後続決定（2026-09-15）：D014でmatching、Constraint不成立・invalid constraintの除外、default deny、require_approval > allow、判断できなければallowしないfail closedを確定。旧3値優先順位案は現行仕様ではない。例外等のPublic APIとAudit failure policyは未確定。
 - 後続決定（2026-09-16）：D019でAPI誤用・設定不正・内部異常をdenyへ変換せずExceptionとする境界、D023でAudit保存失敗時のExceptionを確定。必須入力欠落・不正値を一律denyとする旧案は採用しない。D014のConstraint不成立・invalid constraintをmatchさせないルールは維持する。
+- 後続決定（2026-09-17）：D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D009: v0.1のApproval責任分界
 
@@ -115,6 +117,7 @@
 - 後続決定（2026-09-15）：D013で専用AuditEventテーブルへの永続化、基本append-only、ContextのFilter / Sanitizer経由の記録を確定。識別子、フィルタ仕様、記録失敗時の扱いは未確定。
 - 後続決定（2026-09-15）：D014で業務処理結果を監査対象外とする責務、agent_identifierとmatched_delegation_idsを含む基本情報、allowlist優先方針を確定。reason_code正式一覧、Filter / Sanitizer API、DB型、Audit failure policyは未確定。
 - 後続決定（2026-09-16）：D022でauthorize内部のAudit自動記録、D023で保存失敗時にDecisionを返さずExceptionとする方針を確定。reason_code正式一覧、Filter / Sanitizer API、DB型は引き続き未決定。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D033（Agent validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D011: ActingFor v0.1の正式用語
 
@@ -131,6 +134,7 @@
 - 後続決定（2026-09-15）：Railsモデル、DecisionのValue Object化、Audit Eventの保存方式の基本方針はD013で確定。DBスキーマとPublic APIの詳細は未確定。
 - 後続決定（2026-09-15）：D015〜D017でPublic Entry Point、authorize引数、戻り値 `ActingFor::Decision` と概念上のstatusを設計決定。Step 5項目4〜10は未決定。最新の範囲は[Public API Design](public_api_v0_1.md)を参照。
 - 後続決定（2026-09-16）：D018〜D023でStep 5項目4〜8を確定。最新の進捗は8 / 10で、項目9・10は未決定。
+- 後続決定（2026-09-17）：D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D012: ActingForとMCPの正式な責務境界
 
@@ -165,6 +169,7 @@
 - 次工程：Delegation 1件の意味、matching、Resource、Constraint、複数一致、require_approval、作成・更新・取消の詳細を定義し、その後Step 5「Public API Design」へ進む。
 - 根拠：ユーザーが提示したStep 4のドメインモデル設計内容と、docs/domain_model_v0_1.mdへの整理・保存の指示。
 - 後続決定（2026-09-15）：詳細ルールはD014で確定。Delegationの意味・基本属性、matching、Resource、Constraint、競合、Lifecycle、Auditを具体化し、単一delegation_id案はmatched_delegation_idsへ変更。Public APIとDB型等は引き続き未確定。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D033（Agent validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D014: v0.1 Delegation判定・Constraint・Lifecycle・Audit詳細
 
@@ -193,6 +198,7 @@
 - 後続決定（2026-09-16）：D018〜D023でDecision Public API、deny / Exception、authorize!非提供、Delegation専用API、自動Auditと保存失敗時Exceptionを確定。ドメインモデルは変更しない。Step 5は8 / 10決定済み。
 - 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
 - 後続決定（2026-09-17）：Migration提供方式と独自Generator非提供はD028で確定。DB型・Migration実コード等は未決定のまま維持する。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D033（Agent validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D015: Authorization Public Entry Point
 
@@ -220,6 +226,7 @@
 - 根拠：ユーザーが提示したStep 5 Decision 2と設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-16）：入力不正と例外の境界はD019で確定。具体的なException class名とContextの信頼境界は未決定。
 - 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D017: Decision Value Object
 
@@ -256,6 +263,7 @@
 - Consequences：「Authorizationとして判断できた → Decision」「処理そのものが成立しない → Exception」を基本原則とする。D014のmatching / Constraintルールは維持する。具体的なException class名は未決定。
 - 正式本文：[deny vs Exception](public_api_v0_1.md#7-deny-vs-exception)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D020: authorize!をv0.1では提供しない
 
@@ -267,6 +275,7 @@
 - Consequences：必要性が明確になった場合にv0.2以降で再検討できる。本決定から `delegate!` の採否を推測しない。
 - 正式本文：[authorize!をv0.1では提供しない](public_api_v0_1.md#8-bang-api)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D032（Resource identity・Delegation API / validation）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D021: Delegation専用Public API
 
@@ -278,6 +287,7 @@
 - Consequences：hard deleteではなくrevocationとして無効化し、権限変更はrevoke + createで行う。作成APIの細かな引数・validation APIと `delegate!` の有無は未決定であり、例から確定しない。
 - 正式本文：[Delegation専用Public API](public_api_v0_1.md#9-delegation-api)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D032（Resource identity・Delegation API / validation）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D022: Auditをauthorize内で自動記録
 
@@ -289,6 +299,7 @@
 - Consequences：D014のAudit責務・append-only・ContextのFilter / Sanitizer方針は維持する。保存失敗時はD023に従う。reason_code正式一覧とFilter / SanitizerのPublic APIは未決定。
 - 正式本文：[Auditをauthorize内で自動記録](public_api_v0_1.md#10-audit)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D023: Audit保存失敗時はException
 
@@ -301,6 +312,7 @@
 - 正式本文：[Audit保存失敗時はException](public_api_v0_1.md#10-audit)。
 - 根拠：ユーザーが提示した今日のStep 5項目1〜8の決定内容と、設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-16 / Step 5完了）：既存認可との関係はD024、Contextの信頼境界はD025で確定。Step 5は10 / 10で完了。過去の未決定・進捗表記は当時の記録として残す。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D024: Existing Authorization Integration
 
@@ -327,6 +339,7 @@
 - Consequences：Context確定とAudit Filter / Sanitizerを混同しない。Exception class正式一覧、reason_codeや既存の未決定詳細を追加確定しない。本決定とD024によりStep 5は10 / 10で完了（Design finalized）。実装済みを意味しない。次はStep 6「README Quick Start作成」だが、今回は着手しない。
 - 正式本文：[Context Trust Boundary](public_api_v0_1.md#13-context-trust-boundary)。
 - 根拠：ユーザーが提示したStep 5項目10の正式決定と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D026: Agent Registration / Resolution Boundary
 
@@ -341,6 +354,7 @@
 - Consequences：D002の主体分離、D012のMCP非依存とAuthentication責務外、D013のローカルAgent表現を維持・補足する。AgentはPrincipalを直接belongs_toせず、関係はDelegationで表現する。Domain ModelとStep 5仕様は変更しない。Provisioning方式・具体APIは未固定のまま残す。
 - 正式本文：[Agent Registration / Resolution Boundary](PROJECT.md#24-agent-registration--resolution-boundary)、[Domain ModelのAgent](domain_model_v0_1.md#3-agent)。
 - 根拠：ユーザーが提示したAgent Registration / Resolution Boundaryの正式決定と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D033（Agent validation）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D027: README Quick Start Design
 
@@ -358,6 +372,7 @@
 - Consequences：READMEへの反映によりStep 6設計を完了とする。Gem実装完了やRunnable Quick Start完了ではない。Step 5は10 / 10完了のまま仕様を変更せず、D014のmatching・immutable・require_approval > allow等とD018〜D025を維持する。D026のProvisioningと既存の未決定詳細も追加確定しない。
 - 正式本文：[README Quick Start](../README.md#quick-start)、[Step 6の記録](PROJECT.md#52-step-6-readme-quick-start-design)。
 - 根拠：ユーザーが提示したStep 6 README Quick Start Designの正式決定と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D028: Step 7 Gem Structure Design
 
@@ -380,6 +395,7 @@
 - 正式本文：[Gem Structure Design](gem_structure_v0_1.md)、[Step 7の記録](PROJECT.md#53-step-7-gem-structure-design)、[README](../README.md#project-documents)。
 - 根拠：ユーザーが提示したStep 7 Gem Structure Designの正式決定と、設計ドキュメントのみの更新指示。
 - 後続決定（2026-09-17）：D029でStep 8を完了し、Minitest採用とTest Strategyを設計確定。上記の未決定・未着手表記はStep 7時点の履歴として残す。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D029: Step 8 Test Strategy Design
 
@@ -398,6 +414,7 @@
 - Consequences：D028のTest Framework保留を本決定で解消する。Step 4〜7の製品仕様は変更しない。PROJECT 4.3のDefinition of Done全体はProposal / 提案を維持する。Ruby / Rails version、CI matrix、static analysis、License、Runnable Quick Start、Release notes、Exception class名、reason_code正式一覧、Filter / Sanitizer Public API、delegate!等は未決定のまま。次工程の番号・順序は新たに決めず、実装には進まない。GemはNot implemented / Not released。
 - 正式本文：[Test Strategy Design](test_strategy_v0_1.md)、[Step 8の記録](PROJECT.md#54-step-8-test-strategy-design)。
 - 根拠：ユーザーが提示したStep 8 Test Strategy Designの正式決定と、設計ドキュメントのみの更新指示。
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 
 ## D030: v0.1 Security Model Design
 
@@ -419,6 +436,67 @@
 - 未決定：Exception class / reason_code正式一覧、Sanitizer Public API・設定方式、Retention期間・削除API、Constraint / Context / JSONの上限・timeout、Clock / Time injection、transaction / locking / isolation / retry、cache / replica方式、Resource identifierのDB型、Delegation validation・delegate!・caller authorization API、TOCTOU transaction API、Decision binding token等。Configuration / Initializer、Generator、対応Ruby / Rails、CI matrix、static analysis、License、Approval Workflow、各Adapterも追加決定しない。D028の既存非提供方針を維持し、全項目は正本第27節を参照。
 - 正式本文：[Security Model Design](security_model_v0_1.md)、[Security Model Designの記録](PROJECT.md#55-security-model-design)。
 - 根拠：ユーザーが提示したSecurity Model Designの正式決定と、設計ドキュメントのみの更新指示。
+
+- 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D033（Agent validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
+
+## D031: Audit Context allowlist / Exception classes
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Step 5・Security Model完了後の詳細化。
+- Context：D030まで未決定だったAudit Contextの選択APIとException classを、raw Contextを保存しない原則とdeny / Exception境界に沿って確定する。
+- Decision（API）：authorizeにoptional `audit_context_keys: []` を追加。唯一のAudit Context選択allowlistとし、省略時・対象なしは `{}`、raw contextへのfallbackは禁止。Array<Symbol>のみ許可し、nil / 単一Symbol / String要素 / 混在はInvalidRequestError。重複Symbolは許可して内部で除去する。
+- Decision（Key / Value）：ContextのトップレベルSymbol keyと完全一致し、String / Symbol変換・indifferent access・nested path解釈を行わない。存在しないkeyは無視する。選択valueはString / Integer / Float / BigDecimal / TrueClass / FalseClass / nilのみ。Hash / Array等のunsupported valueが選択された場合はsilent ignoreせずInvalidRequestError。Constraint値の型規則は拡大しない。
+- Decision（Secret）：password / password_confirmation / token / access_token / refresh_token / api_key / secret / client_secret / credentialのSymbolをbuilt-in forbidden secret keysとし、指定時点でInvalidRequestError。完全一致のみで、token_countは許可。substring / regex / 推測は導入しない。
+- Decision（除外）：v0.1ではcustom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定を提供しない。
+- Decision（Exception）：ActingFor定義classは `Error < StandardError`、`InvalidRequestError < Error`、`InternalError < Error`、`AuditPersistenceError < InternalError` の4つのみ（すべてActingFor namespace）。Public入力・形式・利用方法の不正はInvalidRequestError。ActingFor自身が検出した内部・system-level errorはInternalError。lower-layer exceptionは原則そのままraiseし、明示決定したものだけwrapする。
+- Decision（Audit失敗）：AuditPersistenceErrorはAuditEvent保存失敗専用。lower-level persistence exceptionをwrapしRubyのcauseを保持する。全Decisionについて返却せず、denyへ変換せず、Business Logicへ進ませない。ConstraintError / DelegationError / ConfigurationError等は作らない。
+- Rationale：保存項目を呼び出しごとに明示し、秘密情報の誤保存と失敗の黙殺を防ぎ、元の例外原因を追跡できる最小のAPIとするため。
+- Consequences：D016のシグネチャ、D019・D023のException詳細、D014・D022・D030のAudit Filter / Sanitizer保留を詳細化する。BigDecimalの最終JSON serialization表現は未決定。実装・Configuration追加は行わない。
+- 正式本文：[Public API Arguments](public_api_v0_1.md#4-authorize-arguments)、[Exception](public_api_v0_1.md#7-deny-vs-exception)、[Audit](public_api_v0_1.md#10-audit)、[Security Model](security_model_v0_1.md)。
+- 根拠：ユーザーが提示したv0.1設計決定反映指示のAudit Context / Exception正式決定。
+
+## D032: Resource Identity / Delegation API Validation
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Resource scopeとの適用関係も確認済み。
+- Context：Resource識別情報とDelegation作成・取消の入力、成功結果を明確にし、D014・D021の残る詳細を確定する。
+- Decision（Resource）：resource_idの保存型はString。Rails / ActiveModel-style Classはmodel_name.nameとnil ID、Instanceはclass.model_name.nameとid.to_s、nilは両方nilへ正規化する。Instanceのid nil / id.to_s空文字、必要interfaceなし、String / Hashの直接識別子はInvalidRequestError。IDのto_sはPublic境界で1回のみ。resource_typeは正規化後の文字列をcase-sensitiveで、specific Resourceのresource_idは正規化後のStringを完全一致で比較する。case normalization / numeric coercion・conversion / 追加implicit coercion / fuzzy matchingは行わない。resource: nilはResource-less Actionであり全Resourceではない。
+- Decision（Resource scope・確認済み補足）：既存の型全体Delegationを維持する。Delegationのtype指定・ID nilはその型全体のscopeであり、同じ型の個別IDにもmatchし、別の型にはmatchしない。specific ResourceはtypeとIDの両方を厳密比較する。両方nilのDelegationはResource-less Requestにmatchする。「完全一致」は識別値の比較規則であり、matching全体を単純なtuple完全一致へ変更しない。ユーザーの追加確認により曖昧さを解消した。
+- Decision（作成）：Public APIは `ActingFor.delegate(agent:, principal:, action:, resource: nil, constraints: [], effect:, expires_at: nil)` のみ。delegate!は提供しない。effectはrequiredでdefaultなし。成功時はpersist済みDelegationを返す。
+- Decision（主体 / Action / Effect）：agentはpersist済みActingFor::Agent、principalはpersist済みActiveRecord model instance。nil / 別class・非ActiveRecord / unsavedはInvalidRequestError。actionはString / SymbolをStringに正規化し、nil / 空文字 / その他typeは不正。authorizeのAction規則も一致させる。effectはString / Symbolのallow / require_approvalだけを正規化し、deny / nil / 未知値 / その他typeを拒否する。
+- Decision（Constraint）：constraintsはArrayのみ、省略時[]、明示的nilは不正。各要素はfield / operator / valueだけを必須keyとするHash。非Hash / key不足 / extra keyはInvalidRequestError。Hash keyはString / SymbolをStringに正規化し、正規化後の重複keyは不正。fieldはnon-empty String / Symbol、operatorは既定6種のString / Symbolで、Stringに正規化する。valueはeqがString / Integer / Boolean、比較がInteger、inがString / Integer / BooleanのArray。それ以外はInvalidRequestError、暗黙型変換はしない。nested path非対応を維持し、判定regexや命名規則は追加しない。
+- Decision（期限 / 取消）：expires_atはnil / Time / ActiveSupport::TimeWithZoneのみで、指定時はtrusted current timeより未来。同時刻・過去・不正typeはInvalidRequestError、暗黙parseしない。作成APIはrevoked_atを受け付けず必ずnilで開始する。取消はrevoke!のみ、初回のtrusted current timeを記録する。idempotentで、再取消はExceptionにせず最初のtimestampを更新しない。
+- Decision（Duplicate）：類似委任の存在を禁止せず、各delegate呼び出しは独立した新規Delegationを作る。dedup / upsert / semantic uniqueness / duplicate detectionは導入しない。
+- Rationale：識別と入力の曖昧さを減らし、権限変更はrevoke + createという既存方針を維持するため。
+- Consequences：Public作成時の不正入力はInvalidRequestError、Authorization時の不正・評価不能な保存済みConstraintはmatchさせないという既存境界を維持する。caller Authentication / Host AuthorizationはHost責務。Clock injection、transaction / locking / retry等は未決定。Model・Migration実装は行わない。
+- 正式本文：[Resource](domain_model_v0_1.md#7-resource)、[Public Resource](public_api_v0_1.md#4-authorize-arguments)、[Delegation API](public_api_v0_1.md#9-delegation-api)。
+- 根拠：ユーザーが提示したv0.1設計決定反映指示のResource / Delegation正式決定。
+
+## D033: Agent Validation
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context：Agentのローカルidentityと表示名のvalidationを具体化する。Authentication / Resolution / ProvisioningのHost責務は変えない。
+- Decision（identifier）：必須のnon-blank String、1..255文字、whitespace characterを一切含まない。nil / 空文字 / whitespace-only / 非String / 長さ超過 / 前後・途中のwhitespaceはvalidation error。implicit conversion / 自動trim / downcaseを行わず、case-sensitive exact identityとする。一意性はActiveRecord validation + DB unique indexの両方で保証する。
+- Decision（name）：nilまたはnon-blank String、指定時1..255文字。空文字 / whitespace-only / 非String / 長さ超過はvalidation error。自動trimなし。nameは非一意で同名Agentを許可し、identityの一意性はidentifierだけで保証する。
+- Rationale：identityと表示名を区別し、暗黙変換や空白による取り違えを防ぐため。
+- Consequences：文字数上限はModel validationの決定。DB column limit / DB-level length constraintを追加決定しない。DB adapter対応範囲・具体実装も未決定。新しいAgent作成・認証APIは追加しない。
+- 正式本文：[Agent](domain_model_v0_1.md#3-agent)、[Security Model](security_model_v0_1.md)。
+- 根拠：ユーザーが提示したv0.1設計決定反映指示のAgent validation正式決定。
+
+## D034: AuditEvent Decision / Reason / Match Set / Context
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。
+- Context：D014のAudit基本情報を、最終Authorization Decisionの一貫した保存仕様へ詳細化する。
+- Decision（reason_code）：最終Decisionの理由を表し、正式一覧はdelegation_allowed / delegation_requires_approval / no_matching_delegationの3つだけ。個別Delegationのexpired / Resource mismatch / Constraint mismatchや、API misuse / InternalError / AuditPersistenceError等のExceptionは責務外。
+- Decision（decision / 整合性）：Audit decisionはDB Stringのallow / deny / require_approvalのみ。Public Decision#statusのSymbolは維持する。有効な組はallow ↔ delegation_allowed、require_approval ↔ delegation_requires_approval、deny ↔ no_matching_delegationだけ。両項目はModel validationで必須・許可値・組み合わせを検証し、各columnはNOT NULL。DB CHECK constraintは設けない。
+- Decision（matched_delegation_ids）：常にArray、nil不可。denyは[]、allow / require_approvalは実際にmatchしたIDを1件以上保存する。重複IDは不正、順序に意味を持たないmatch集合とする。JSON配列として保存し、JSONBを必須としない。ID自体のDB型や新しい制約は追加しない。
+- Decision（sanitized context）：D031のallowlistで選択したContextをJSON objectとして保存する。対象なしは{}でraw contextへfallbackしない。JSONBは必須としない。DB default / NOT NULLは追加決定しない。
+- Rationale：最終Decisionの説明と一致した委任集合を正確に追跡し、内部失敗理由や業務実行結果と混同しないため。
+- Consequences：D014時点のreason_code候補を正式一覧で置き換える。Audit自動保存、全結果の保存失敗時Exception、append-only、Retentionの別運用責務は維持する。Constraint JSON / JSONBの最終DB型、DB adapter正式対応範囲は未決定。Test設計の再構築・実装は行わない。
+- 正式本文：[AuditEvent](domain_model_v0_1.md#14-auditevent)、[Audit Context](public_api_v0_1.md#10-audit)、[Security Model](security_model_v0_1.md)。
+- 根拠：ユーザーが提示したv0.1設計決定反映指示のAuditEvent正式決定。
 
 ## 追記する際の項目
 
