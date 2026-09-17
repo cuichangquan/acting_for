@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Step 8「Test Strategy」完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
+- 現在の段階：Security Model Design完了（Complete / Design finalized / Not implemented）。[Security Model正本](security_model_v0_1.md)に記録。次は「未決定事項の詰め」（今回は未着手）。Step 8「Test Strategy」も完了（Complete / Design finalized / Not implemented）。[Step 8正本](test_strategy_v0_1.md)に記録。Step 7もComplete / Design finalized / Not implementedを維持する。Step 6はComplete / Design-stage Quick Start finalizedを維持する。Step 5は10 / 10、Complete / Design finalizedを維持する。Gemは未実装・未リリースで、Quick Startはまだ実行できない。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -301,14 +301,15 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 | 6 | README Quick Start | 完了（Complete / Design-stage Quick Start finalized）。D026・D027、[README](../README.md#quick-start)に反映済み。実行不可 |
 | 7 | Gem Structure Design | 完了（Complete / Design finalized / Not implemented）。D028、[正本](gem_structure_v0_1.md) |
 | 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
-| 未採番 | セキュリティモデル設計 | 未着手。各設計工程でも随時検討する。後続の順番は未確定 |
+| 未採番 | Security Model Design | 完了（Complete / Design finalized / Not implemented）。D030、[正本](security_model_v0_1.md) |
+| 未採番 | 未決定事項の詰め | 次工程。今回は未着手 |
 | 10 | 実装開始 | 設計後 |
 
 MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で完了（Design finalized / Not implemented）。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
-Step 7決定に伴い、従来Step 9に置いていたテスト方針をStep 8へ変更した。セキュリティモデル設計の後続の順番は今回固定しない。Gem実装にはまだ入っていない。
+Step 7決定に伴い、従来Step 9に置いていたテスト方針をStep 8へ変更した。当時はセキュリティモデル設計の後続の順番を固定しなかった。D030でSecurity Model Designを未採番のまま完了し、次工程を「未決定事項の詰め」とする。既存の工程番号・過去履歴は変更せず、Gem実装にはまだ入っていない。
 
 ### 5.1 Step 5の検討項目
 
@@ -354,7 +355,13 @@ D024により、Principal自身の現在の権限はホストが実行時にも�
 
 **Complete / Design finalized / Not implemented（D029）。** [Test Strategyの正本](test_strategy_v0_1.md)にMinitest採用、Unit / Integrationの境界、最小 `test/dummy`、Decision、ConstraintEvaluator、authorize、Delegation matching、Audit / 保存失敗、Migration / Engine、Host Authorization Boundary、Context Trust Boundary、fail-closed、v0.1 Acceptance Criteriaとの対応を記録した。
 
-Testコードはまだ存在しない。4.3のDefinition of Done全体はProposal / 提案を維持する。次工程の番号・順序は新たに決めず、Security Model DesignをStep 9として採番しない。GemはNot implemented / Not releasedであり、実装開始には進まない。
+Testコードはまだ存在しない。4.3のDefinition of Done全体はProposal / 提案を維持する。Step 8完了時点では次工程の番号・順序を新たに決めず、Security Model DesignをStep 9として採番しなかった。GemはNot implemented / Not releasedであり、実装開始には進まない。
+
+### 5.5 Security Model Design
+
+**Complete / Design finalized / Not implemented（D030）。** [Security Modelの正本](security_model_v0_1.md)にThreat Model、Trust Boundary、6つのSecurity Invariant、Host Applicationとの責務境界、v0.1のSecurity requirementと未決定事項を記録した。Step 1〜8の決定は維持し、Security Modelの工程番号は追加しない。
+
+具体的な実装方式やPublic APIは追加確定しない。Implementation / Testへの反映は後続工程で確認し、Step 8のTest Strategyを今回再設計しない。GemはNot implemented / Not released。次は「未決定事項の詰め」だが、今回は着手しない。
 
 ## 6. Issue化する候補
 
@@ -380,6 +387,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 | docs/public_api_v0_1.md | Step 5 Public API設計の正本。決定済み範囲と未決定事項・進捗 |
 | docs/gem_structure_v0_1.md | Step 7 Gem Structure Designの正本。Design finalized / Not implemented |
 | docs/test_strategy_v0_1.md | Step 8 Test Strategy Designの正本。Complete / Design finalized / Not implemented |
+| docs/security_model_v0_1.md | v0.1 Security Model Designの正本。Complete / Design finalized / Not implemented |
 | GitHub Issues | 開発タスク、懸念点、未解決の質問 |
 
 - 会話の区切りで、決まった内容を該当ファイルへ反映する。
@@ -392,8 +400,8 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Step 8はComplete / Design finalized / Not implemented。次工程の番号・順序は今回新たに決めず、実装にも進まない。
-2. reason_code正式一覧、Filter / SanitizerのPublic API等の詳細は未決定のまま残す。
+1. Security Model DesignはComplete / Design finalized / Not implemented（D030）。次は「未決定事項の詰め」。今回は着手せず、実装にも進まない。
+2. reason_code正式一覧、Filter / SanitizerのPublic API等に加え、[Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を残す。具体的な実装方式・設定値・新規APIは追加確定しない。
 3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、DB型、Migration実コード・taskの確認、対応Ruby/Rails、ライセンス等を後続工程で扱い、v0.1の完了条件をレビューする。
 
 ## 9. 初版の根拠

@@ -399,6 +399,27 @@
 - 正式本文：[Test Strategy Design](test_strategy_v0_1.md)、[Step 8の記録](PROJECT.md#54-step-8-test-strategy-design)。
 - 根拠：ユーザーが提示したStep 8 Test Strategy Designの正式決定と、設計ドキュメントのみの更新指示。
 
+## D030: v0.1 Security Model Design
+
+- 日付：2026-09-17
+- Status：**確定（設計のみ・未実装）**。Security Model Designは **Complete / Design finalized / Not implemented**。
+- Context：Step 8完了後、認証・解決済みAgentがPrincipalから委任された範囲を超えて操作することを防ぐため、Security requirementとHost Applicationとの責務境界を整理する必要がある。
+- Decision（Threat / Trust Boundary）：HostがAuthentication、Agent / Principal Resolution、Resource / Context確定を担当し、ActingForがDelegation / Constraint / Expiration / Revocation / Authorizationを評価する。認証突破、OAuth / OIDCやMCP自体、HostやDB管理権限の完全な乗っ取り、Business Operation自体の安全性はCoreの直接責務外。
+- Decision（Fail Closed / Secure Defaults）：権限を明確に確認できなければallowしない。無効・不一致のDelegationはmatchさせず、有効なmatchがなければdeny。Unknown / Invalid / Ambiguousや設定不足で権限を拡大しない。Authorization failureはDecision(:deny)、System / API / configuration failureはExceptionとし、異常をdenyへ潰さない。
+- Decision（Privilege / Binding）：実効権限はPrincipal Current AuthorityとDelegated Authorityの積集合。HostがPrincipalの現在権限を確認し、古いDelegationやrequire_approvalで権限を拡張しない。明示されたAgent / Principalの組み合わせで評価し、別Principalの委任を流用しない。Decisionは判定時点のAgent / Principal / Action / Resource / Contextに対する結果であり、再利用可能なAuthorization Tokenではない。入力・Delegation状態・Principal権限等の判断に影響する状態が変われば再authorizeする。
+- Decision（Audit Integrity / Confidentiality）：allow / deny / require_approvalすべてでAuditEvent保存成功後にのみDecisionを返す。保存失敗はDecisionを返さずExceptionとし、denyへ変換せずBusiness Logicへ進ませない（D022・D023・D029）。Raw ContextはFilter / Sanitizerを経由し、allowlist優先で必要最小限を保存する。Token / API Keyを保存せず、Secretを無条件に保存しない。
+- Decision（Delegation Tamper / 操作保護）：認可内容はimmutable、権限変更はrevoke + createとする。作成・revokeするcallerのAuthentication / Host AuthorizationはHost責務で、専用Public APIも代替しない。
+- Decision（Replay / Time / TOCTOU）：二重実行防止、idempotency、exactly-onceはHost責務。ExpirationにはActingFor側の信頼できる現在時刻を使い、外部callerの任意時刻を信頼しない。既存の時刻固定Test方針は維持する。DecisionとBusiness Logicの完全な原子性は単体で保証せず、Hostは重要操作の実行直前と判断に影響する状態変更後に再authorizeする。
+- Decision（Resource / Constraint）：Hostが確定した一意に識別可能なResource情報を用い、既存のResource scopeとnilの意味は維持する。Constraint評価でeval / instance_eval / DB由来の任意Ruby code・Proc・Lambdaを実行せず、既存の限定operatorのみ評価する。巨大入力・過剰な構造を無制限に評価せず、上限を設けられる設計とし、制限超過をallowへ倒さない。
+- Decision（Information / Error Leakage）：外部Agentにはallow / deny / require_approvalを中心とする必要最小限の情報を返す。他PrincipalのDelegation有無、内部Constraint・reason・DB・Debug詳細を不用意に公開しない。Resource / Contextの機密情報をAudit・log・Error / Exception messageへそのまま出力しない。Hostが内部Exceptionを安全な外部Error Responseへ変換し、調査情報は保護されたlog / monitoringで扱う。
+- Decision（Audit Tamper / Retention）：通常Public APIはappend-onlyでupdate / deleteを設けない。必要最小限の記録とし、無期限保存を固定仕様にしない。Hostが法令・Privacy / Security Policyに応じRetentionを管理可能とする。Retention / legal deletion / DB保守は通常Audit APIとは別の運用責務。
+- Decision（Direct DB / Concurrency / Stale State）：Public APIを迂回するModel / SQL / DB直接更新まで完全防御する保証はせず、Host側の責務とする。通常はPublic API経由を推奨し、可能な範囲で安全なModel制約を持たせる方向とする。同時実行、revoke競合、expiration境界、状態更新で古い状態から権限を拡大させない。十分新しいDelegation状態を使い、cache / replica / stale objectによってrevoked / expired Delegationを再度allowしない。
+- Rationale：委任範囲・判定時点・Auditの完全性と機密性を守り、HostとCoreの保証範囲を明確にする。Security requirementと実装手段を分け、過剰設計や未決定APIの先行確定を避けるため。
+- Consequences：Threat Model、Trust Boundary、Security Invariant、Host責務、v0.1要件、実装方式との分離、未決定事項の整理を完了条件とし、設計完了とする。Step 1〜8と過去の工程番号を変更せず、Security Model Designは未採番。次は「未決定事項の詰め」だが今回は未着手。Implementation / Testへの反映は後続工程で確認し、Step 8の再設計やGem / Test / Migration実装は行わない。GemはNot implemented / Not released、全体Definition of DoneはProposalを維持する。
+- 未決定：Exception class / reason_code正式一覧、Sanitizer Public API・設定方式、Retention期間・削除API、Constraint / Context / JSONの上限・timeout、Clock / Time injection、transaction / locking / isolation / retry、cache / replica方式、Resource identifierのDB型、Delegation validation・delegate!・caller authorization API、TOCTOU transaction API、Decision binding token等。Configuration / Initializer、Generator、対応Ruby / Rails、CI matrix、static analysis、License、Approval Workflow、各Adapterも追加決定しない。D028の既存非提供方針を維持し、全項目は正本第27節を参照。
+- 正式本文：[Security Model Design](security_model_v0_1.md)、[Security Model Designの記録](PROJECT.md#55-security-model-design)。
+- 根拠：ユーザーが提示したSecurity Model Designの正式決定と、設計ドキュメントのみの更新指示。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
