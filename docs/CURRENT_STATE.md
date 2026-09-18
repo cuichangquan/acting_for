@@ -39,7 +39,8 @@ ActiveRecord Models implemented and Docker verified
 Delegation Public API implementation design finalized
 Delegation API implemented
 Decision implemented
-Authorization not implemented
+Authorization core implemented
+ActingFor.authorize Public Entry Point not implemented
 ConstraintEvaluator implemented
 Audit authorization integration not implemented
 Minitest test suite not implemented
@@ -50,6 +51,8 @@ Not released
 ```
 
 ## Implemented
+
+Authorization core：`app/services/acting_for/internal/authorization.rb`。D216どおり、DBでagent / principal / action / resource_type / active stateの候補を絞り、Ruby側でResource scopeとConstraintEvaluatorを評価してmatching Delegationを確定し、`require_approval > allow > deny` でDecisionを生成する。`ActingFor.authorize(...)` Public Entry PointとAuditEvent保存はまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -118,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-ConstraintEvaluator実装完了。D216でAuthorizationを「DB候補抽出 → Ruby最終評価」に分離する方針を確定。Authorization自体は未実装。次の明示指示で `ActingFor::Internal::Authorization` のcore実装（candidate lookup / Resource scope / ConstraintEvaluator / Decision生成）へ進む。`ActingFor.authorize(...)` Public Entry Point、AuditEvent保存・Audit integrationにはまだ進まない。具体的SQLや細かなprivate method構成は未決定のまま維持する。詳細は[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+Authorization core実装完了。`ActingFor.authorize(...)` Public Entry PointとAudit authorization integrationは未実装。次の重要事項はPublic authorizeの入力validation / normalizationとInternal Authorizationへの受け渡し方針を確認すること。AuditEvent保存にはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
