@@ -3176,3 +3176,24 @@ Production code・Gem本体Migration・DB schema・既存Decision・仕様は変
 既存Docker環境の空DBで `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
 
 **286 runs, 688 assertions, 0 failures, 0 errors, 0 skips**（seed 51215）。追加Engine / Migration Integration Test24件、既存Unit16件・Delegation114件・Authorization / Audit132件も全て成功。Production code修正なし。検証用volumeは `down -v` で削除し、log / schema等の生成物はcommitしない。対応matrixやTest Strategy全体の完了を意味しない。
+
+## D228: Host Authorization Boundaryを正式Integration Testで検証する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Test Strategy §10〜13・§15](test_strategy_v0_1.md)、D049・D221〜D227。
+
+Agentの実効権限はPrincipal自身の現在のHost権限とDelegationされた権限の積集合。正式Host Authorization Boundary Test8件を追加し、Host deny + ActingFor allowの停止、両allowの実行、Host権限の有無によるrequire_approvalの停止 / Approval Workflow境界、両effectでDelegation作成後のHost権限喪失、Host権限だけでは実行できないこと、Audit failure時にBusiness Logicへ進まないことを検証する。
+
+Dummyの最小 `HostAuthorizedOperation` はHost認可callbackを現在の権限として評価し、CoreのDecisionを実行 / Approval境界 / 停止へ接続する。権限fixtureはPrincipal・Action・ResourceごとのTest内配列。特定Authorization libraryへの依存、本格Workflow、新Public APIは追加しない。CoreへHost Authorizationを実装しない。
+
+同じ実装バッチで既存Test Strategyのcoverageを確認。不足していた既存仕様のTest4件を追加：Context提供値による評価とHost Resource再取得・業務属性再検証なし1件、Delegation lookup system failureのException伝播1件、bigint / UUID Principal IDのassociation・Authorization・Audit ID2件。UUIDはTest専用Dummy Model / Migrationで再現する。形式不正Context、missing field、expired / revoked / 各mismatch / invalid constraint、Audit failure等は既存Testでcoverage済みのため重複追加しない。
+
+Production code・Gem本体Migration・schema意味・認可 / 委任 / Approval / Audit / Constraint semanticsを変更しない。既存仕様のTest実装であり、新設計Decisionは不要。D229以降は追加しない。Test Strategyの現在状態とcoverage一覧を更新する。CI / RuboCop / Quick Start / Releaseは未実装のまま残す。
+
+### D228 runtime verification（2026-09-18）
+
+Dockerの空DBで `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
+
+**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**（seed 63244）。D228 Host Boundary8件・その他既存仕様4件が実行され、既存286件も全て成功。Production code修正なし。生成log / schema等と今回の検証用volumeは削除し、commitしない。CI前の確定済みcoverageに残存未実装項目なし。正式対応matrix全体・Quick Start・Releaseの完了を意味しない。

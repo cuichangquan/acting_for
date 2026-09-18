@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D227
+D228
 ```
 
 ## Current Status
@@ -43,7 +43,8 @@ Authorization core implemented
 ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
 Audit authorization integration implemented
-Minitest unit / delegation / authorization / audit / engine / migration tests implemented and Docker runtime verified
+Minitest unit / delegation / authorization / audit / engine / migration / host boundary tests implemented and Docker runtime verified
+Pre-CI Test Strategy coverage checked
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -51,6 +52,8 @@ Not released
 ```
 
 ## Implemented
+
+Host Authorization Boundary / 残存coverage（D228）：Host boundary Test8件、Context Resource責務境界・Delegation lookup failure・bigint / UUID Principal IDの既存仕様Test4件を追加。既存286件を維持し、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**。Dummyに最小Host operationとUUID Principal fixtureを追加。Production code変更なし。Context形式不正・field不足とFail Closedの大部分は既存Testでcoverage済み。CI前の確定済みcoverageに残存未実装項目なし。詳細は[Test Strategy §17](test_strategy_v0_1.md#17-d228後のcoverage確認2026-09-18)。
 
 Engine / Migration Integration Test（D227）：`test/integration/engine_integration_test.rb` に正式Test24件を追加。namespace共存用の最小Host `::Agent` をDummy側へ追加し、fresh boot / eager load・constant解決・Host Migration参照と適用・Model接続とassociationを確認した。既存262件を維持し、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**286 runs, 688 assertions, 0 failures, 0 errors, 0 skips**。Production code・schema修正なし。検証用volume・生成物は削除済み。
 
@@ -129,7 +132,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D227によりEngine / Migration Integrationも正式TestでDocker検証完了。正式コマンドは `bundle exec rake test`、DB事前準備はDummyの `db:prepare`。次の候補はTest Strategyの残存coverage（Host Authorization Boundary）の実装単位を確認すること。CI / Host Authorization Boundary実装 / Quick Start / Releaseには今回進んでいない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D228と既存仕様の残存coverage実装・確認が完了。次の大きな工程はCI（正式Ruby / Rails matrix・PostgreSQL・正式Test・RuboCop）。CI詳細の未決定事項は既存正本に従い確認する。Quick Start / Releaseは未実装。
 
 ## Important Rules
 

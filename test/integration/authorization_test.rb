@@ -491,6 +491,18 @@ class AuthorizationTest < ActiveSupport::TestCase
     end
   end
 
+  test "authorize propagates delegation lookup system failure instead of deny" do
+    original = ActiveRecord::StatementInvalid.new("simulated delegation lookup failure")
+    subscriber = ->(_name, _start, _finish, _id, payload) do
+      raise original if payload[:sql].match?(/\bFROM\s+"acting_for_delegations"/i)
+    end
+    assert_no_difference "ActingFor::AuditEvent.count" do
+      ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+        assert_same original, assert_raises(ActiveRecord::StatementInvalid) { authorize }
+      end
+    end
+  end
+
   private
 
   def authorize(**overrides)

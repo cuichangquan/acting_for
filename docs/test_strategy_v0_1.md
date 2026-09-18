@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Partially implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了。D221に基づく共通Test runner / helperとDecision・ConstraintEvaluator Unit Testは実装済みで、Public API Integration Testは未実装。Gem skeleton / Migration / Models / 最小Dummyは実装・検証済み。Gemは **Not released** であり、README Quick Startは実行できない。
+**Step 8: Complete / Design finalized / Test suite implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・RuboCop・Runnable Quick Start・Releaseは未実装。Gemは **Not released**。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
@@ -10,7 +10,9 @@
 
 v0.1では **Minitest** を正式採用する。Rails-nativeでRails標準のTest構成と自然に統合でき、`test/dummy` と相性がよい。v0.1に十分で、不要なTest Framework依存を増やさないためである。RSpecはv0.1では採用しない。
 
-## 1.1 正式Test suiteの最初の実装単位（D221）
+## 1.1 正式Test suiteの実行基盤（D221）
+
+D221の最初の実装単位はUnit Test。以下のtreeはD228後の現在状態。後続実装を分離する記述は当時の範囲を示す。
 
 正式Minitest suiteは、まず共通実行基盤とUnit Testから実装する。
 
@@ -21,7 +23,12 @@ test/
 │   ├── decision_test.rb
 │   └── constraint_evaluator_test.rb
 └── integration/
-    └── （後続実装）
+    ├── delegation_test.rb
+    ├── authorization_test.rb
+    ├── engine_integration_test.rb
+    ├── host_authorization_boundary_test.rb
+    ├── context_trust_boundary_test.rb
+    └── principal_id_integration_test.rb
 ```
 
 `test/test_helper.rb` から最小 `test/dummy` Rails環境をloadし、Rails標準の `rails/test_help` を使う。新しいTest Framework依存は追加しない。`Rake::TestTask` を追加し、正式Test実行コマンドは `bundle exec rake test`、discovery patternは `test/**/*_test.rb` とする。
@@ -232,11 +239,11 @@ System failure → Exception
 
 後続D067・D072・D073により、正式CI基盤はGitHub Actions、triggerはPull Requestとmain branchへのpush。少なくとも正式Ruby / Rails matrix・PostgreSQL・既存の必須Test・RuboCopを検証し、RuboCop violationはCI failureとする。scheduled / cron CI、独自Style Guide、大量の独自Cop、大規模custom rule set、複数plugin群はv0.1必須でない。
 
-RuboCop version / config / rule set / plugin、rake task名、workflow YAML・job構成・cache・具体的CI command・service設定、Quick Start最終コード、Release Notes本文、CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。設定・本文・Test / CI実装は作成しない。
+RuboCop version / config / rule set / plugin、rake task名、workflow YAML・job構成・cache・具体的CI command・service設定、Quick Start最終コード、Release Notes本文、CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。正式Testは後続D221〜D228で実装済み。CI設定・Quick Start最終コード・Release本文は未実装。
 
-Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、Delegation Public APIの具体的なAcceptance Criteriaは後続D190〜D212に基づく第16節に反映する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。Migration / Modelsは実装・Docker検証済み。正式Test suiteは未実装で、Authorization等の未対象の実装詳細は後続工程で扱う。
+Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。設計時点ではTest Strategyの再構築やTestコード実装は行わず、Delegation Public APIの具体的なAcceptance Criteriaは後続D190〜D212に基づく第16節に反映する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。Migration / Modelsは実装・Docker検証済み。正式Test suiteとAuthorization / Audit integrationはD221〜D228で実装・検証済み。
 
-Step 8は **Complete / Design finalized / Not implemented**。次工程の番号・順序は新たに決めず、Security Model Design等をStep 9に採番しない。Gem / Test / Migration / Model / Service / Decision / AuditEvent / Generator / Dummy Rails Appの実装、Configuration追加、CI構築、releaseには進まない。
+Step 8の設計は **Complete / Design finalized**。Gem / Test / Migration / Model / Service / Decision / AuditEvent / 最小Dummyの後続実装は完了。CI・Runnable Quick Start・Releaseは未実装。新しいConfigurationやGeneratorを完了条件に追加しない。
 
 ## 15. 後続決定に対応する検証設計（D035・D043〜D046）
 
@@ -255,11 +262,11 @@ Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前
 
 時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。
 
-Integration Testではbigint / UUID等の異なるPrincipal ID型について、stringのDelegation#principal_idを介したassociationとAuthorization動作を確認する。Model / Migration検証はD043のjson型・default・NOT NULLとAgent string型・unique indexに従い、AuditではBigDecimalの10進数String保存による精度維持を確認する設計とする。これは検証方針だけであり、Test / Dummy App / Migration / CI workflowを実装しない。
+Integration Testではbigint / UUID等の異なるPrincipal ID型について、stringのDelegation#principal_idを介したassociationとAuthorization動作を確認する。Model / Migration検証はD043のjson型・default・NOT NULLとAgent string型・unique indexに従い、AuditではBigDecimalの10進数String保存による精度維持を確認する設計とする。bigint / UUID Principalの正式Integration TestはD228バッチで追加した。schema全項目の従来手動検証を重複Test化せず、CI workflowは未実装。
 
 ## 16. Delegation Public API Test as Executable Documentation
 
-**D208：Public API Test = Executable Documentation。** 将来の正式Minitest suiteでは、`ActingFor.delegate(...)` / `ActingFor.authorize(...)` を中心に、利用者が読める仕様書としてテストを書く。以下はD190〜D212に基づくIntegration TestのAcceptance Criteriaであり、今回Testコードは作成しない。入力仕様の正本は[Public API第9節](public_api_v0_1.md#9-delegation-api)。
+**D208：Public API Test = Executable Documentation。** 正式Minitest suiteでは、`ActingFor.delegate(...)` / `ActingFor.authorize(...)` を中心に、利用者が読める仕様書としてテストを書く。以下はD190〜D212に基づくIntegration TestのAcceptance Criteriaであり、D225で正式Test実装済み。入力仕様の正本は[Public API第9節](public_api_v0_1.md#9-delegation-api)。
 
 テスト名は許可・拒否条件が理解できる英語名とする。たとえば `delegate accepts a persisted agent`、`delegate rejects an unsaved agent`、`delegate converts symbol action to string`、`delegate does not mutate constraints passed by the caller`。正常系と間違いやすい異常系を明示し、Internal class名・private method依存を最小化する。1テストへ大量の仕様を詰め込まず、コメントよりテスト名・入力・期待結果で伝える。READMEの将来の利用例とPublic API Testを乖離させない。
 
@@ -372,3 +379,23 @@ Rails time helperで基準時刻を固定する。ActingFor側でparse / convert
 | DB failure | 一律InvalidRequestErrorへwrapせず原則そのまま伝播 |
 
 Exception classはPublic contractだが、message全文一致と複数不正時のvalidation順序はTest contractにしない（D210・D211）。内部の検出順序やprivate methodへ依存せずPublic behaviorを検証する。
+
+## 17. D228後のcoverage確認（2026-09-18）
+
+新しい設計仕様は追加せず、既存Acceptance Criteriaと正式Testを照合した。
+
+| 対象 | 現在状態 / 検証先 |
+| --- | --- |
+| §1〜3 Framework / runner / Dummy / 責務境界 | 実装済み：test_helper、Rake task、最小Dummy、Engine / Host boundary Test |
+| §4〜5 Decision / Constraint | 既存Unit Testでcoverage済み：3 status、freeze、strict type、AND、境界、missing / nil、invalid、nested非対応 |
+| §6〜8・§16 Public API / matching / Audit | 既存delegation_test・authorization_testでcoverage済み：全matching条件、優先順位、入力・永続化・非破壊、Audit全結果・選択・保存失敗 |
+| §9 Engine / Migration | 既存engine_integration_testでcoverage済み：fresh boot / eager load、namespace、Host Migration適用、Model / association / Audit連携 |
+| §10 Host Authorization | D228で実装済み：Host現在権限との積集合、allow実行、approval境界、両effectで委任後の権限喪失、Audit failure時の停止 |
+| §11 Context Trust Boundary | 形式不正Exception・必要field不足で不成立 / denyは既存authorization_testでcoverage済み。追加context_trust_boundary_testでHost提供Contextによる評価、Host Resourceの再取得・業務属性再検証なしを確認 |
+| §12 Fail Closed | expired / revoked / action・resource・constraint mismatch / missing / type mismatch / invalid constraintは既存Unit・Authorizationでcoverage済み。API misuse / Audit / snapshot errorのException境界も既存Test。追加TestでDelegation lookupのDB failureをdenyへ変換しないことを確認。独立したConfiguration APIは存在せず、新APIを前提とするTestは追加しない |
+| §13 Acceptance Criteria | 上記Testで全項目coverage済み。Agent差異は既存different-agent matching Test、approval自動実行禁止はD228で確認 |
+| §15 Principal ID / 時刻 / 精度 | bigint / UUIDのassociation・authorize・Audit IDは追加principal_id_integration_test。時刻固定とBigDecimal精度は既存Testでcoverage済み |
+| §14〜15 CI / 静的解析 | 未実装、CI工程で検証予定：GitHub Actions PR / main push、Ruby 3.4 / 4.0 × Rails 8.0 / 8.1、PostgreSQL、正式Test、RuboCop。今回のDocker 1組の成功は正式matrix全体の保証ではない |
+| §14〜15 Quick Start / Release | 未実装、Quick Start / Release工程で検証予定：Runnable Quick Start、README / Security・Responsibility Boundaryと実装の一致、Ruby / Rails公式support status再確認、GitHub Release Notes、0.1.0 / v0.1.0 |
+
+CI前の確定済みTest coverageに残存未実装項目なし。CI・Quick Start・Releaseの完成を意味しない。D229以降のDecisionは追加しない。
