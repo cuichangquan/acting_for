@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D097
+D098
 ```
 
 ## Current Status
@@ -90,11 +90,11 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration file実装は完了したが、PostgreSQLへの実適用は未確認。
+Migration implementationの完了条件は、PostgreSQL上で3 Migrationを実際に `up → rollback → up` し、エラーなく適用・取消・再適用できることの確認とする（D098）。
 
-次の重要事項は、Model implementationへ進む前に **3 Migrationのup / down実行確認をMigration implementationの完了条件として行うか** を決める。
+このruntime verificationが完了するまでModel implementationへ進まない。
 
-Model / Authorization / Auditロジック / Test / CIへはまだ進まない。
+次に、検証に使用するRails host環境を1項目として決める。
 
 ## Important Rules
 

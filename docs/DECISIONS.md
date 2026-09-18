@@ -1320,6 +1320,19 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D098: Migration Verification Completion Criteria
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D095でMigration implementationを第2実装単位とし、D097で3 Migration fileを実装した。Model implementationへ進む前のMigration実装完了条件を確定する。
+- Decision：Migration implementationは、PostgreSQL上で3 Migrationを実際に `up → rollback → up` し、エラーなく適用・取消・再適用できることを確認して完了とする。この確認が終わるまでModel implementationへ進まない。
+- Rationale：Migration Ruby fileの存在やsyntax確認だけでは、PostgreSQL上でのDDL・constraint・index・Foreign Keyの実行可能性を保証できないため。
+- 未決定：検証に使用する具体的なRails host環境・実行コマンド。
+- Consequences：Migration runtime verificationは未完了のまま維持する。Model / Authorization / Auditロジック / Test / CIにはまだ進まない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
