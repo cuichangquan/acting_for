@@ -146,6 +146,11 @@ D218により、Authorization DecisionのAuditEvent保存も `ActingFor::Interna
 
 D219により、`audit_context_keys` のvalidation / normalizationとsanitized context生成も `ActingFor::Internal::Authorization` が担当する。Array<Symbol>、forbidden secret keys、許可scalar型、BigDecimalの10進数String化等はD031・D044を維持し、別Sanitizer Serviceは追加しない。Context選択時はSymbol key完全一致、生成するsanitized_contextのcanonical keyはStringとする。Public入力objectは破壊しない。
 
+
+D220により、Internal AuthorizationはDecision生成後に `ActingFor::AuditEvent.create!` を1回だけ呼び、成功後にDecisionを返す。snapshotはagent id / identifier、`principal.class.polymorphic_name` / `principal.id.to_s`、正規化済みaction / resource identity、Decision String、D034 reason_code、実際にmatchしたDelegation ID全部、D219 sanitized_context。matched_delegation_idsはcanonical representationとしてID昇順にsortするが、順序に意味は持たせない。
+
+AuditEvent persistenceでは `create!` 周辺の `ActiveRecord::ActiveRecordError` だけを `ActingFor::AuditPersistenceError` へwrapしcauseを保持する。属性組み立て等のprogramming errorやその他の `StandardError` は一律wrapしない。`ActingFor::InternalError < ActingFor::Error`、`ActingFor::AuditPersistenceError < ActingFor::InternalError` を既存errors.rbへ追加する。明示的transaction / retry / lock / Audit専用Serviceは追加しない。
+
 ## 5. Decision Value Object
 
 `ActingFor::Decision` は `lib/acting_for/decision.rb` に配置する。ActiveRecord ModelでもServiceでもなく、Public APIとして利用されるValue Objectである。

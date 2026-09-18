@@ -2981,3 +2981,54 @@ key選択時はD031どおりSymbolで厳密比較し、選択後にAudit JSON ob
 
 本Decisionは `audit_context_keys` と `sanitized_context` 生成までを確定する。AuditEvent INSERT、reason_code / matched_delegation_idsの保存、AuditPersistenceErrorの実装はD218に基づく後続実装単位で扱う。
 
+## D220: AuditEventをcreate!で1回保存し、永続化失敗だけをAuditPersistenceErrorへwrapする
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)、[Test Strategy](test_strategy_v0_1.md#8-auditevent--audit保存失敗-integration-test)。
+
+D218・D219を受け、`ActingFor::Internal::Authorization` は最終Decision生成後に `ActingFor::AuditEvent.create!` を **1回だけ** 呼び、保存成功後にDecisionを返す。
+
+概念上の流れ：
+
+```text
+validation / normalization
+        ↓
+sanitized_context生成
+        ↓
+Delegation検索・評価
+        ↓
+Decision生成
+        ↓
+AuditEvent.create! 1回
+        ↓
+Decision return
+```
+
+AuditEventへ保存するsnapshot：
+
+- `agent_id`：`agent.id`
+- `agent_identifier`：`agent.identifier`
+- `principal_type`：`principal.class.polymorphic_name`
+- `principal_id`：`principal.id.to_s`
+- `action`：正規化済みAction String
+- `resource_type` / `resource_id`：Public境界で正規化済みResource identity
+- `decision`：`decision.status.to_s`
+- `reason_code`：D034の正式対応値
+- `matched_delegation_ids`：実際にmatchしたDelegationのIDをすべて保存
+- `sanitized_context`：D219で生成したcanonical sanitized context
+
+`matched_delegation_ids` は保存時のcanonical representationとしてID昇順にsortする。ただし既存D034どおりmatch集合としての意味だけを持ち、配列順序によるpriority / precedence / specificity等の意味は導入しない。
+
+Audit persistence failure：
+
+- `AuditEvent.create!` の呼び出し周辺だけで `ActiveRecord::ActiveRecordError` を捕捉する
+- 捕捉した例外は `ActingFor::AuditPersistenceError` へwrapし、Rubyのcauseを保持する
+- `ActingFor::InternalError < ActingFor::Error`
+- `ActingFor::AuditPersistenceError < ActingFor::InternalError`
+- Audit保存失敗時はDecisionを返さず、denyへ変換しない
+- Audit属性組み立て等のプログラミングエラーや、Audit persistence以外の予期しない `StandardError` を一律 `AuditPersistenceError` へwrapしない
+
+v0.1では明示的transaction、retry、DB lock、Audit専用Serviceを追加しない。具体的private method名はPublic contractにしない。
+

@@ -448,6 +448,8 @@ AuditEventは、**ActingForがどのAuthorization Decisionを行ったか**を�
 
 ID重複は許可しない。`[12, 18]` は有効、`[12, 12, 18]` は不正。match集合として扱い、配列順序に意味はない。`[12, 18]` と `[18, 12]` は同じ集合を表し、利用者は順序に依存しない。
 
+D220により、保存時のcanonical representationはID昇順にsortする。ただしこれは永続化表現を安定させるためだけであり、順序にpriority / precedence / specificity等の意味は持たせない。
+
 JSON配列（`[]` / `[12, 18]` 等）として保存する。PostgreSQL固有のJSONBを必須とせず、新しい中間テーブルは作らない。後続D043でDB schemaは `json` / `default: []` / `null: false` とする。後続D051・D052によりDelegation主キーはbigint、配列内部IDはJSON number / Integerとし、Stringへ変換しない。Array・Integerのみ・重複なし・Decisionとの件数整合性はModel / Authorization内部ロジックで保証し、JSON内部用DB CHECKは設けない。
 
 ### reason_code

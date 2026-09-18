@@ -108,6 +108,7 @@ AuditEventは `ActingFor.authorize(...)` 経由で検証する。allow / deny / 
 追跡対象はAgent、Principal、Action、Resource、Decision、`matched_delegation_ids`、sanitized Context、timestamp。既存Audit設計に従い、Agentのid / identifier、PrincipalとResourceの識別情報、判定と記録時刻を追跡できることを検証する。
 
 - matching Delegationなしのdenyでは `matched_delegation_ids = []`。
+- allow / require_approvalでは実際にmatchしたDelegation IDをすべて保存し、canonical representationとしてID昇順であることを確認する。ただしTestの意味論としてpriorityやprecedenceを順序に持たせない。
 - 複数matchでは該当Delegationを追跡できること。
 - ContextはFilter / Sanitizerを経由し、allowlist優先で必要最小限を保存する既存方針に従う。生のContextをそのまま保存する契約にしない。
 - D219に従い、`audit_context_keys` はArray<Symbol>のみ、重複除去、forbidden secret key拒否、missing key無視、unsupported value拒否、BigDecimalの精度保持String化を検証する。Symbol keyで選択し、sanitized_contextのcanonical keyがStringになることも検証する。
@@ -126,6 +127,8 @@ Business Logicへ進ませない
 ```
 
 AuthorizationとしてのdenyとAudit / System failureは異なる。Audit保存失敗はSystem Errorであり、Step 8時点で未固定だったclassは後続D031のAuditPersistenceErrorに従う。lower-level persistence exceptionのcauseを保持する。
+
+D220に従い、`AuditEvent.create!` が `ActiveRecord::ActiveRecordError` をraiseした場合だけ `ActingFor::AuditPersistenceError` へwrapされcauseが保持されることを確認する。Audit属性組み立て等の非persistence errorを一律AuditPersistenceErrorへ変換しないことも境界として確認する。
 
 ## 9. Migration / Engine Integration Test
 

@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D219
+D220
 ```
 
 ## Current Status
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-`audit_context_keys` のPublic受け渡しとInternal Authorization内のvalidation / normalization・sanitized context生成をD219どおり実装済み。AuditEvent保存・reason_code / matched_delegation_ids・AuditPersistenceError integrationは未実装。次の重要事項はD218と既存D031 / D034に基づくAuditEvent INSERTと保存失敗処理の実装方針を確認すること。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md)を参照。
+`audit_context_keys` sanitizationはD219どおり実装済み。D220でAuditEvent snapshot、`create!` 1回、matched_delegation_idsのcanonical sort、AuditPersistenceErrorのwrap境界を確定。Audit persistence integration自体はまだ未実装。次の明示指示でAuditEvent保存と `InternalError` / `AuditPersistenceError` を実装する。正式Minitest suite / CIにはまだ進まない。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md)を参照。
 
 ## Important Rules
 
