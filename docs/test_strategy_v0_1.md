@@ -10,6 +10,24 @@
 
 v0.1では **Minitest** を正式採用する。Rails-nativeでRails標準のTest構成と自然に統合でき、`test/dummy` と相性がよい。v0.1に十分で、不要なTest Framework依存を増やさないためである。RSpecはv0.1では採用しない。
 
+## 1.1 正式Test suiteの最初の実装単位（D221）
+
+正式Minitest suiteは、まず共通実行基盤とUnit Testから実装する。
+
+```text
+test/
+├── test_helper.rb
+├── unit/
+│   ├── decision_test.rb
+│   └── constraint_evaluator_test.rb
+└── integration/
+    └── （後続実装）
+```
+
+`test/test_helper.rb` から最小 `test/dummy` Rails環境をloadし、Rails標準の `rails/test_help` を使う。新しいTest Framework依存は追加しない。`Rake::TestTask` を追加し、正式Test実行コマンドは `bundle exec rake test`、discovery patternは `test/**/*_test.rb` とする。
+
+最初の実装対象は `ActingFor::Decision` と `ActingFor::Internal::ConstraintEvaluator` のUnit Testまで。`ActingFor.delegate(...)` / `ActingFor.authorize(...)` / AuditEvent persistence等のIntegration Testは次の実装単位へ分離し、CIにはまだ進まない。private methodを直接Test Contractにせず、Public behavior / observable behaviorを中心に検証する。
+
 ## 2. Unit Test / Integration Testの境界
 
 | 種別 | 境界 | 主な対象 |

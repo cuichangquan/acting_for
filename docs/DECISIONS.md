@@ -3032,3 +3032,40 @@ Audit persistence failure：
 
 v0.1では明示的transaction、retry、DB lock、Audit専用Serviceを追加しない。具体的private method名はPublic contractにしない。
 
+## D221: 正式Minitest suiteは共通実行基盤とUnit Testから開始する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Test Strategy](test_strategy_v0_1.md)、[Gem Structure](gem_structure_v0_1.md#9-test-directory--dummy-rails-app)。
+
+正式Minitest suiteの最初の実装単位は、共通Test runner / helperとUnit Testに限定する。
+
+構成：
+
+```text
+test/
+├── test_helper.rb
+├── unit/
+│   ├── decision_test.rb
+│   └── constraint_evaluator_test.rb
+└── integration/
+    └── （後続実装）
+```
+
+方針：
+
+- Test Frameworkは既存D029どおりMinitest
+- `test/test_helper.rb` から最小 `test/dummy` Rails環境をloadする
+- Rails標準の `rails/test_help` を使う
+- 新しいTest Framework依存は追加しない
+- `Rake::TestTask` を追加する
+- 正式Test実行コマンドは `bundle exec rake test`
+- Test file discoveryは `test/**/*_test.rb`
+- private methodを直接Test Contractにせず、Public behavior / observable behaviorを中心に検証する
+- 最初のTest実装対象は `ActingFor::Decision` と `ActingFor::Internal::ConstraintEvaluator`
+- `ActingFor.delegate(...)` / `ActingFor.authorize(...)` / AuditEvent persistence等のIntegration Testは次の実装単位へ分離する
+- CI、Runnable Quick Start、Releaseにはまだ進まない
+
+実装順序は「Test runner + Unit tests → Public API Integration tests → CI」とする。
+

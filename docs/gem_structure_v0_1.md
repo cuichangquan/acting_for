@@ -233,6 +233,8 @@ Public Exceptionは `lib/acting_for/errors.rb` にまとめる（D191・D199）�
 
 Step 7時点では `test/` という構造のみを決め、Test Frameworkは未決定だった。後続の[Step 8 Test Strategy](test_strategy_v0_1.md)（D029）で **Minitest採用・RSpec不採用** を確定した。Unit / Integrationの境界と検証シナリオはStep 8正本に従う。`test/dummy` は最小Rails integration hostとし、sample product / demo applicationにはしない。最小Dummy Rails Appは実装済み。正式Minitest suiteは未実装。
 
+D221により、正式Minitest suiteの最初の実装単位は `test/test_helper.rb`、`Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb` とする。`test_helper` は `test/dummy` Rails環境と `rails/test_help` を利用し、正式実行コマンドは `bundle exec rake test`、discoveryは `test/**/*_test.rb`。Public API Integration Testは後続へ分離し、CIはまだ実装しない。
+
 ## 10. Configuration / Initializer
 
 v0.1では現時点で `lib/acting_for/configuration.rb` と `config/initializers/acting_for.rb` を作らない。必須Configurationが確定していないため、空のConfiguration APIを先にPublic化しない。将来必要になった時点で追加できる。

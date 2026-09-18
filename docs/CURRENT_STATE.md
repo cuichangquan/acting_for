@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D220
+D221
 ```
 
 ## Current Status
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D220までのAuthorization / Audit integration実装完了。`ActingFor.authorize(...)` はDecision生成後にAuditEventを自動保存し、保存成功後だけDecisionを返す。次の重要事項は正式Minitest suiteの実装方針を1項目ずつ確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D221で正式Minitest suiteの最初の実装単位を確定。`test/test_helper.rb`、`Rake::TestTask`、Decision / ConstraintEvaluator Unit Testから開始し、正式コマンドは `bundle exec rake test` とする。次の明示指示でこのUnit Test基盤を実装する。Public API Integration Test / CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
