@@ -2824,3 +2824,41 @@ Constraint field "amount"
 - String / Symbol両方を暗黙に探索する曖昧な評価を避ける
 - nested object access非対応という既存v0.1境界を維持する
 
+## D216: AuthorizationはDB候補抽出とRuby最終評価を分離する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)、[Domain Model](domain_model_v0_1.md#4-delegation)、[Test Strategy](test_strategy_v0_1.md#6-actingforauthorize-integration-test)。
+
+`ActingFor::Internal::Authorization` のDelegation評価は、DBで候補を絞り込み、その後Ruby側で最終matchingを行う二段階構成とする。
+
+概念上の流れ：
+
+```text
+DB candidate lookup
+  ↓
+agent / principal / action / resource_type / active state で候補抽出
+  ↓
+Ruby final evaluation
+  ├─ Resource scope判定
+  ├─ ConstraintEvaluator
+  └─ matching Delegation確定
+  ↓
+require_approval > allow > deny
+```
+
+ルール：
+
+- Constraint評価をDB queryへ押し込まず、既実装の `ActingFor::Internal::ConstraintEvaluator` を使う
+- specific Resource / type-wide Resource / Resource-lessの最終scope判定はRuby側で行う
+- matching Delegationが0件なら `:deny`
+- matching Delegationに `require_approval` が1件以上あれば `:require_approval`
+- それ以外にmatching Delegationが1件以上あれば `:allow`
+- explicit deny Delegationは導入しない
+- DB取得順、ID順、created_at順、作成順、Resource specificityによる優先順位を導入しない
+- lock / cache / retryを追加しない
+- 具体的SQL、ActiveRecord chainの細かな形、private method構成はPublic contractにしない
+
+この実装単位ではAuditEvent保存と `ActingFor.authorize(...)` Public Entry Pointの統合にはまだ進まない。まずInternal Authorization coreのcandidate lookup・final matching・Decision生成を実装対象とする。
+

@@ -129,6 +129,11 @@ v0.1のAuthorizationはDelegationへ `SELECT ... FOR UPDATE` 等の明示的なD
 
 v0.1ではAuthorization / Delegation作成 / AuditEvent保存を内部で自動retryしない。失敗は既存Exception方針で呼び出し元へ伝える。Hostがretryする場合、古いDecisionを再利用せず、必要に応じauthorizeから再評価する。delegateは呼ぶたび新規Delegationを作るため、内部自動retryによるduplicate Delegation作成を避ける（D038）。
 
+
+D216により、AuthorizationのDelegation評価は **DB candidate lookup → Ruby final evaluation** の二段階とする。DBではagent / principal / action / resource_type / active stateで候補を絞り、Resource scopeの最終判定とConstraint評価はRuby側で行う。Constraintは既実装の `ActingFor::Internal::ConstraintEvaluator` を使う。matching 0件はdeny、require_approvalが1件以上ならrequire_approval、それ以外のmatchingがあればallow。DB順・ID順・created_at順・作成順・specificityによる優先順位は導入しない。具体的SQLやActiveRecord chainの細かな形は固定しない。
+
+D216の次の実装単位はInternal Authorization coreまでとし、AuditEvent保存と `ActingFor.authorize(...)` Public Entry Point統合は後続へ分離する。
+
 ## 5. Decision Value Object
 
 `ActingFor::Decision` は `lib/acting_for/decision.rb` に配置する。ActiveRecord ModelでもServiceでもなく、Public APIとして利用されるValue Objectである。

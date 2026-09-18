@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D215
+D216
 ```
 
 ## Current Status
@@ -118,7 +118,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-ConstraintEvaluator実装完了。Authorization / `ActingFor.authorize(...)` / Audit authorization integrationは未実装。次の重要事項はAuthorization実装方針を1項目ずつ確認すること。Authorization用DB queryの具体SQL等の未決定事項を勝手に確定しない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+ConstraintEvaluator実装完了。D216でAuthorizationを「DB候補抽出 → Ruby最終評価」に分離する方針を確定。Authorization自体は未実装。次の明示指示で `ActingFor::Internal::Authorization` のcore実装（candidate lookup / Resource scope / ConstraintEvaluator / Decision生成）へ進む。`ActingFor.authorize(...)` Public Entry Point、AuditEvent保存・Audit integrationにはまだ進まない。具体的SQLや細かなprivate method構成は未決定のまま維持する。詳細は[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
