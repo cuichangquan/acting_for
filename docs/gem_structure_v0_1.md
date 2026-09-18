@@ -139,6 +139,11 @@ D217により、`ActingFor.authorize(...)` は `lib/acting_for.rb` の薄いPubl
 
 `AuthorizationValidator` / `AuthorizationNormalizer` 等へ過剰分割せず、validation順序やprivate method構成をPublic contractにしない。`audit_context_keys` はAudit integration時に扱い、D217の実装単位には含めない。
 
+
+D218により、Authorization DecisionのAuditEvent保存も `ActingFor::Internal::Authorization` の責務に含める。別の `AuditRecorder` / `AuditService` 等は追加しない。Internal Authorizationはmatching Delegation集合を内部で保持し、そのIDを `matched_delegation_ids` としてAuditEventへ保存する。Public DecisionへAudit用属性は追加しない。
+
+処理順序は「matching Delegation確定 → Decision生成 → AuditEvent保存 → Decision return」。Audit保存失敗時は既存仕様どおりDecisionを返さず `ActingFor::AuditPersistenceError` をraiseし、denyへ変換しない。`audit_context_keys` のvalidation / normalization / sanitized context生成は次のDecisionで別途扱う。
+
 ## 5. Decision Value Object
 
 `ActingFor::Decision` は `lib/acting_for/decision.rb` に配置する。ActiveRecord ModelでもServiceでもなく、Public APIとして利用されるValue Objectである。

@@ -2906,3 +2906,39 @@ Internal Authorizationが担当するPublic入力規則：
 
 このDecisionはPublic authorizeのvalidation / normalization責務を確定するものであり、AuditEvent保存・AuditPersistenceError・Audit Context selectionの実装には進まない。
 
+## D218: Audit保存はInternal Authorizationの責務に含める
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)。
+
+Authorization実行時のAuditEvent保存は、別の `AuditRecorder` / `AuditService` 等へ分離せず、`ActingFor::Internal::Authorization` の責務に含める。
+
+概念上の流れ：
+
+```text
+Delegation evaluation
+        ↓
+matching Delegation確定
+        ↓
+Decision生成
+        ↓
+AuditEvent保存
+        ↓
+Decision return
+```
+
+方針：
+
+- Internal Authorizationがmatching Delegation集合を保持し、そのIDを `matched_delegation_ids` としてAuditEventへ保存する
+- Public `ActingFor::Decision` へ `matched_delegation_ids` / `reason_code` / Audit用context等を追加しない
+- Audit用情報はAuthorization内部の実装情報として扱う
+- AuditEvent保存成功後にのみDecisionを返す
+- AuditEvent保存失敗時はDecisionを返さず、既存D023 / D031どおり `ActingFor::AuditPersistenceError` をraiseする
+- Audit保存失敗をdeny Decisionへ変換しない
+- Audit保存専用の追加Service、Base Service、callback、event bus等はv0.1では導入しない
+- AuditEvent保存時の具体的なprivate method構成はPublic contractにしない
+
+`audit_context_keys` のvalidation / normalization / sanitized context生成は本Decisionでは実装詳細を確定せず、次のDecisionで別項目として扱う。
+
