@@ -1,10 +1,10 @@
 # ActingFor v0.1 Public API Design
 
-更新日：2026-09-17
+更新日：2026-09-18
 
-**状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gemは未実装であり、本更新では実装を開始しない。
+**状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Modelsは実装済み。delegate / authorizeは未実装で、本更新では実装を開始しない。
 
-Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。
+Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。D190〜D212によりDelegation Public APIの実装設計を詳細化した。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 
 ## 1. Purpose
 
@@ -102,7 +102,7 @@ ActingFor.authorize(agent, principal, :purchase, product, context)
 
 ### action
 
-String / Symbolを受け付け、Symbolは `:purchase` → `"purchase"` のようにStringへ正規化する。nil、空文字、String / Symbol以外は `ActingFor::InvalidRequestError`（D032）。
+String / Symbolを受け付け、Symbolは `:purchase` → `"purchase"` のようにStringへ正規化する。nil、空文字、whitespace-only、String / Symbol以外は `ActingFor::InvalidRequestError`。自動trimせず、`" purchase "` はそのまま保持する（D032・D202）。
 
 Action matchingはStep 4どおり完全一致。wildcard、regex、hierarchy、`purchase.*`、`orders:*` はv0.1では扱わない。このAction正規化は、Constraint値の暗黙の型変換を認めるものではない。
 
@@ -127,6 +127,8 @@ Rails / ActiveModel-style Resource ClassまたはInstance、またはnilを受�
 | nil | nil | nil |
 
 Classはmodel_nameを持つ必要がある。Instanceはclassからmodel_nameを解決でき、idを持ち、そのidがnilではなく、id.to_sが空文字でないことが必要。必要interfaceを持たないobject、instanceのidがnil / id.to_sが空文字の場合は `ActingFor::InvalidRequestError`。
+
+Resource instanceはActiveRecord::Baseに限定せず、ActiveModel-style Resourceを許可する。`persisted?` / `to_model` / `to_param` / GlobalID / polymorphic associationは要求しない（D201）。
 
 IDはPublic API境界で1回だけto_sする。resource_typeは正規化後の文字列をcase-sensitiveで比較し、specific Resourceのresource_idも正規化後のStringを完全一致で比較する。case normalization、numeric coercion / conversion、追加のimplicit coercion、fuzzy matchingは行わない。
 
@@ -266,25 +268,31 @@ ActingFor.delegate(
 
 keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resource:` / `expires_at:` は省略時nil、`constraints:` は省略時 `[]`。成功時は **persist済み `ActingFor::Delegation`** を返し、unsaved recordを成功として返さない。
 
+D190〜D212でD032を詳細化し、`ActingFor.delegate(...)` を次の実装対象とする。既存 `Delegation#revoke!` を利用し、この実装単位ではAuthorization / Decision / Audit authorization integrationへ進まない。以下は確定設計であり、delegateの実装完了を意味しない。
+
 ### 入力validation
 
 次の要件に反する入力は `ActingFor::InvalidRequestError` とする。
 
 | 引数 | 許可する入力 / 正規化 | 不正例 |
 | --- | --- | --- |
-| `agent:` | persist済み `ActingFor::Agent` | nil、別class、unsaved Agent |
-| `principal:` | persist済みActiveRecord model instance | nil、非ActiveRecord object、unsaved record |
-| `action:` | String / Symbol。SymbolをStringへ正規化し完全一致 | nil、空文字、String / Symbol以外 |
+| `agent:` | `is_a?(ActingFor::Agent)` かつ `persisted?` | nil、別class、unsaved Agent |
+| `principal:` | `is_a?(ActiveRecord::Base)` かつ `persisted?` | nil、非ActiveRecord object、unsaved record |
+| `action:` | String / Symbol。SymbolのみStringへ正規化。trimしない | nil、空文字、whitespace-only、String / Symbol以外 |
 | `resource:` | 第4節のRails / ActiveModel-style Class / Instance、またはnil | String / Hashの直接識別子、必要interfaceなし、instanceのidがnil / id.to_sが空文字 |
-| `effect:` | String / Symbolのallow / require_approvalのみ。内部で正規化 | deny、nil、未知の値、その他type |
+| `effect:` | `"allow"` / `:allow` / `"require_approval"` / `:require_approval`。SymbolのみString化 | deny、nil、大文字、前後空白、alias、未知値、その他type |
 | `constraints:` | `Array<Constraint>`。条件なしは `[]` | 明示的nil、Array以外 |
-| `expires_at:` | nil / Time / ActiveSupport::TimeWithZone。指定時はActingFor trusted current timeより未来 | String、Date、Integer等、現在と同時刻、過去 |
+| `expires_at:` | nil / Time / ActiveSupport::TimeWithZone。指定時はActingFor trusted current timeより未来 | String、Date、DateTime、Integer等、現在と同時刻、過去 |
 
-`expires_at: nil` は無期限。暗黙のparse / conversionは行わない。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。explicit deny Delegationは作らない。
+`expires_at: nil` は無期限。指定時は `expires_at > ActingFor.current_time` を検証する。parse / 暗黙のTime変換 / timezone変換 / 丸めは行わず、正常なTime / ActiveSupport::TimeWithZone objectをそのままActiveRecordへ渡す（D209）。時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。explicit deny Delegationは作らない。
+
+Agentは完全class一致を要求しない。Public API内でidentifier検索・Agent自動作成・Resolution・Authenticationをしない（D204）。Principal ID型を独自検証せず、`principal: principal` をRails polymorphic associationへ渡す。principal_type / principal_idを手動生成しない（D197・D203）。Resourceの識別値は第4節の規則でActingFor側が正規化する。
+
+Action / effectとも任意objectのto_sを使わない。effectはtrim・downcase・alias変換をせず、`"ALLOW"` / `" allow "` / `"require-approval"` は不正（D202・D205）。
 
 ### Constraint validation
 
-各Constraintは `field` / `operator` / `value` の3つだけを必須keyとするHash。非Hash、必須key不足、未知のextra keyはInvalidRequestError。Hash keyはSymbol / Stringを受け付け、内部でStringへ正規化する。ただし `{ field: "amount", "field" => "price", ... }` のような正規化後の重複keyはInvalidRequestErrorとする。
+各Constraintは `field` / `operator` / `value` の3つだけを必須keyとするHash。非Hash、必須key不足、未知のextra keyはInvalidRequestError。Hash keyはSymbol / Stringのみを受け付け、Stringへ正規化する。他のkey型は不正であり、HashWithIndifferentAccess的な曖昧な扱いは導入しない（D206）。ただし `{ field: "amount", "field" => "price", ... }` のような正規化後の重複keyはInvalidRequestErrorとする。
 
 | 項目 | 許可する入力 / 正規化 |
 | --- | --- |
@@ -294,7 +302,21 @@ keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resour
 | `value`（lt / lte / gt / gte） | Integer |
 | `value`（in） | String / Integer / BooleanのArray |
 
-表のtype・値以外はInvalidRequestError。valueの暗黙型変換はしない。nested path判定のregexやfield命名規則は追加決定しない。ConstraintのAND評価とAuthorization時のfail-closedは維持する。
+表のtype・値以外はInvalidRequestError。field / operatorはSymbolのみString化し、trim・downcase・任意objectのto_sを使わない。valueにはString数値→Integer、Symbol→String、Float→Integer等の変換をせず、`in` Array要素も変換しない（D207）。ConstraintのAND評価とAuthorization時のfail-closedは維持する。
+
+D212により未決定の意味的ルールは追加しない。fieldはnon-emptyでありnon-blankではないため `field: "   "` を許可する。`operator: "in", value: []` および `value: [1, 1, 2]` も許可する。field命名regex、空in Array拒否、dedup、sort、意味的な有用性判定を追加しない。
+
+### 入力非破壊と保存・Exception境界
+
+Public境界でagent / principalを検証し、actionとeffectをcanonical String、resourceをresource_type / resource_id、constraintsをcanonical `Array<Hash<String, ...>>` に正規化する。expires_atは検証済みTime系objectまたはnil、revoked_atはnilとし、Modelはcanonical formの最終防御を担当する（D194）。
+
+呼び出し元のconstraints Array、各Constraint Hash、`in` value Arrayを破壊的変更しない。必要な新しいArray / Hashを生成し、deep_freezeや汎用DeepCopy utilityは導入しない（D200）。
+
+Public validation / normalizationの後に `ActingFor::Delegation.create!` を1回だけ呼び、事前に `valid?` を呼ばない。正常時はpersist済みDelegationを返す。Public仕様違反は `ActingFor::InvalidRequestError`、canonical化後の予期しない `ActiveRecord::RecordInvalid` やDB exceptionは一律wrapせず原則そのまま伝播する。独自transaction / retryは追加しない（D193・D198）。
+
+次の実装単位では `ActingFor::Error < StandardError` と `ActingFor::InvalidRequestError < ActingFor::Error` だけを実装予定とし、既設計のInternalError / AuditPersistenceErrorは必要になる段階まで待つ（D191）。配置と呼び出し構造は[Gem Structure](gem_structure_v0_1.md)に従う。
+
+InvalidRequestErrorというException classはPublic contract。messageは原因を理解できる具体的内容にするが、全文の完全一致はcontractにしない。複数不正時にどの入力を先に検出するかというvalidation順序も保証しない（D210・D211）。
 
 ### Revocation / duplicate Delegation
 
@@ -306,9 +328,9 @@ keyword argumentsの設計表記。`effect:` は必須でdefaultなし。`resour
 
 ActingFor v0.1はDelegation作成・取消callerのAuthentication / Authorizationを提供しない。Host Applicationが事前に認証・認可してから `ActingFor.delegate(...)` / `delegation.revoke!` を呼ぶ。caller authorization用の `actor:` / `current_user:` 等のPublic APIは追加しない（D049）。
 
-persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、具体的なcallback・validationのRuby実装は未決定（D053）。
+persist済みDelegationの `agent` / `principal` / `action` / `resource_type` / `resource_id` / `constraints` / `effect` / `expires_at` はModelレベルでも変更禁止とし、validation等で誤更新を防ぐ。期限延長・短縮も旧Delegationのrevoke + 新Delegationのcreateで表す。通常lifecycleで変更可能な状態属性は `revoked_at` のみ（通常のRails timestamp更新は別）。v0.1ではDB triggerによるimmutability強制は行わず、D053を詳細化したD177・D187によりdirty change validationを実装済みで、revoked_atの通常saveも拒否する。
 
-`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。具体的なActiveRecord / Ruby / SQL実装は未決定（D054）。
+`Delegation#revoke!` は並行実行時にもidempotentとする。対象IDと `revoked_at IS NULL` を条件とするatomic updateを用い、最初に永続化されたrevoked_atを保持する。後続呼び出しはtimestampを書き換えず、既にrevokedでもExceptionにしない。explicit row lockは使わない。revoked_atが変更された場合は通常のRails timestampとしてupdated_atも更新する。時刻は `ActingFor.current_time` を使う。D179・D188によりconditional updateを実装済み。時刻を1回取得してrevoked_at / updated_atへ同じ値を設定後reloadし、2回目以降は両timestampを保持する。unsaved recordはActiveRecord::RecordNotSavedとなる。
 
 ## 10. Audit
 
@@ -539,17 +561,17 @@ AuditEventは通常運用でappend-onlyとし、v0.1では削除用Public APIを
 
 v0.1ではConstraint complexity score、深さ制限、動的complexity判定、complexity engineを提供しない。固定Constraint件数上限・固定byte上限・Authorization専用timeoutを設けない既存方針を維持する。eq / lt / lte / gt / gte / in、nested pathなし、任意Ruby codeなし、複数ConstraintはANDという小さい言語で複雑性を抑え、Hostには必要最小限のConstraint利用を推奨する（D055）。
 
-persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。具体的なModel実装は未決定（D056）。
+persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。新しいAudit情報は常に新規INSERTで記録する。v0.1ではDB trigger、WORM storage、cryptographic signingによるDB / storage-level強制は行わない。Host側retention責務は変更しない。D183によりpersist後のreadonlyを実装済みで、update / destroyはActiveRecord::ReadOnlyRecordとなる。
 
 ## 14. Open Questions
 
-Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
+Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。基盤の実装状況は[CURRENT_STATE](CURRENT_STATE.md)を参照。delegate / authorize / Decision / Audit authorization integrationは未実装。
 
-Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。Migration実コード・taskの確認、Model validation・callback、revoke!やAuthorization queryの具体実装等の後続事項は[Step 4の残る未確定事項](domain_model_v0_1.md#22-次に決めること)を参照する。
+Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。Migration / Models / revoke!は実装・検証済み。D190〜D212によりdelegateの実装設計を確定した。Authorization query等の未対象事項は引き続き後続工程で扱う。
 
 ## 15. Step 5 Progress
 
-Step 4は完了。Step 5「Public API Design」も **10 / 10、Complete**。後続のStep 6は **Complete / Design-stage Quick Start finalized**（D027）。最新の進捗は[PROJECT](PROJECT.md#5-進行順)、設計例は[README](../README.md#quick-start)を参照。Gemは未実装・未リリースで、例は実行不可。
+Step 4は完了。Step 5「Public API Design」も **10 / 10、Complete**。後続のStep 6は **Complete / Design-stage Quick Start finalized**（D027）。最新の進捗は[PROGRESS](PROGRESS.md)、設計例は[README](../README.md#quick-start)を参照。Gemの基盤は実装済みだが未リリースで、delegate / authorizeの例はまだ実行不可。
 
 | 項目 | 内容 | 状態 |
 | --- | --- | --- |

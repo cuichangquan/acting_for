@@ -2,9 +2,9 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了したが、Testコードはまだ存在しない。Gemも **Not implemented / Not released** であり、README Quick Startは実行できない。
+**Step 8: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了したが、Testコードはまだ存在しない。Gem skeleton / Migration / Models / 最小Dummyは実装・検証済みだが、正式Minitest suiteは未実装。Gemは **Not released** であり、README Quick Startは実行できない。
 
-[Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
+[Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
 ## 1. Test Framework
 
@@ -15,7 +15,7 @@ v0.1では **Minitest** を正式採用する。Rails-nativeでRails標準のTes
 | 種別 | 境界 | 主な対象 |
 | --- | --- | --- |
 | Unit Test | Rails / DBへの依存が小さいpure / internal logic | `ActingFor::Decision`、`ActingFor::Internal::ConstraintEvaluator` |
-| Integration Test | Rails / ActiveRecord / DB / Engine / Public APIをまたぐ動作 | `ActingFor.authorize(...)`、Delegation + ActiveRecord、AuditEvent persistence、Rails Engine、Migration、Zeitwerk / autoload、`test/dummy` |
+| Integration Test | Rails / ActiveRecord / DB / Engine / Public APIをまたぐ動作 | `ActingFor.delegate(...)`、`ActingFor.authorize(...)`、Delegation + ActiveRecord、AuditEvent persistence、Rails Engine、Migration、Zeitwerk / autoload、`test/dummy` |
 
 `ActingFor.authorize(...)` はAuthorizationからAuditEvent保存まで含むため、中心的なIntegration Test対象とする。`ActingFor::Internal::Authorization` のprivate / internal method単位の仕様をTest Contractにせず、Public behaviorを検証する。
 
@@ -132,7 +132,7 @@ AuthorizationとしてのdenyとAudit / System failureは異なる。Audit保存
 - Migration適用とActiveRecord Modelとの接続。
 - `acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events` の作成・利用。
 
-Step 8時点ではDB columnの最終型を固定しなかったが、後続D043・D051・D052で確定した範囲はDomain Model正本に従う。Migration方針は後続D060〜D066と[Gem Structure第6節](gem_structure_v0_1.md#6-migration--db-table-names)に従う。Migration実コード・task名・timestamp・filenameの最終形は未決定を維持する。Configuration / Initializerや独自Generatorの追加を前提にしない。
+Step 8時点ではDB columnの最終型を固定しなかったが、後続D043・D051・D052で確定した範囲はDomain Model正本に従う。Migration方針は後続D060〜D066と[Gem Structure第6節](gem_structure_v0_1.md#6-migration--db-table-names)に従う。Migration実コード・task・filenameは後続工程で確定・実装済み。Docker runtime verificationの結果は[DECISIONS](DECISIONS.md)を参照。Configuration / Initializerや独自Generatorの追加を前提にしない。
 
 ## 10. Host Authorization Boundary
 
@@ -189,7 +189,7 @@ System failure → Exception
 | 必須機能 / 横断的要件 | Test上のAcceptance Criteria | 対応節 / 種別 |
 | --- | --- | --- |
 | Agent representation | Hostが認証・解決したAgentをPrincipalと別主体として受け取り、同じPrincipalでも異なるAgentを区別する | 3・7 / Integration |
-| Delegation | Agent / Principal / Action / Resourceを含む全matching条件を満たす委任のみ適用する | 7 / Integration |
+| Delegation | Public入力validation・normalization・非破壊・永続化と、全matching条件を満たす委任のみ適用すること | 7・16 / Integration |
 | Authorization | 3つのDecision、一致なしdeny、require_approval優先、DecisionとExceptionの境界 | 4・6・7 / Unit・Integration |
 | Constraint | Contextに対する条件内・境界値・条件外、AND、field不足、型不一致、不正・評価不能、nested非対応 | 5・6・11 / Unit・Integration |
 | Expiration / Revocation | 期限なし・期限内、期限とnowの一致・期限切れ、取消済みを区別する | 7 / Integration |
@@ -208,7 +208,7 @@ System failure → Exception
 
 RuboCop version / config / rule set / plugin、rake task名、workflow YAML・job構成・cache・具体的CI command・service設定、Quick Start最終コード、Release Notes本文、CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。設定・本文・Test / CI実装は作成しない。
 
-Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。 Migration実コード・task名、内部method・constructor・class構造、具体的validation / callback / queryコードは引き続き未決定。
+Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、Delegation Public APIの具体的なAcceptance Criteriaは後続D190〜D212に基づく第16節に反映する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。Migration / Modelsは実装・Docker検証済み。正式Test suiteは未実装で、Authorization等の未対象の実装詳細は後続工程で扱う。
 
 Step 8は **Complete / Design finalized / Not implemented**。次工程の番号・順序は新たに決めず、Security Model Design等をStep 9に採番しない。Gem / Test / Migration / Model / Service / Decision / AuditEvent / Generator / Dummy Rails Appの実装、Configuration追加、CI構築、releaseには進まない。
 
@@ -230,3 +230,119 @@ Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前
 時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。
 
 Integration Testではbigint / UUID等の異なるPrincipal ID型について、stringのDelegation#principal_idを介したassociationとAuthorization動作を確認する。Model / Migration検証はD043のjson型・default・NOT NULLとAgent string型・unique indexに従い、AuditではBigDecimalの10進数String保存による精度維持を確認する設計とする。これは検証方針だけであり、Test / Dummy App / Migration / CI workflowを実装しない。
+
+## 16. Delegation Public API Test as Executable Documentation
+
+**D208：Public API Test = Executable Documentation。** 将来の正式Minitest suiteでは、`ActingFor.delegate(...)` / `ActingFor.authorize(...)` を中心に、利用者が読める仕様書としてテストを書く。以下はD190〜D212に基づくIntegration TestのAcceptance Criteriaであり、今回Testコードは作成しない。入力仕様の正本は[Public API第9節](public_api_v0_1.md#9-delegation-api)。
+
+テスト名は許可・拒否条件が理解できる英語名とする。たとえば `delegate accepts a persisted agent`、`delegate rejects an unsaved agent`、`delegate converts symbol action to string`、`delegate does not mutate constraints passed by the caller`。正常系と間違いやすい異常系を明示し、Internal class名・private method依存を最小化する。1テストへ大量の仕様を詰め込まず、コメントよりテスト名・入力・期待結果で伝える。READMEの将来の利用例とPublic API Testを乖離させない。
+
+以下の「拒否」は `ActingFor::InvalidRequestError` を意味する。原則1テスト1仕様違反とし、他の入力は正常にする。
+
+### Agent / Principal
+
+| 対象 | 入力 | 期待結果 |
+| --- | --- | --- |
+| Agent | persisted ActingFor::Agent | success。完全class一致ではなくis_a?で判定 |
+| Agent | nil / 別class / unsaved Agent | それぞれ拒否 |
+| Principal | persisted ActiveRecord record | success。Rails polymorphic associationで保存・取得 |
+| Principal | nil / non-ActiveRecord object / 単なるid付きobject / unsaved ActiveRecord record | それぞれ拒否 |
+
+### Action
+
+| 入力 | 期待結果 |
+| --- | --- |
+| `"purchase"` | success |
+| `:purchase` | `"purchase"` に正規化 |
+| nil / `""` / `"   "` / 非String・Symbol | それぞれ拒否 |
+| `" purchase "` | trimせず同じStringを保存 |
+
+### Resource
+
+| 入力 | 期待するtype / IDまたは失敗 |
+| --- | --- |
+| nil | nil / nil |
+| ActiveModel-style Class | model_name.name / nil |
+| ActiveModel-style Instance | class.model_name.name / id.to_s |
+| model_nameなしClass | 拒否 |
+| 必要interfaceなしInstance | 拒否 |
+| idがnil | 拒否 |
+| id.to_sが空文字 | 拒否 |
+| String / Hash direct identifier | それぞれ拒否 |
+
+非ActiveRecordのResource instanceでも必要interfaceがあれば成功するケースを設け、`persisted?` を要求しないことを読み取れるTestにする。to_model / to_param / GlobalID / polymorphic associationも要件に追加しない。
+
+### Effect
+
+| 入力 | 期待結果 |
+| --- | --- |
+| `"allow"` / `:allow` | success / `"allow"` |
+| `"require_approval"` / `:require_approval` | success / `"require_approval"` |
+| nil / `"deny"` / `:deny` | それぞれ拒否 |
+| 大文字 / 前後空白 / `"require-approval"` / 未知値 / 不正type | それぞれ拒否。trim / downcase / alias変換なし |
+
+### Constraints
+
+正常入力例（テスト実装ではなく仕様の入力値）：
+
+```ruby
+[
+  { field: :amount, operator: :lte, value: 10_000 }
+]
+```
+
+保存後のcanonical form：
+
+```ruby
+[
+  { "field" => "amount", "operator" => "lte", "value" => 10_000 }
+]
+```
+
+| ケース | 期待結果 |
+| --- | --- |
+| 省略 / 空Array | 条件なしとしてsuccess |
+| Array以外 / nil / Constraint要素がHash以外 | それぞれ拒否 |
+| key不足 / extra key / 非String・Symbol key | それぞれ拒否 |
+| String・Symbol keyの正規化後duplicate | 拒否。たとえばfieldと"field"の併存 |
+| field空文字 / field不正type | それぞれ拒否 |
+| operator不正type / 未知値 | それぞれ拒否 |
+| eqのString / Integer / true / false | 各型でsuccess |
+| eqの不正value型 | 拒否 |
+| lt / lte / gt / gteのInteger | 各operatorでsuccess |
+| lt / lte / gt / gteの非Integer | 各operatorで拒否。数値String・Floatも変換しない |
+| inのString / Integer / true / falseを含むArray | success |
+| inの非Array / Array要素の不正型 | それぞれ拒否。Symbol等も変換しない |
+| `field: "   "` | 許可。non-emptyでありnon-blankを要求しない |
+| `operator: "in", value: []` | 許可 |
+| `operator: "in", value: [1, 1, 2]` | 許可。dedup / sortせず順序・重複を維持 |
+
+field / operatorはSymbolのみString化し、trim / downcase / field命名regex / 意味的な有用性判定を追加しない。入力非破壊も個別に確認する：元constraints Array、元Constraint Hash、in value Arrayの内容を変更しない。
+
+### expires_at
+
+| 入力 | 期待結果 |
+| --- | --- |
+| nil | success |
+| future Time | success |
+| future ActiveSupport::TimeWithZone | success |
+| current timeと同時刻 / past | それぞれ拒否 |
+| String / Date / DateTime / Integer | それぞれ拒否 |
+
+Rails time helperで基準時刻を固定する。ActingFor側でparse / convert / timezone変換 / 丸めをしない方針を維持する。正常なTime系objectはそのままActiveRecordへ渡すという境界と、DBの保存表現を区別する。
+
+### Return / Persistence
+
+- 正常時はpersist済みActingFor::Delegationを返す。
+- 各delegate callは独立した新規Delegationを作る。同じ内容の2回の呼び出しでもdedup / upsertしない。
+- revoked_atはnilで作成する。
+
+### Error Boundary
+
+| 原因 | 期待結果 |
+| --- | --- |
+| Public入力不正 | ActingFor::InvalidRequestError |
+| canonical化後のModel validation failure | ActiveRecord::RecordInvalidを一律InvalidRequestErrorへwrapしない |
+| DB failure | 一律InvalidRequestErrorへwrapせず原則そのまま伝播 |
+
+Exception classはPublic contractだが、message全文一致と複数不正時のvalidation順序はTest contractにしない（D210・D211）。内部の検出順序やprivate methodへ依存せずPublic behaviorを検証する。

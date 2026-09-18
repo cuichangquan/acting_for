@@ -6,7 +6,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。このファイルは現在地点の短い案内板であり、設計・仕様の正本ではない。
 
-詳細は [DECISIONS](DECISIONS.md)、[PROJECT](PROJECT.md)、各設計書（[Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)、[Security Model](security_model_v0_1.md)）を参照する。
+全体進捗は [PROGRESS](PROGRESS.md)を参照。詳細は [DECISIONS](DECISIONS.md)、[PROJECT](PROJECT.md)、各設計書（[Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)、[Security Model](security_model_v0_1.md)）を参照する。
 
 ## Implementation Baseline
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D189
+D212
 ```
 
 ## Current Status
@@ -36,6 +36,7 @@ Migration implemented and runtime verified
 Minimal Dummy Rails App implemented for migration verification
 Docker migration verification environment implemented
 ActiveRecord Models implemented and Docker verified
+Delegation Public API implementation design finalized
 Delegation API not implemented
 Authorization not implemented
 Decision not implemented
@@ -110,7 +111,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 Model implementationは完了。
 
-次はDelegation Public API `ActingFor.delegate(...)` のimplementationを開始するかどうかを、次の重要Decisionとして検討する。まだDelegation API実装には進まない。
+D190〜D212の設計反映完了後、`ActingFor.delegate(...)` の実装を開始する。今回の作業は設計反映までとし、次のChat / 次の明示指示で実装を開始する。詳細は[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

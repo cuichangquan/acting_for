@@ -2034,6 +2034,670 @@ D168〜D189に基づくModel実装の実施結果であり、新しいDecision�
 - Delegation API / Authorization / Decision / ConstraintEvaluator / Audit保存Service / Minitest / CI / Runnable Quick Startには進んでいない。
 - 関連文書：[Current State](CURRENT_STATE.md)。
 
+## D190: Delegation Public APIを次の実装単位とする
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+- 次の実装単位を `ActingFor.delegate(...)` とする
+- 既存 `Delegation#revoke!` を利用する
+- この実装単位では Authorization / Decision / Audit authorization integration には進まない
+- 現在の実装単位を越えて機能追加しない
+
+## D191: Delegation API実装時のException class
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+今回実装対象：
+
+```ruby
+ActingFor::Error < StandardError
+ActingFor::InvalidRequestError < ActingFor::Error
+```
+
+既に設計済みの以下は、必要になる実装段階まで実装を待つ：
+
+```ruby
+ActingFor::InternalError
+ActingFor::AuditPersistenceError
+```
+
+新しいException classを追加しない。
+
+## D192: `lib/acting_for.rb` は薄いPublic Entry Point
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+- `ActingFor.delegate(...)` は `lib/acting_for.rb` に置く
+- `lib/acting_for.rb` は薄いPublic API Entry Pointに限定する
+- 非自明なvalidation / normalizationロジックを `lib/acting_for.rb` に集中させない
+- 既存 `gem_structure_v0_1.md` の「Public APIと内部実装を分離する」方針を維持する
+
+## D193: Delegation保存とException境界
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+- 正常時はpersist済み `ActingFor::Delegation` を返す
+- 保存は `ActingFor::Delegation.create!` を使用する
+- Public入力不正は `ActingFor::InvalidRequestError`
+- DB障害や予期しないModel validation failureを一律 `InvalidRequestError` へwrapしない
+- lower-level exceptionは既存方針どおり原則そのまま伝播する
+
+## D194: Public APIでcanonical formへ正規化する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+`ActingFor.delegate(...)` のPublic API境界で、Modelへ渡す前に以下へ正規化する。
+
+```text
+agent
+→ persisted ActingFor::Agent
+
+principal
+→ persisted ActiveRecord model
+
+action
+→ canonical String
+
+resource
+→ resource_type / resource_id
+
+constraints
+→ canonical Array<Hash<String, ...>>
+
+effect
+→ "allow" / "require_approval"
+
+expires_at
+→ 検証済みTime系objectまたはnil
+
+revoked_at
+→ nil
+```
+
+Modelはcanonical formの最終防御を担当する。
+
+## D195: `DelegationCreator` をInternal Serviceとして導入する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+配置：
+
+```text
+app/services/acting_for/internal/delegation_creator.rb
+```
+
+概念：
+
+```text
+ActingFor.delegate(...)
+    ↓
+ActingFor::Internal::DelegationCreator
+    ↓
+ActingFor::Delegation.create!
+```
+
+責務：
+
+- Public入力validation
+- normalization
+- Resource identity変換
+- Constraint canonicalization
+- expires_at validation
+- Delegation作成
+
+v0.1では以下のような過剰分割をしない：
+
+```text
+DelegationValidator
+DelegationNormalizer
+ConstraintNormalizer
+DelegationBuilder
+```
+
+## D196: `DelegationCreator.call` を内部呼び出し形とする
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+内部Serviceの呼び出し形：
+
+```ruby
+ActingFor::Internal::DelegationCreator.call(
+  agent:,
+  principal:,
+  action:,
+  resource:,
+  constraints:,
+  effect:,
+  expires_at:
+)
+```
+
+- `DelegationCreator` はInternal API
+- 利用者が直接呼ぶことは想定しない
+- `DelegationCreator.new(...).call` をPublic contractにしない
+- Base Service / ApplicationServiceを追加しない
+
+## D197: PrincipalはRails polymorphic associationへ任せる
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+Delegation作成時、Principalを以下のように手動変換しない：
+
+```ruby
+principal_type: principal.class.name
+principal_id: principal.id.to_s
+```
+
+代わりに：
+
+```ruby
+ActingFor::Delegation.create!(
+  principal: principal,
+  ...
+)
+```
+
+としてRailsのpolymorphic associationへ任せる。
+
+ResourceはActiveRecord associationではないため、既存設計どおりActingFor側で `resource_type / resource_id` に正規化する。
+
+## D198: Public validationとModel / DB failureを分離する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+処理順：
+
+```text
+Public input
+  ↓
+DelegationCreator validation / normalization
+  ↓
+canonical values
+  ↓
+Delegation.create!
+```
+
+- Public仕様違反 → `ActingFor::InvalidRequestError`
+- `create!` は1回だけ使用
+- 事前に `valid?` を呼ばない
+- canonical化後にModel validationで `ActiveRecord::RecordInvalid` が発生した場合は `InvalidRequestError` にwrapしない
+- DB exceptionも原則そのまま伝播
+- 独自transaction / retryを追加しない
+
+## D199: Public Exceptionは `lib/acting_for/errors.rb`
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+新規：
+
+```text
+lib/acting_for/errors.rb
+```
+
+内容：
+
+```ruby
+module ActingFor
+  class Error < StandardError; end
+  class InvalidRequestError < Error; end
+end
+```
+
+`lib/acting_for.rb` から：
+
+```ruby
+require "acting_for/errors"
+```
+
+将来 `InternalError` / `AuditPersistenceError` を実装するときも同じファイルへ追加する。
+
+Exceptionごとにファイル分割しない。
+独自error codeや追加属性はv0.1では導入しない。
+
+## D200: Public入力objectを破壊しない
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+`DelegationCreator` は呼び出し元から渡された入力を破壊的変更しない。
+
+特に：
+
+- constraints Arrayを変更しない
+- 各Constraint Hashを変更しない
+- `in` operatorのvalue Arrayも変更しない
+- canonical化では必要な新しいArray / Hashを生成する
+- `deep_freeze` はしない
+- 汎用DeepCopy utilityは作らない
+
+## D201: Resource正規化
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+既存D032を最小実装する。
+
+```text
+nil
+→ resource_type = nil
+→ resource_id = nil
+
+Resource Class
+→ resource.model_name.name
+→ resource_id = nil
+
+Resource instance
+→ resource.class.model_name.name
+→ resource.id.to_s
+```
+
+Class：
+
+- `model_name` を持つ必要がある
+- 持たない場合は `InvalidRequestError`
+
+Instance：
+
+- classから `model_name` を解決できる
+- `id` を持つ
+- `id != nil`
+- `id.to_s` が空文字でない
+
+Resource instanceは `ActiveRecord::Base` に限定しない。
+ActiveModel-style Resourceを許可する。
+
+要求しないもの：
+
+```text
+resource.persisted?
+to_model
+to_param
+GlobalID
+polymorphic association
+String / Hashによる直接identifier指定
+```
+
+## D202: actionのblankをPublic APIで拒否する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+`action:` はString / Symbolを受け付け、SymbolはStringへ正規化する。
+
+以下は `InvalidRequestError`：
+
+```text
+nil
+""
+"   "
+String / Symbol以外
+```
+
+ただし自動trimはしない。
+
+```ruby
+" purchase "
+```
+
+を `"purchase"` へ変換しない。
+
+## D203: Principal validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+Principalとして許可するのは：
+
+```ruby
+principal.is_a?(ActiveRecord::Base)
+principal.persisted?
+```
+
+の両方を満たすrecord。
+
+不正例：
+
+```text
+nil
+String
+Hash
+単なるid付きobject
+unsaved ActiveRecord record
+```
+
+追加でPrincipal ID型を独自検証しない。
+Principal type / IDを手動生成しない。
+
+## D204: Agent validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+Agentとして許可するのは：
+
+```ruby
+agent.is_a?(ActingFor::Agent)
+agent.persisted?
+```
+
+を満たすrecord。
+
+完全class一致ではなく `is_a?` とする。
+
+Public API内で以下をしない：
+
+```text
+identifierによるAgent検索
+Agent自動作成
+Agent Resolution
+Agent Authentication
+```
+
+## D205: effectの厳密な正規化
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+許可：
+
+```text
+"allow"              → "allow"
+:allow               → "allow"
+"require_approval"   → "require_approval"
+:require_approval    → "require_approval"
+```
+
+不正：
+
+```text
+nil
+"deny"
+:deny
+"ALLOW"
+" allow "
+"require-approval"
+その他type
+```
+
+- SymbolのみString化
+- 任意objectのto_sを使わない
+- trimしない
+- downcaseしない
+- aliasを追加しない
+- explicit deny Delegationは作らない
+
+## D206: Constraint Hash keyのcanonicalization
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+各Constraintは `field / operator / value` の3 keyだけを許可。
+
+- keyはString / Symbolのみ
+- String keyへ正規化
+- 3 key不足 → `InvalidRequestError`
+- extra key → `InvalidRequestError`
+- 正規化後に同じkeyが重複 → `InvalidRequestError`
+- 元Hashを変更しない
+- HashWithIndifferentAccess的な曖昧な扱いを導入しない
+
+例：
+
+```ruby
+{
+  field: "amount",
+  "field" => "price",
+  operator: "lte",
+  value: 10_000
+}
+```
+
+は正規化後 `field` が重複するため不正。
+
+## D207: Constraint field / operatorのみ必要最小限正規化
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+field：
+
+- String / Symbolのみ
+- SymbolはStringへ
+- 空文字は不正
+- trimしない
+- downcaseしない
+- 任意objectのto_sをしない
+
+operator：
+
+- String / Symbolのみ
+- SymbolはStringへ
+- 許可値：
+
+```text
+eq
+lt
+lte
+gt
+gte
+in
+```
+
+value：
+
+- 型変換しない
+- String数値をIntegerへ変換しない
+- SymbolをStringへ変換しない
+- FloatをIntegerへ変換しない
+- `in` Array要素も変換しない
+
+既存D032のoperator別value型をそのまま守る。
+
+## D208: Public API TestをExecutable Documentationとして書く
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+正式Test Suiteでは、Public API Testを利用者が読める仕様書として扱う。
+
+方針：
+
+- `ActingFor.delegate(...)` / `ActingFor.authorize(...)` を中心にテスト
+- テスト名から許可 / 拒否条件が理解できるようにする
+- 正常系と間違いやすい異常系を明示する
+- Internal class名 / private methodへの依存を最小化する
+- 1テストに大量の仕様を詰め込まない
+- コメントよりテスト名・入力・期待結果を読みやすくする
+- READMEの利用例とPublic API Testを乖離させない
+
+例：
+
+```ruby
+test "delegate accepts a persisted agent" do
+  ...
+end
+
+test "delegate rejects an unsaved agent" do
+  ...
+end
+
+test "delegate converts symbol action to string" do
+  ...
+end
+
+test "delegate does not mutate constraints passed by the caller" do
+  ...
+end
+```
+
+## D209: expires_atは検証のみで時刻変換しない
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+許可：
+
+```text
+nil
+Time
+ActiveSupport::TimeWithZone
+```
+
+指定時：
+
+```ruby
+expires_at > ActingFor.current_time
+```
+
+が必要。
+
+不正例：
+
+```text
+String
+Date
+DateTime
+Integer
+現在時刻と同じ
+過去
+```
+
+ActingFor側では以下をしない：
+
+```text
+parse
+Timeへの暗黙変換
+timezone変換
+丸め
+```
+
+正常なTime系objectはそのままActiveRecordへ渡す。
+
+## D210: Exception classはPublic contract、message全文はcontractにしない
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+- `ActingFor::InvalidRequestError` がraiseされることはPublic contract
+- messageは人間が原因を理解できる具体的内容にする
+- message全文の完全一致をPublic contractにしない
+- Testも原則message全文一致に依存しない
+
+## D211: validation順序はPublic contractにしない
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+複数の入力が同時に不正でも、
+
+```text
+agentが必ず最初
+principalが必ず次
+```
+
+のようなvalidation順序は保証しない。
+
+Testでは原則1ケースにつき1つの仕様違反を明確にする。
+
+保証するのは：
+
+```text
+不正なPublic入力
+→ ActingFor::InvalidRequestError
+```
+
+であり、どのエラーを最初に検出するかは内部実装とする。
+
+## D212: Constraintへ未決定の追加ルールを足さない
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済みのD190〜D212設計ドキュメント反映指示。
+- 関連文書：[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)。
+
+D032 / D207をそのまま実装し、意味的な補正・最適化を追加しない。
+
+既存仕様上、次を新たに禁止しない：
+
+```ruby
+field: "   "
+operator: "in", value: []
+operator: "in", value: [1, 1, 2]
+```
+
+理由：
+
+- fieldはnon-emptyでありnon-blankとは決定していない
+- `in` はArrayであることまでが既存仕様
+- duplicate禁止は決定していない
+
+以下をしない：
+
+```text
+field trim
+field命名regex追加
+空in Arrayの拒否
+in valueのdedup
+sort
+意味的に「役に立たないConstraint」かの判定
+```
+
+Public APIは既決定の型・構造を保証し、未決定の意味ルールを勝手に追加しない。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
