@@ -3111,3 +3111,24 @@ docker compose -f compose.migration.yml down -v
 `db:prepare` 成功、正式Testはexit 0：**16 runs, 53 assertions, 0 failures, 0 errors, 0 skips**（seed 4834）。D221のDecision / ConstraintEvaluator Unit Testが成功した。
 
 実際の値：Rails.rootは `/app/test/dummy`、DB設定は `/app/test/dummy/config/database.yml`、Migration確認先は `/app/test/dummy/db/migrate`、pending migrationsは空。検証用volumeは `down -v` で削除した。log等の実行生成物はcommitしない。正式Test suiteや対応matrix全体の完了を意味しない。
+
+## D225: ActingFor.delegateの正式Integration Testを実装する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Test Strategy §16](test_strategy_v0_1.md#16-delegation-public-api-test-as-executable-documentation)、[Public API §9](public_api_v0_1.md#9-delegation-api)、D190〜D212。
+
+`test/integration/delegation_test.rb` に `ActingFor.delegate(...)` を中心とする正式Integration Testを追加し、既存Public API仕様をExecutable Documentationとして固定する。新しい仕様は追加しない。英語のTest名で1 Testにつき1つの意味を表し、message全文一致・validation順序・Internal private methodに依存しない。
+
+対象：persisted / invalid Agent・Principal、Agent subclass、Rails polymorphic association、action String / Symbolとblank拒否・trimなし、resource nil / Class / Instanceと必要interface・ID検証、effect厳密一致、constraints canonicalization・operator別strict type・不正入力・順序と重複保持・入力非破壊、expires_at nil / future Time / TimeWithZoneとcurrent / past / invalid type拒否、persisted Delegation返却・revoked_at nil・同一内容でも別record、Public入力エラーとModel / DBエラーの分離。
+
+Dummy側に最小Host `Principal < ActiveRecord::Base` と `principals` テーブル用Migrationを追加する。ResourceはTest内の最小ActiveModel-style classを使用する。Rails time helperで時刻を固定する。ModelエラーはTest内で一時validationを追加しensureで除去、DBエラーは実際のAgent Foreign Key違反をsavepoint内で発生させ、そのまま伝播することを確認する。Production code・Gem本体Migration・既存Test仕様は変更しない。
+
+### D225 runtime verification（2026-09-18）
+
+既存Docker環境で `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
+
+**130 runs, 328 assertions, 0 failures, 0 errors, 0 skips**（seed 47832）。追加Delegation Integration Testは114件、既存Decision / ConstraintEvaluator Unit Testは16件で全て成功。検証用volumeは `down -v` で削除し、log等の生成物はcommitしない。
+
+Authorization / Audit Integration Test、CI、Quick Start、Releaseには進まない。正式Test suiteや対応matrix全体の完了を意味しない。
