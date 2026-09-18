@@ -5,7 +5,7 @@
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：v0.1実装・正式Test・4 matrix CI / RuboCop・Runnable Quick Startは完了（D221〜D230）。D231で配布artifact・documentation・security・support・Release Notesを最終照合する。Gemは **Not released**。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、検証証跡は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。
+- 現在の段階：v0.1実装・正式Test・4 matrix CI / RuboCop・Runnable Quick Startは完了（D221〜D230）。D231で配布artifact・documentation・security・support・Release Notesを最終照合し、RELEASE READY（D076全9項目PASS）。Gemは **Not released**。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、検証証跡は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -277,7 +277,7 @@ v0.1対象外機能はDoDに含めない。公開操作はDoD達成とは別に�
 
 ### 4.3.1 v0.1必須の検査と公開成果物（D057〜D059）
 
-D229で正式GitHub Actions CI・core RuboCop、D230でRunnable Quick Startを実装・検証済み。D231で[Release Notes draft](release_notes_v0_1_0.md)を準備する。
+D229で正式GitHub Actions CI・core RuboCop、D230でRunnable Quick Startを実装・検証済み。D231で[Release Notes draft](release_notes_v0_1_0.md)を準備済み。
 
 - **Static Analysis（D057・D067）：** core RuboCopを必須とし、violationはCI failure。具体設定はD229。Sorbet、Steep、Brakeman、独自security scannerは必須に含めない。
 - **Runnable Quick Start（D058・D068〜D071）：** 新規Rails AppでGem導入 → Migration → Agent → delegate → authorize → Decision / Audit確認。HostのApproval Workflow、認証、UI、独立sample appは必須に含めない。

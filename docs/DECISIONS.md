@@ -3250,7 +3250,7 @@ Docker / Ruby **3.4.10** / Rails **8.0.5.1** / PostgreSQL **16.15** / developmen
 ## D231: v0.1 Release Readiness Gate
 
 - 日付：2026-09-19（Asia/Tokyo）。
-- Status：**確定・検証済み。最終CI確認待ち**。
+- Status：**確定・検証完了。RELEASE READY / Not released**。
 - 根拠：ユーザー承認済みD231。Readiness Gateのみであり、Release承認ではない。
 - 開始baseline：`bef259433a4066301875c4025a7f9f5befeabd61`（`docs: make quick start runnable`）。branch main / clean status、origin/main / GitHub main SHA一致をfetch・SSH ls-remote・GitHub APIで確認。
 - VERSION / gemspec：`acting_for` / `0.1.0`、Ruby `>= 3.4, < 4.1`、activerecord / activesupport / railties `>= 8.0, < 8.2`、MIT、authors `ChangQuan Cui`、require_paths `lib`。homepage / source_code_uriはcanonical repo URL。dependency / version / license / Public API / semantics / schema / support matrix変更なし。
@@ -3318,7 +3318,7 @@ D012 / D030 / D024・D025・D049等の責務・Security決定に矛盾なし。�
 - Repository：GitHub connector APIで **private**。変更なし。
 - tags：local tag list / remote SSH ls-remoteで空、`v0.1.0` 未作成。
 - GitHub Releases：API collection `[]`、未作成。
-- RubyGems authentication：local credentials **not configured**、GEM_HOST_API_KEY **not configured**。準備可能だがアカウント本人確認 / 初期owner / publish認証方式は実行前の人間確認事項。secret表示・API key生成・設定変更なし。MFA / Trusted Publishing policyは今回選択しない。
+- RubyGems authentication：local credentials（RubyGems active credentials pathも確認） **not configured**、GEM_HOST_API_KEY **not configured**。準備可能だがアカウント本人確認 / 初期owner / publish認証方式は実行前の人間確認事項。secret表示・API key生成・設定変更なし。MFA / Trusted Publishing policyは今回選択しない。
 
 ### D076 Definition of Done
 
@@ -3326,7 +3326,7 @@ D012 / D030 / D024・D025・D049等の責務・Security決定に矛盾なし。�
 | --- | --- | --- |
 | 1 | v0.1確定機能の実装 | PASS：production照合・packaged runtime verification |
 | 2 | 必須自動Test | PASS：298 runs / 755 assertions / 0 failures / 0 errors / 0 skips |
-| 3 | 正式CI matrix | BLOCKED：D231 main push後の正式全4 matrix確認待ち |
+| 3 | 正式CI matrix | PASS：D231 CI #5全4 matrix green（下記run） |
 | 4 | RuboCop | PASS：1.91.0、42 files、no offenses |
 | 5 | Runnable Quick Start | PASS：D230 + D231 built artifactから新規App検証 |
 | 6 | READMEと実装 | PASS：照合済み、Not released維持 |
@@ -3334,10 +3334,14 @@ D012 / D030 / D024・D025・D049等の責務・Security決定に矛盾なし。�
 | 8 | Responsibility Boundary | PASS：Host / Core / framework / MCP / authentication / approval一致 |
 | 9 | GitHub Release Notes | PASS：[draft](release_notes_v0_1_0.md)完成、公開先GitHub Releases |
 
-正式Test / RuboCopはisolated tracked-sourceコピーで `bundle exec rake -f test/dummy/Rakefile db:prepare` → `bundle exec rake test` → `bundle exec rubocop`、全exit 0（seed 17311）。production変更なし。CI trigger / matrix / release automation変更なし。
+正式Test / RuboCopはisolated tracked-sourceコピーで `bundle exec rake -f test/dummy/Rakefile db:prepare` → `bundle exec rake test` → `bundle exec rubocop`、全exit 0（最終seed 38238、初回17311）。production変更なし。CI trigger / matrix / release automation変更なし。
 
 ### Final Gate
 
-**NOT READY：D231 main push後の正式GitHub Actions全5 jobs確認待ち。** その他の技術的blockerなし。CI結果を確認後、本D231のGate結果を確定する。
+**RELEASE READY。D076全9項目PASS。技術的blockerなし。Not released。**
 
-Release Notesは[docs/release_notes_v0_1_0.md](release_notes_v0_1_0.md)、Actual Release順序・認証確認・失敗時再開は[docs/release_plan_v0_1_0.md](release_plan_v0_1_0.md)。D231完了後のmain HEADが現在のrelease候補。公開transaction内のREADME更新commitを含む最終mainをtag候補とし、artifact-source SHA / checksumとの対応を記録する。公開承認とRubyGems account / authentication確認は次工程。**Not released**。gem push / repo public化 / tag作成・push / GitHub Release / version bump / release automation有効化は一切実施しない。
+D231検証commit `25c90f23ed14a7d4bffa58b867ff0c4790f38a40` の正式GitHub Actions [CI #5 / run 35403650830](https://github.com/cuichangquan/acting_for/actions/runs/35403650830) は **completed / success、全5 jobs green**。Ruby 3.4 / 4.0 × Rails 8.0 / 8.1、PostgreSQL 16、正式Testと独立RuboCopの全job・step成功を確認。本完了記録commitのmain pushも同じ正式CIを最後まで確認し、最終run URL / SHAは完了報告で提示する。
+
+技術的readinessと公開権限は別。Actual Release前にユーザーの明示公開承認、RubyGems account / initial owner / authentication方式確認が必要。local publish credential未設定は次工程の確認事項として残し、今回設定・生成しない。
+
+Release Notesは[docs/release_notes_v0_1_0.md](release_notes_v0_1_0.md)、Actual Release順序・認証確認・失敗時再開は[docs/release_plan_v0_1_0.md](release_plan_v0_1_0.md)。D231完了後のmain HEADが現在のrelease候補。公開transaction内のpre-push README更新commitをartifact source / tag候補としてpinし、artifact / tag全内容を一致させる。公開後のstatus更新でmainを進めるがtagは動かさない。公開承認とRubyGems account / authentication確認は次工程。**Not released**。gem push / repo public化 / tag作成・push / GitHub Release / version bump / release automation有効化は一切実施しない。

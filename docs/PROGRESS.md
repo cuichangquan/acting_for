@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。Releaseは未完了。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）、Releaseは未実施。
 
 ## 全体進捗
 
@@ -29,7 +29,7 @@
 | 17 | 正式Minitest suite | ✅ CI前の確定済みcoverage実装・Docker検証済み |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
-| 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、最終CI確認待ち |
+| 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、RELEASE READY / D076全9項目PASS / CI全5 jobs green |
 
 ## 現在の位置
 
@@ -56,7 +56,7 @@ Public API / Value Object実装
 
 ## 実装・検証済みの実績
 
-- D231 Release Readiness Gate：strict built gem・17 files package audit・secret / privacy簡易監査・built artifactから新規Rails App導入 / Migration / 全Decision / Audit検証成功。Release Notes draft / Actual Release plan完成。support / Security / Responsibility / README照合済み。最終CI確認待ち、Not released。
+- D231 Release Readiness Gate：strict built gem・17 files package audit・secret / privacy簡易監査・built artifactから新規Rails App導入 / Migration / 全Decision / Audit検証成功。Release Notes draft / Actual Release plan完成。support / Security / Responsibility / README照合済み。RELEASE READY / D076全9項目PASS / CI全5 jobs green、Not released。
 
 - Gem skeleton implemented。
 - Migration implemented and runtime verified。
