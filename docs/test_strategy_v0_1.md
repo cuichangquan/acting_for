@@ -1,6 +1,6 @@
 # ActingFor v0.1 Test Strategy Design
 
-更新日：2026-09-17
+更新日：2026-09-18
 
 **Step 8: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了したが、Testコードはまだ存在しない。Gemも **Not implemented / Not released** であり、README Quick Startは実行できない。
 
@@ -132,7 +132,7 @@ AuthorizationとしてのdenyとAudit / System failureは異なる。Audit保存
 - Migration適用とActiveRecord Modelとの接続。
 - `acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events` の作成・利用。
 
-DB columnの最終型、Migration実装詳細、Migration taskの具体的名称は固定しない。Configuration / Initializerや独自Generatorの追加を前提にしない。
+Step 8時点ではDB columnの最終型を固定しなかったが、後続D043・D051・D052で確定した範囲はDomain Model正本に従う。Migration方針は後続D060〜D066と[Gem Structure第6節](gem_structure_v0_1.md#6-migration--db-table-names)に従う。Migration実コード・task名・timestamp・filenameの最終形は未決定を維持する。Configuration / Initializerや独自Generatorの追加を前提にしない。
 
 ## 10. Host Authorization Boundary
 
@@ -202,7 +202,11 @@ System failure → Exception
 
 ## 14. 未決定事項と完了状態
 
-[PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)全体は引き続き **Proposal / 提案**。Ruby / Rails・CI matrixはD046、LicenseはD048で確定した。後続D057〜D059で必須static analysisはRuboCop、READMEのRunnable Quick Startと公開時のRelease Notesは必須成果物と確定した。対象範囲は[PROJECT 4.3.1](PROJECT.md#43-v01全体のdefinition-of-done)に従う。RuboCop version / config / rule set / plugin、rake task名、CI組み込み方法、Quick Startの具体的コマンド、Release Notesのファイル名・配置方法、CHANGELOG方式は未決定。全体の完了条件は追加確定せず、設定・本文・Test / CI実装は作成しない。
+[PROJECT 4.3のDefinition of Done](PROJECT.md#43-v01全体のdefinition-of-done)は、Step 8およびD057〜D059時点では全体がProposalだったが、後続D076で整合する範囲を正式決定へ更新した。より広い未承認条件はProposalのまま残す。必須自動Test・正式Ruby / Rails / PostgreSQL CI matrix・RuboCopの成功、Runnable Quick Startの実行可能性、README / Security Boundary / Responsibility Boundaryと実装の一致、確定機能の実装完了、GitHub Release Notesを公開できる状態を完成条件とし、v0.1対象外機能は含めない。新しい未承認Test項目は追加しない。
+
+後続D067・D072・D073により、正式CI基盤はGitHub Actions、triggerはPull Requestとmain branchへのpush。少なくとも正式Ruby / Rails matrix・PostgreSQL・既存の必須Test・RuboCopを検証し、RuboCop violationはCI failureとする。scheduled / cron CI、独自Style Guide、大量の独自Cop、大規模custom rule set、複数plugin群はv0.1必須でない。
+
+RuboCop version / config / rule set / plugin、rake task名、workflow YAML・job構成・cache・具体的CI command・service設定、Quick Start最終コード、Release Notes本文、CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。設定・本文・Test / CI実装は作成しない。
 
 Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。今回Test Strategyの再構築やTestコード実装は行わず、後続仕様のTestへの反映は別途確認する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。 Migration実コード・task名、内部method・constructor・class構造、具体的validation / callback / queryコードは引き続き未決定。
 

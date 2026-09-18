@@ -1,6 +1,6 @@
 # ActingFor 決定記録
 
-更新日：2026-09-17
+更新日：2026-09-18
 
 このファイルは、決定内容と理由を残す。現在の開発範囲は[PROJECT](PROJECT.md)、紹介文の本文は[README](../README.md)を参照する。
 
@@ -404,6 +404,8 @@
 - 後続決定（2026-09-17）：D031（Audit Context allowlist・Exception）、D032（Resource identity・Delegation API / validation）、D034（AuditEvent詳細）で該当する詳細を確定。上記の未決定・候補・追加確定しないという記載は当時の履歴であり、現在の仕様は後続決定と正本に従う。未対象の詳細は引き続き未決定。
 - 後続決定（2026-09-17追加）：D035・D036・D038・D043〜D048で該当する保留を解消。上記の未決定表記は当時の履歴であり、現在の仕様は後続決定に従う。
 
+- 後続決定（2026-09-18）：Migration提供・更新・保持・Runtime境界・明示的取り込み・3分割・reversibilityはD060〜D066で確定。
+
 ## D029: Step 8 Test Strategy Design
 
 - 日付：2026-09-17
@@ -425,6 +427,8 @@
 - 後続決定（2026-09-17追加）：D035・D043・D045・D046・D048で該当する保留を解消。上記の未決定表記は当時の履歴であり、現在の仕様は後続決定に従う。
 
 - 後続決定（2026-09-17追加）：D057〜D059でstatic analysis（RuboCop）、Runnable Quick Start、Release Notesの必須要件を確定。上記の該当する未決定表記は当時の履歴。具体的設定・コマンド・配置は未決定。
+
+- 後続決定（2026-09-18）：CI基盤・trigger・RuboCop合否境界はD067・D072・D073、全体DoDはD076で確定。
 
 ## D030: v0.1 Security Model Design
 
@@ -844,6 +848,8 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
 - 根拠：ユーザー承認済みの追加正式決定。
 
+- 後続決定（2026-09-18）：RuboCop violationによるCI failureはD067、CI基盤とtriggerはD072・D073で確定。具体設定は未決定を維持する。
+
 ## D058: Runnable Quick Start
 
 - 日付：2026-09-17
@@ -856,6 +862,8 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
 - 根拠：ユーザー承認済みの追加正式決定。
 
+- 後続決定（2026-09-18）：実行可能性・Rails console用途・Public API境界・Shopping Agent例はD068〜D071で確定。
+
 ## D059: v0.1 Release Notes
 
 - 日付：2026-09-17
@@ -867,6 +875,212 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - Consequences：設計文書のみ更新する。Gem / Test / CI / Migration実装、RuboCop設定ファイル、README Runnable Quick Startコード、Release Notes本文は作成しない。Definition of Done全体を追加承認するものではない。
 - 正式本文：[PROJECTの必須成果物](PROJECT.md#43-v01全体のdefinition-of-done)。
 - 根拠：ユーザー承認済みの追加正式決定。
+
+- 後続決定（2026-09-18）：公開先はD074でGitHub Releasesに確定。version / tagはD075、全体DoDはD076で確定。本文・CHANGELOG方式は未決定を維持する。
+
+## D060: Migration Provisioning
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D028のRails Engine標準方式を具体化する。
+- Decision：MigrationはGem側の `db/migrate/` で管理し、Rails Engine標準のMigration提供機構でHost Applicationの `db/migrate/` へ取り込む。DBへの適用はHost Applicationの通常のMigrationプロセスに委ねる。独自Migration DSL、独自Migration Generator、自動Migration実行機構は提供しない。
+- Rationale：Rails標準の導入手順とHostのDB管理責務を維持する。
+- 未決定：具体的なRails task名・Migration Rubyコード。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D061: Migration Evolution Policy
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：リリース済みMigrationの変更方針を明確にする。
+- Decision：一度リリースしたMigrationは原則変更せず、DB schema変更には新しいMigrationを追加する。Host ApplicationはGem更新時に追加Migrationを取り込み、通常のMigrationプロセスで適用する。独自schema versioning機構はv0.1では作らない。
+- Rationale：既存installationの履歴を保ち、追加Migrationで更新する。
+- 未決定：Migration実コード・具体的task名。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D062: Migration Retention Policy
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：新規installationと旧versionからのupgradeに同じ履歴を提供する。
+- Decision：一度リリースしたMigrationファイルは原則Gemから削除しない。新規installation、旧versionからのupgrade、Migration履歴保持を目的とする。過去Migrationのsquash・統合・削除はv0.1では行わない。
+- Rationale：導入・更新に必要なMigration履歴を保持する。
+- 未決定：具体的Migrationファイルの最終形。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D063: Migration Runtime Boundary
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：Migration管理とRuntimeの責務を分離する。
+- Decision：v0.1のRuntimeでは独自Migration適用状況チェック、独自schema version管理、起動時Migration、自動Migration実行を行わない。Migration管理・適用確認はHost Application / Rails / ActiveRecordの標準機構に委ねる。
+- Rationale：標準の管理機構へ責務を集約する。
+- 未決定：具体的なMigration task名・実コード。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D064: Explicit Migration Installation
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D060の取り込み操作の実行主体を明確にする。
+- Decision：Host開発者がRails Engine標準のMigration提供機構を明示的に実行してHost Applicationへ取り込む。Gem install、Gem update、Application bootを契機として自動コピーしない。
+- Rationale：Host開発者がDB変更の導入を管理できるようにする。
+- 未決定：具体的task名は実装工程で確認・決定する。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D065: Initial Migration Granularity
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D028の初期schema構成を正式な分割方針として確定する。
+- Decision：初期schemaはAgent / Delegation / AuditEventの3つのMigrationへ分割し、1つの巨大な初期Migrationにまとめない。概念上の名称は `create_acting_for_agents` / `create_acting_for_delegations` / `create_acting_for_audit_events` とする。
+- Rationale：3 Modelに対応するMigrationの単位を明確にする。
+- 未決定：具体的timestamp・filenameの最終形・Migration Rubyコード。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D066: Migration Reversibility Policy
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：Rails標準のreversibilityと保証範囲を区別する。
+- Decision：Rails標準機構で安全にreversibleにできるMigrationはreversibleに設計する。独自rollback機構は提供しない。将来、不可逆Migrationが必要になった場合はその時点で別Decisionとして判断する。v0.1で将来の全Migrationのrollback可能性までは保証しない。
+- Rationale：安全に利用できる標準機構を使い、将来の保証を広げない。
+- 未決定：不可逆Migrationが必要になった場合の扱い・具体的実コード。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D067: RuboCop Enforcement Boundary
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D057の必須static analysisの合否境界を確定する。
+- Decision：v0.1ではRuboCopを必須static analysisとして実行し、violationがあればCI failureとする。独自Style Guide、大量の独自Cop、大規模なcustom rule set、複数plugin群はv0.1必須ではない。
+- Rationale：必須検査の失敗条件を明確にする。
+- 未決定：RuboCop version・具体的config・具体的rule set・plugin採否。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Test Strategy](test_strategy_v0_1.md)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D068: Runnable Quick Start Executability
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D058の必須成果物について実行可能性を明確にする。
+- Decision：対応する新規Rails Applicationで、READMEの手順を上から順番に実行し、Gem導入 → Migration取り込み → Migration実行 → Agent作成 → Delegation作成 → `ActingFor.authorize(...)` → Decision確認まで到達できる手順とする。未実装APIや疑似コードを実行可能なコードとして掲載しない。具体的な実コード化はGem実装後に行う。
+- Rationale：最小の導入・動作確認を再現可能にする。
+- 未決定：Quick Startの最終コード・具体的コマンド。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[README](../README.md#quick-start)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D069: Runnable Quick Start Execution Context
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：Quick Startと本番の管理方法を区別する。
+- Decision：README Quick Startの最小動作確認にはRails consoleを使う。これはQuick Start / 開発者による動作確認用であり、本番のAgent / Delegation管理方法をRails consoleと規定しない。本番の作成・管理フローはHost Applicationの責務とする。Quick StartだけのためのController、Route、View、UI、専用管理画面は必須としない。
+- Rationale：最小確認のためにUIを要求せず、Hostの本番管理責務を維持する。
+- 未決定：Quick Startの最終コード。本番管理フローはHost側で定める。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[README](../README.md#quick-start)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D070: Quick Start Public API Boundary
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D058の導入説明のためにAPIを増やさない境界を定める。
+- Decision：Runnable Quick Startは正式にサポートするPublic APIとRails標準操作のみで構成する。簡単に見せる目的だけで `ActingFor.create_agent(...)`、`ActingFor.setup(...)`、`ActingFor.quick_start(...)` 等の新しいPublic API / helper / setup APIを追加しない。
+- Rationale：説明用の便宜でPublic APIの保証範囲を広げない。
+- 未決定：Quick Startの最終コード・具体的コマンド。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[README](../README.md#quick-start)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D071: Quick Start Example Domain
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D027の既存Shopping Agent例とRunnable版の題材を揃える。
+- Decision：v0.1 Runnable Quick Startは既存READMEのShopping Agent例に統一する。Principal = User、Agent = Shopping Agent、Action = purchase、Resource = Product、Context = amountとする。これはREADMEの説明用サンプルであり、必須domain・必須Host Model・必須business logicを規定しない。
+- Rationale：説明の一貫性を保ち、利用domainを限定しない。
+- 未決定：サンプルの最終コード。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[README](../README.md#quick-start)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D072: v0.1 CI Platform
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D046の正式matrixとD057の必須検査を実行する基盤を確定する。
+- Decision：正式CI基盤はGitHub Actionsとする。少なくとも正式Ruby / Rails matrix、PostgreSQL、必須Test、RuboCopをCI上で検証する。
+- Rationale：正式対応環境と必須検査を同じCI方針で扱う。
+- 未決定：workflow YAML・job分割・cache・具体的command・service設定。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Test Strategy](test_strategy_v0_1.md)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D073: CI Trigger Policy
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D072のCI実行契機を確定する。
+- Decision：Pull Requestとmain branchへのpushを契機にCIを実行する。scheduled / cron CIはv0.1必須要件としない。
+- Rationale：変更提案とmainへの反映を検証する。
+- 未決定：具体的GitHub Actions YAML。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[Test Strategy](test_strategy_v0_1.md)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D074: Release Notes Publication
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：D059で保留していた正式な公開先を確定する。
+- Decision：正式Release NotesはGitHub Releasesで公開し、各Releaseを対応するversion tagと紐付ける。RELEASE_NOTES.md、CHANGELOG、自動CHANGELOG生成はv0.1必須成果物としない。Release Notes本文はrelease準備時に作成する。
+- Rationale：公開versionと説明を対応付ける。
+- 未決定：Release Notes本文・CHANGELOG方式。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[PROJECT](PROJECT.md#43-v01全体のdefinition-of-done)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D075: Versioning and Tagging Policy
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：最初の公開versionとtagの対応を確定する。
+- Decision：Semantic Versioningを基本とし、最初の公開versionは `0.1.0`、Git tagは `v0.1.0` とする。0.x期間中はPublic APIを含む破壊的変更の可能性をRelease Notesで明示する。
+- Rationale：versionと互換性の注意を明確にする。
+- 未決定：自動release・自動tag作成・release automation（gem push automation・GitHub Release自動作成を含む）。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[PROJECT](PROJECT.md#43-v01全体のdefinition-of-done)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
+
+## D076: v0.1 Definition of Done
+
+- 日付：2026-09-18
+- Status：**確定（設計のみ・未実装）**。
+- Context / 既存決定との関係：PROJECTでProposalだった全体DoDを承認済みの範囲で正式決定へ更新する。
+- Decision：ActingFor `0.1.0` は少なくとも、v0.1確定機能の実装完了、必須自動Test成功、正式Ruby / Rails / PostgreSQL CI matrix成功、RuboCop成功、対応環境でRunnable Quick Startの実行可能性確認、READMEと実装の一致、Security Boundaryと実装の一致、Responsibility Boundaryと実装の一致、GitHub Release Notesを公開できる状態を満たした時点で完成とする。v0.1対象外機能は含めない。従来Proposalは本Decisionに整合する範囲を正式決定へ更新し、より広い未承認条件は昇格させない。
+- Rationale：完成判定を確定済みスコープと必須成果物に対応付ける。
+- 未決定：従来ProposalのうちD076より広い未承認条件、各成果物の未決定の実装詳細。
+- Consequences：設計文書のみ更新する。具体的な実装・設定・Runnableコード・Release Notes本文は作成せず、tag作成・releaseも行わない。GemはNot implemented / Not releasedを維持する。
+- 関連文書：[PROJECT](PROJECT.md#43-v01全体のdefinition-of-done)、[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
 
 ## 追記する際の項目
 

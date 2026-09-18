@@ -1,6 +1,6 @@
 # ActingFor v0.1 Gem Structure Design
 
-更新日：2026-09-17
+更新日：2026-09-18
 
 **Step 7は完了（Complete / Design finalized / Not implemented）。** 本書をStep 7「Gem Structure Design」の正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gemは未実装・未リリース。このドキュメントは実装済み構成を示すものではない。ファイル構成とRubyコードは設計例であり、今回作成するのは設計ドキュメントのみ（Design documentation only / No implementation）。
 
@@ -122,7 +122,15 @@ statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow`
 
 ## 6. Migration / DB Table Names
 
-MigrationはGem側の `db/migrate/` で管理し、第1節の3ファイルを想定する。Rails Engine標準のMigration提供方式を利用し、Host ApplicationのDBへMigrationをコピー・適用する。独自Migration DSLや独自DBセットアップ機構は作らない。
+MigrationはGem側の `db/migrate/` で管理する。Rails Engine標準のMigration提供機構をHost開発者が明示的に実行し、Host Applicationの `db/migrate/` へ取り込む。DBへの適用はHost Applicationの通常のMigrationプロセスに委ねる。独自Migration DSL・独自Migration Generator・自動Migration実行機構は提供しない（D060・D064）。Gem install / Gem update / Application boot時には自動コピーしない。
+
+初期schemaはAgent / Delegation / AuditEventの3つのMigrationへ分割し、1つにまとめない。第1節のファイル名は概念上の `create_acting_for_agents` / `create_acting_for_delegations` / `create_acting_for_audit_events` を示す設計例であり、timestamp・filenameの最終形・Migration Rubyコードは未決定（D065）。
+
+リリース済みMigrationは原則変更せず、schema変更には新しいMigrationを追加する。HostはGem更新時に追加Migrationを取り込み、通常のMigrationプロセスで適用する。独自schema versioning機構は作らない（D061）。リリース済みファイルは新規installation・旧versionからのupgrade・履歴保持のため原則削除せず、v0.1では過去Migrationのsquash・統合・削除を行わない（D062）。
+
+Runtimeで独自Migration適用状況チェック、独自schema version管理、起動時Migration、自動Migration実行を行わない。管理・適用確認はHost Application / Rails / ActiveRecordの標準機構に委ねる（D063）。
+
+Rails標準機構で安全にreversibleにできるMigrationはreversibleに設計する。独自rollback機構は提供せず、将来の全Migrationのrollback可能性までは保証しない。不可逆Migrationが必要となった場合の扱いは、その時点で別Decisionとして判断する（D066）。
 
 Step 7時点では具体的なMigration内容・実コード・DB columnの最終型は確定しなかった。後続D032〜D034でResource IDのString保存、Agent unique index、AuditEventの一部保存型・制約を確定した。後続D043でAgent string型、principal_id string型、constraints / sanitized context / matched_delegation_idsのjson型・default・NOT NULLを確定した。後続D051・D052で3 Modelの主要DB型・NULL・CHECK・index・主キー、sanitized_contextの正式column名とAuditEventのupdated_at非設定を確定した。詳細は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)を正本とする。Migration実コードは未決定。Migration taskの具体的なコマンド名はRails実装時に確認する事項とし、未検証のコマンドを正式仕様に固定しない。
 
@@ -231,7 +239,7 @@ Public分類はDecision constructorや任意Model更新の保証ではない。D
 
 以下は引き続き未決定であり、本書では追加確定しない。
 
-- Migrationの実コード・taskの具体的なコマンド名
+- Migration Rubyコード・taskの具体名・timestamp・filenameの最終形
 - Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
 - install generatorの将来設計（v0.1では独自Generatorを作らない）
 - 実装クラスの細かなprivate method構成
