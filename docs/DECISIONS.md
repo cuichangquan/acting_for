@@ -2791,3 +2791,36 @@ Decision実装完了後の次の実装単位を `ActingFor::Internal::Constraint
 
 ConstraintEvaluatorの既存仕様を実装対象とし、未決定の意味ルールや追加機能を勝手に導入しない。
 
+## D215: Constraint fieldはContextのSymbol keyへ厳密に対応させる
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Domain Model](domain_model_v0_1.md#8-constraint)、[Public API](public_api_v0_1.md#4-authorize-arguments)、[Test Strategy](test_strategy_v0_1.md#5-constraintevaluator-unit-test)。
+
+保存済みConstraintの `field` はcanonical Stringであり、Constraint評価時はそのStringをSymbolへ変換して、ContextのトップレベルSymbol keyを1回だけ厳密に参照する。
+
+例：
+
+```text
+Constraint field "amount"
+→ context[:amount]
+```
+
+ルール：
+
+- `"amount"` は `context[:amount]` を参照する
+- `context["amount"]` とはmatchしない
+- String / Symbolのindifferent accessは行わない
+- Context keyの自動変換を追加しない
+- nested pathとして解釈しない
+- たとえばfield `"order.amount"` は `context[:"order.amount"]` というトップレベルkeyだけを参照し、`context[:order][:amount]` は参照しない
+- fieldがContextに存在しない、または値がnilならConstraint不成立
+
+理由：
+
+- Public APIの既存例 `context: { amount: 8_900 }` と自然に一致する
+- Audit ContextのSymbol key完全一致方針と整合する
+- String / Symbol両方を暗黙に探索する曖昧な評価を避ける
+- nested object access非対応という既存v0.1境界を維持する
+

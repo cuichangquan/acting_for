@@ -261,6 +261,8 @@ v0.1ではAuthorization context全体とsanitized Audit Contextに固定byte上�
 
 ContextのトップレベルKeyのみ参照できる。`order.amount`、`items[0].price` などのnested accessは非対応。
 
+D215により、保存済みConstraintの`field`はcanonical StringからSymbolへ変換し、ContextのトップレベルSymbol keyを厳密に1回だけ参照する。たとえば`field: "amount"`は`context[:amount]`を参照し、`context["amount"]`とはmatchしない。indifferent accessやContext keyの自動変換は行わない。`field: "order.amount"`は`context[:"order.amount"]`というトップレベルkeyだけを参照し、`context[:order][:amount]`のようなnested pathとして解釈しない。field不存在または値nilはConstraint不成立。
+
 | 対応operator | 型ルール |
 | --- | --- |
 | `eq` | String / Integer / Boolean |

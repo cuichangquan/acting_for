@@ -147,6 +147,8 @@ context: {
 
 Constraintが参照するのはトップレベルKeyのみ。次のHashの `order.amount` のようなnested object accessはv0.1のConstraint評価対象にしない。
 
+D215により、Constraintのcanonical String fieldはSymbolへ変換してContextのトップレベルSymbol keyを厳密に参照する。`field: "amount"`は`context[:amount]`にmatchし、`context["amount"]`にはmatchしない。String / Symbolのindifferent accessやnested path解釈は行わない。field不存在または値nilはConstraint不成立とする。
+
 ```ruby
 context: {
   order: {

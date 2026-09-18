@@ -63,6 +63,8 @@ D213により、将来の正式Unit Testでは上記に加えてDecisionが初�
 | nested Context非対応 | nested object accessで条件を成立させない。トップレベルKeyのみ参照 |
 | fail closed | 権限条件を確認できない場合に成立扱いにしない |
 
+D215のContext key規則も検証する。canonical String field `"amount"` は `context[:amount]` のみにmatchし、`context["amount"]` にはmatchしない。fieldをnested pathとして解釈せず、たとえば `"order.amount"` はトップレベルの `:"order.amount"` keyだけを参照する。field不存在・値nilは不成立とする。
+
 Delegation lookup、effect precedence、final Decision生成、AuditEvent保存はこのUnit Testの対象外とする。内部method名、constructor形式、内部class構造をTest Strategy上の契約として固定しない。評価不能な条件とSystem failureの境界は第12節に従う。
 
 ## 6. ActingFor.authorize Integration Test

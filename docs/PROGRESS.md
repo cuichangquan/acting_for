@@ -23,7 +23,7 @@
 | 11 | Delegation Public API実装設計 | ✅ 完了 |
 | 12 | ActingFor.delegate実装 | ✅ 完了 |
 | 13 | Authorization実装 | ⬜ 未実装 |
-| 14 | ConstraintEvaluator実装 | ⬜ 未実装 |
+| 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ⬜ 未実装 |
 | 17 | 正式Minitest suite | ⬜ 未実装 |
@@ -44,7 +44,7 @@ Public API / Value Object実装
   delegate ✅
   Decision ✅
   authorize ← 現在ここ（実装直前）
-  ConstraintEvaluator / Audit integration
+  ConstraintEvaluator ✅ / Audit integration
       ↓
 品質・公開：未着手
   正式Tests → CI → Runnable Quick Start → Release
@@ -62,6 +62,7 @@ Public API / Value Object実装
 - 既存Model regression：213 checks passed。
 - Migration regression passed（rollback後3テーブル削除、再up後schema一致）。
 - Decision Value Object implemented（D213）。正式Minitest suite / CIは未実装のためruntime verificationは未実施。
+- ConstraintEvaluator implemented（D214・D215）。正式Minitest suite / CIは未実装のためruntime verificationは未実施。
 
 今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 

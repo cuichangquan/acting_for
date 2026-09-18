@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D214
+D215
 ```
 
 ## Current Status
@@ -40,7 +40,7 @@ Delegation Public API implementation design finalized
 Delegation API implemented
 Decision implemented
 Authorization not implemented
-ConstraintEvaluator not implemented
+ConstraintEvaluator implemented
 Audit authorization integration not implemented
 Minitest test suite not implemented
 CI not implemented
@@ -50,6 +50,8 @@ Not released
 ```
 
 ## Implemented
+
+ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 Decision Value Object：`lib/acting_for/decision.rb`。D213どおり、`:allow` / `:deny` / `:require_approval` の3 status、`status` / `allowed?` / `denied?` / `approval_required?` の4 Public API、初期化後freeze、不正statusの `ArgumentError` を実装した。`lib/acting_for.rb` からrequireする。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -116,7 +118,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Decision実装完了。D214で次の実装単位を `ActingFor::Internal::ConstraintEvaluator` に確定。ConstraintEvaluator自体はまだ未実装。次の明示指示でConstraintEvaluatorの実装へ進み、`ActingFor.authorize(...)` / `ActingFor::Internal::Authorization` / Audit authorization integration / Authorization用DB queryにはまだ進まない。詳細は[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+ConstraintEvaluator実装完了。Authorization / `ActingFor.authorize(...)` / Audit authorization integrationは未実装。次の重要事項はAuthorization実装方針を1項目ずつ確認すること。Authorization用DB queryの具体SQL等の未決定事項を勝手に確定しない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
