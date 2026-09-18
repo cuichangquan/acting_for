@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D098
+D099
 ```
 
 ## Current Status
@@ -90,11 +90,11 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration implementationの完了条件は、PostgreSQL上で3 Migrationを実際に `up → rollback → up` し、エラーなく適用・取消・再適用できることの確認とする（D098）。
+Migration runtime verificationのRails hostは、将来のIntegration Testでも使用する `test/dummy` Rails Applicationとする（D099）。
 
-このruntime verificationが完了するまでModel implementationへ進まない。
+Migration検証のために最小限のDummy Rails Appを先行作成するが、Minitest本体のTest実装、Model、Authorization、Auditロジック、CIへはまだ進まない。
 
-次に、検証に使用するRails host環境を1項目として決める。
+次に、今回作成する `test/dummy` の最小構成を1項目として決める。
 
 ## Important Rules
 

@@ -1333,6 +1333,19 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D099: Dummy Rails Host for Migration Verification
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D098でMigration implementationの完了条件をPostgreSQL上の `up → rollback → up` 実行確認とした。Step 8 Test Strategyでは将来のRails Engine integration用に `test/dummy` Rails Applicationを使う方針が既に確定している。
+- Decision：Migration runtime verificationに使用するRails hostは、将来のIntegration Testでも使用する `test/dummy` Rails Applicationとする。Migration検証のために最小限のDummy Rails Appを先行して作成する。
+- Rationale：Migration検証専用の一時Hostを別に作らず、後続のRails Engine integration test基盤と共用することで重複を避けるため。
+- 未決定：`test/dummy` の今回の最小ファイル構成、Rails version、PostgreSQL接続設定、Migration取り込み・実行の具体的コマンド。
+- Consequences：Dummy Rails Appの実装開始はMigration verificationを目的とする最小範囲に限定する。現時点ではMinitest本体のTest実装、Model、Authorization、Auditロジック、CIへは進まない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#9-test-directory--dummy-rails-app)、[Test Strategy](test_strategy_v0_1.md)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
