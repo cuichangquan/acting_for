@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D213
+D214
 ```
 
 ## Current Status
@@ -116,7 +116,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Decision実装完了。Authorization / ConstraintEvaluator / Audit authorization integrationは未実装。次の重要事項はAuthorization実装に入る前の実装単位確認とし、未決定事項を勝手に追加しない。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+Decision実装完了。D214で次の実装単位を `ActingFor::Internal::ConstraintEvaluator` に確定。ConstraintEvaluator自体はまだ未実装。次の明示指示でConstraintEvaluatorの実装へ進み、`ActingFor.authorize(...)` / `ActingFor::Internal::Authorization` / Audit authorization integration / Authorization用DB queryにはまだ進まない。詳細は[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

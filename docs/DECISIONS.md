@@ -2766,3 +2766,28 @@ module ActingFor
   end
 end
 ```
+
+## D214: ConstraintEvaluatorを次の実装単位とする
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)、[Test Strategy](test_strategy_v0_1.md#5-constraintevaluator-unit-test)、[Domain Model](domain_model_v0_1.md#8-constraint)。
+
+Decision実装完了後の次の実装単位を `ActingFor::Internal::ConstraintEvaluator` とする。
+
+理由：
+
+- Authorization本体へ進む前にConstraint評価を独立して実装・検証できる
+- Authorizationの責務を小さく保ち、実装を一度に複雑化しない
+- 既存Gem Structure / Test StrategyでConstraintEvaluatorはInternal Serviceとして分離済み
+
+この実装単位では以下へ進まない：
+
+- `ActingFor.authorize(...)`
+- `ActingFor::Internal::Authorization`
+- Audit authorization integration
+- Authorization用DB query
+
+ConstraintEvaluatorの既存仕様を実装対象とし、未決定の意味ルールや追加機能を勝手に導入しない。
+
