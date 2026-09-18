@@ -1307,6 +1307,19 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[Test Strategy](test_strategy_v0_1.md)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D097: Migration Implementation Start
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D095でMigration implementationを第2実装単位とし、D096で3 Migrationの互換バージョンを `ActiveRecord::Migration[8.0]` に統一した。
+- Decision：Migration implementationを開始し、既存のDB schema決定に従って `acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events` の3 Migrationのみを実装する。Model、Authorization、Auditロジック、Test、CIは今回の範囲に含めない。
+- Rationale：Migration実装に必要なschema、主要CHECK constraint、Foreign Key、index方針が既存Decisionで確定しており、追加のdomain設計をせず実装へ移せるため。
+- 未決定：実環境PostgreSQLでのMigration up / down実行確認と、後続のModel implementation開始時期。
+- Consequences：3 Migration fileを追加する。Migration Ruby syntaxは確認するが、今回のcommitではDummy Rails App、Test code、CIを追加せず、PostgreSQLへの実適用確認は行わない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。

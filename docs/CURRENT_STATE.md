@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D096
+D097
 ```
 
 ## Current Status
@@ -32,9 +32,9 @@ D096
 ```text
 Design substantially finalized
 Gem skeleton implemented
-Core feature implementation not started
+Core authorization logic implementation not started
 
-Migration not implemented
+Migration files implemented (runtime DB execution not yet verified)
 Model not implemented
 Delegation API not implemented
 Authorization not implemented
@@ -47,6 +47,19 @@ Not released
 ```
 
 ## Implemented
+
+Migration files：
+
+```text
+db/migrate/
+├── 20260918030001_create_acting_for_agents.rb
+├── 20260918030002_create_acting_for_delegations.rb
+└── 20260918030003_create_acting_for_audit_events.rb
+```
+
+Implemented schema follows the existing Domain Model decisions for columns, defaults, indexes, Foreign Key, and DB CHECK constraints.
+
+Ruby syntax check completed for all 3 Migration files. PostgreSQLへのup / down実行確認はまだ行っていない。
 
 Gem skeleton：
 
@@ -77,9 +90,11 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration implementationへ進む前提条件として、3 Migrationの互換バージョンは `ActiveRecord::Migration[8.0]` に統一する（D096）。
+Migration file実装は完了したが、PostgreSQLへの実適用は未確認。
 
-次に、Migration実装へ入るかどうかを1項目として判断する。実装する場合も対象はD095の3テーブルに限定し、Model / Authorization / Auditロジック / Test / CIへは進まない。
+次の重要事項は、Model implementationへ進む前に **3 Migrationのup / down実行確認をMigration implementationの完了条件として行うか** を決める。
+
+Model / Authorization / Auditロジック / Test / CIへはまだ進まない。
 
 ## Important Rules
 
