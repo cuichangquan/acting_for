@@ -38,8 +38,9 @@ Docker migration verification environment implemented
 ActiveRecord Models implemented and Docker verified
 Delegation Public API implementation design finalized
 Delegation API implemented
+Decision implemented
 Authorization not implemented
-Decision not implemented
+ConstraintEvaluator not implemented
 Audit authorization integration not implemented
 Minitest test suite not implemented
 CI not implemented
@@ -49,6 +50,8 @@ Not released
 ```
 
 ## Implemented
+
+Decision Value Object：`lib/acting_for/decision.rb`。D213どおり、`:allow` / `:deny` / `:require_approval` の3 status、`status` / `allowed?` / `denied?` / `approval_required?` の4 Public API、初期化後freeze、不正statusの `ArgumentError` を実装した。`lib/acting_for.rb` からrequireする。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 Delegation Public API：`lib/acting_for.rb` の `ActingFor.delegate(...)`、`lib/acting_for/errors.rb`、`app/services/acting_for/internal/delegation_creator.rb`。D190〜D212どおり実装し、既存Modelは変更していない。
 
@@ -113,7 +116,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Decision実装方針はD213で確定済み。Decision自体はまだ未実装。次の明示指示で `ActingFor::Decision` の実装へ進む。Authorization / ConstraintEvaluator / Audit authorization integrationにはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+Decision実装完了。Authorization / ConstraintEvaluator / Audit authorization integrationは未実装。次の重要事項はAuthorization実装に入る前の実装単位確認とし、未決定事項を勝手に追加しない。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
