@@ -6,6 +6,8 @@ require "acting_for"
 
 module Dummy
   class Application < Rails::Application
+    config.root = File.expand_path("..", __dir__)
     config.load_defaults 8.0
+    config.eager_load = false
   end
 end

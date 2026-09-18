@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D221
+D224
 ```
 
 ## Current Status
@@ -43,7 +43,7 @@ Authorization core implemented
 ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
 Audit authorization integration implemented
-Minitest unit test foundation implemented (integration tests pending)
+Minitest unit tests implemented and Docker runtime verified (integration tests pending)
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -52,13 +52,13 @@ Not released
 
 ## Implemented
 
-Minitest Unit Test foundation：`test/test_helper.rb`、`Rakefile` の `Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb`。D221どおりDummy Rails環境 + `rails/test_help` を共通helperとして使用し、Decisionの3 status / freeze / invalid statusとConstraintEvaluatorのAND / strict type / boundary / missing・nil / Symbol key厳密一致 / nested非対応 / fail-closedを正式Unit Test化した。GitHub上でのファイル実装のみで、この反映ではruntime実行は行っていない。
+Minitest Unit Test foundation：`test/test_helper.rb`、`Rakefile` の `Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb`。D221どおりDummy Rails環境 + `rails/test_help` を共通helperとして使用し、Decisionの3 status / freeze / invalid statusとConstraintEvaluatorのAND / strict type / boundary / missing・nil / Symbol key厳密一致 / nested非対応 / fail-closedを正式Unit Test化した。D222〜D224でDummy rootとMigration確認先を一致させ、`db:prepare` 後の正式 `bundle exec rake test` がDocker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で成功：**16 runs, 53 assertions, 0 failures, 0 errors, 0 skips**。検証用volumeは削除済み。
 
-Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。このAuthorization / Audit integrationの正式Integration Testによるruntime verificationは未実施。
 
-ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。D221の正式Unit Testでruntime verification済み。
 
-Decision Value Object：`lib/acting_for/decision.rb`。D213どおり、`:allow` / `:deny` / `:require_approval` の3 status、`status` / `allowed?` / `denied?` / `approval_required?` の4 Public API、初期化後freeze、不正statusの `ArgumentError` を実装した。`lib/acting_for.rb` からrequireする。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+Decision Value Object：`lib/acting_for/decision.rb`。D213どおり、`:allow` / `:deny` / `:require_approval` の3 status、`status` / `allowed?` / `denied?` / `approval_required?` の4 Public API、初期化後freeze、不正statusの `ArgumentError` を実装した。`lib/acting_for.rb` からrequireする。D221の正式Unit Testでruntime verification済み。
 
 Delegation Public API：`lib/acting_for.rb` の `ActingFor.delegate(...)`、`lib/acting_for/errors.rb`、`app/services/acting_for/internal/delegation_creator.rb`。D190〜D212どおり実装し、既存Modelは変更していない。
 
@@ -123,7 +123,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D221のUnit Test基盤を実装済み。`test/test_helper.rb`、`Rake::TestTask`、Decision / ConstraintEvaluator Unit Testを追加し、正式コマンドは `bundle exec rake test`。Public API Integration Testはまだ未実装。次の重要事項は `ActingFor.delegate(...)` / `ActingFor.authorize(...)` / Audit persistenceのIntegration Test実装単位を確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D221のUnit Test基盤はD222〜D224によりDocker runtime verification完了。`test/test_helper.rb`、`Rake::TestTask`、Decision / ConstraintEvaluator Unit Testを追加し、正式コマンドは `bundle exec rake test`。Public API Integration Testはまだ未実装。次の重要事項は `ActingFor.delegate(...)` / `ActingFor.authorize(...)` / Audit persistenceのIntegration Test実装単位を確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

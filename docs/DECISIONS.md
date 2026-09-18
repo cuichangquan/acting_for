@@ -3069,3 +3069,45 @@ test/
 
 実装順序は「Test runner + Unit tests → Public API Integration tests → CI」とする。
 
+## D222: Dummy Rails Appのrootを明示する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+
+`test/dummy/config/application.rb` に `config.root = File.expand_path("..", __dir__)` を設定し、Dummy Rails Appのrootを `test/dummy` とする。リポジトリ直下から正式Testを実行しても、Dummy側の `config/database.yml` を参照する。database.ymlの新設・コピーは行わない。
+
+## D223: 正式Test実行前にDummy test DBをdb:prepareで準備する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+
+Rails標準の `bundle exec rake -f test/dummy/Rakefile db:prepare` をTest環境の事前準備として実行する。既存Dummy Migrationを使い、正式Testコマンドは `bundle exec rake test` を維持する。Migration内容・DB schemaの意味は変更しない。
+
+## D224: 正式TestのMigration確認先をDummyと一致させる
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザーによるTest infrastructureの最小修正の包括承認。
+
+`test/test_helper.rb` でDummy環境load後、`rails/test_help` のload前に `ActiveRecord::Migrator.migrations_paths = Rails.application.paths["db/migrate"].to_a` を設定する。Migration確認に使用される相対パス `db/migrate` がリポジトリ直下を参照し、Dummy側で適用済みのMigrationと異なる番号を未適用と判定していたため、Dummy rootから解決された絶対パスに揃える。Rails標準のpending migration checkは維持する。
+
+Dummyの `config.eager_load = false` も明示する。Production code・Test仕様・Gem本体Migrationは変更しない。CI / Integration Test / Quick Start / Releaseには進まない。
+
+### 正式Minitest Unit runtime verification（2026-09-18）
+
+既存 `compose.migration.yml` / `gemfiles/rails_8_0.gemfile` を使用し、Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=testで以下を実行した。
+
+```sh
+export POSTGRES_PASSWORD=acting_for_test
+docker compose -f compose.migration.yml up -d db
+docker compose -f compose.migration.yml run --rm app bundle install
+docker compose -f compose.migration.yml run --rm app bundle exec rake -f test/dummy/Rakefile db:prepare
+docker compose -f compose.migration.yml run --rm app bundle exec rake test
+docker compose -f compose.migration.yml down -v
+```
+
+`db:prepare` 成功、正式Testはexit 0：**16 runs, 53 assertions, 0 failures, 0 errors, 0 skips**（seed 4834）。D221のDecision / ConstraintEvaluator Unit Testが成功した。
+
+実際の値：Rails.rootは `/app/test/dummy`、DB設定は `/app/test/dummy/config/database.yml`、Migration確認先は `/app/test/dummy/db/migrate`、pending migrationsは空。検証用volumeは `down -v` で削除した。log等の実行生成物はcommitしない。正式Test suiteや対応matrix全体の完了を意味しない。
