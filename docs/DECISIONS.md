@@ -1863,6 +1863,177 @@ D098・D122〜D145・D160の完了条件を確認した実施結果であり、�
 - 最後に `down -v` を実行し、検証用DB・Gem volumeの削除を確認した。Model / Authorization / Auditロジック / Minitest本体 / CIには進んでいない。
 - 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)。
 
+## D168: Model Implementation Unit
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：第3実装単位をModel implementationとする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D169: Model Implementation Targets
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：対象はActingFor::ApplicationRecord / ActingFor::Agent / ActingFor::Delegation / ActingFor::AuditEventとする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D170: Model Only Scope
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：今回の範囲はModel層のみ。Delegation API / Authorization / Decision / Test / CIへ進まない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D171: Abstract ApplicationRecord
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：ApplicationRecordはActiveRecord::Baseを継承するabstract classとする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D172: Model Associations
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Agent has_many Delegations、Delegation belongs_to Agent、Delegation belongs_to polymorphic Principalとする。AuditEventはsnapshotのためAgent / Principal associationを持たない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D173: Agent Deletion Restriction
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Delegationを持つAgentの削除はModelでもrestrictする。通常の無効化はDelegation#revoke!を使う。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D174: Agent Model Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Agent validationを既存設計どおり実装する。identifier / nameの非String値がActiveRecord castで通らないようtype-cast前入力も確認する。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D175: Minimal Current Time
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：D035実装のため `ActingFor.current_time` を最小実装する。通常は `Time.current` を返す。Clock configuration APIは作らない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D176: Delegation Model Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Delegationの基本Model validationを実装する。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D177: Delegation Immutability
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：persist済みDelegationの権限内容をModel validationでimmutableにする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D178: Revocation Only Through Revoke
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：revoked_atの通常更新は禁止し、revoke!だけが変更する。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D179: Atomic Conditional Revocation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：revoke!は `id + revoked_at IS NULL` のconditional atomic updateを使用する。最初のrevocation timestampを保持し、explicit row lock / internal retryを行わない。unsaved recordは `ActiveRecord::RecordNotSaved` とする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D180: Canonical Constraint Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Constraint Model validationはPublic入力正規化ではなく、保存されるcanonical formを検証する。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D181: No Constraint Value Conversion
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Constraint valueを暗黙型変換しない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D182: Audit Snapshot Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：AuditEventでsnapshot、resource scope、decision / reason pair、matched_delegation_ids、sanitized_contextをvalidationする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D183: Readonly Persisted Audit Events
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：persist済みAuditEventはreadonlyとし、update / destroyを `ActiveRecord::ReadOnlyRecord` で拒否する。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D184: Model Protection Boundary
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Model制約は通常ActiveRecord操作を対象とする。update_all / delete_all / raw SQL / DB管理者操作まで完全防御せず、DB triggerも追加しない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D185: Agent Input Types and Case Sensitivity
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Agentのidentifier / nameはbefore type cast値を確認し、implicit String conversionを許可しない。identifier uniquenessはcase-sensitiveとする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D186: Standard Rails Validation Errors
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Model validation失敗はRails標準errorsを使用する。独自Model validation Exceptionを作らない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D187: Dirty Change Immutability Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Delegation immutabilityはdirty change validationで実装する。callbackで無言に値を戻さない。revoked_atも通常saveでは変更不可とする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D188: Single Revocation Time and Reload
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：revoke!では `ActingFor.current_time` を1回取得し、revoked_at / updated_atへ同じ時刻をatomic updateする。その後reloadする。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## D189: JSON Column Validation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：JSON columnのModel validationはcast後Ruby値を検証する。独自JSON parse / serializer / custom attribute typeは作らない。
+- 根拠：ユーザー承認済みのModel Implementation完了反映・Commit指示。
+
+## Model Runtime Verification完了記録（2026-09-18）
+
+D168〜D189に基づくModel実装の実施結果であり、新しいDecisionではない。作業開始時の基準commitは `f2e50d2bf514be8eaf2c16e9498c09d55857029e`。
+
+- 環境：Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。MacへのRuby / Rails / PostgreSQLインストールは行っていない。
+- 新規の専用DBに既存Migrationを適用し、一時Ruby scriptから `test/dummy` environmentをrequireして確認した。scriptはRepositoryへ追加していない。Minitest本体は未実装。
+- **全213 checks成功**：ApplicationRecord abstract class 1、Agent 36、Delegation基本24、Delegation immutability 23、Constraint 56、revoke! 5、AuditEvent 59、append-only 9。
+- Agent：Integer identifier / name、duplicate identifierを拒否。name=nil / duplicate name / case-sensitive identifierを許可。Delegationを持つAgentのdestroy拒否とDB Foreign Key制約を確認した。
+- Delegation：Resource scope、effect、期限、必須項目、canonical constraintsを検証。immutable attributesの通常更新とconstraintsのin-place変更を拒否した。ConstraintのSymbol keyはcast前入力も確認して拒否し、独自JSON parseや型変換は追加していない。
+- revoke!：1回目にrevoked_at / updated_atへ同一時刻を設定。2回目は例外なしで両timestampが不変。異なる2接続のconcurrent executionでも最初のtimestampを保持した。unsaved revoke!は `ActiveRecord::RecordNotSaved` となった。
+- AuditEvent：正式3 pair、snapshot、resource scope、matched_delegation_idsの型・重複・件数・順序保持、sanitized_contextを確認。persist直後と再取得後のupdate / update! / destroyは `ActiveRecord::ReadOnlyRecord` となり、DBの値も不変だった。
+- Migration regression：`db:migrate → db:rollback STEP=3 → db:migrate` 成功。rollback後の対象3テーブル削除も確認した。既存Migrationは変更していない。
+- 既存Dummyの `config.eager_load` 未設定warningあり。検証コマンドの作業ディレクトリと一時Principal定義を修正後、全件成功した。
+- 検証後に専用Composeプロジェクトを `down -v` し、コンテナ・DB / Gem volumeを削除した。
+- Delegation API / Authorization / Decision / ConstraintEvaluator / Audit保存Service / Minitest / CI / Runnable Quick Startには進んでいない。
+- 関連文書：[Current State](CURRENT_STATE.md)。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。

@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D167
+D189
 ```
 
 ## Current Status
@@ -32,14 +32,14 @@ D167
 ```text
 Design substantially finalized
 Gem skeleton implemented
-Migration implemented
-Migration runtime verification completed
+Migration implemented and runtime verified
 Minimal Dummy Rails App implemented for migration verification
 Docker migration verification environment implemented
-Model not implemented
+ActiveRecord Models implemented and Docker verified
 Delegation API not implemented
 Authorization not implemented
-Audit logic not implemented
+Decision not implemented
+Audit authorization integration not implemented
 Minitest test suite not implemented
 CI not implemented
 Runnable Quick Start not implemented
@@ -48,6 +48,21 @@ Not released
 ```
 
 ## Implemented
+
+ActiveRecord Models / time helper：
+
+```text
+app/models/acting_for/
+├── application_record.rb
+├── agent.rb
+├── delegation.rb
+└── audit_event.rb
+
+lib/acting_for.rb
+└── ActingFor.current_time
+```
+
+Model verification：Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=testで **213 checks passed**。Migration regressionも成功。詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。
 
 Migration files：
 
@@ -93,9 +108,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration implementationはD098の完了条件を満たし完了。
+Model implementationは完了。
 
-次はModel implementationを開始するかどうかを、次の重要Decisionとして検討する。まだModel実装は開始しない。
+次はDelegation Public API `ActingFor.delegate(...)` のimplementationを開始するかどうかを、次の重要Decisionとして検討する。まだDelegation API実装には進まない。
 
 ## Important Rules
 
