@@ -1346,6 +1346,33 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#9-test-directory--dummy-rails-app)、[Test Strategy](test_strategy_v0_1.md)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D100: Minimal Dummy Rails App Structure
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D099でMigration runtime verification用Hostとして `test/dummy` Rails Applicationを採用した。今回作成するDummy Appの最小構成を確定する。
+- Decision：Migration検証のために先行作成する `test/dummy` は、次の最小構成に限定する。
+
+```text
+test/dummy/
+├── config/
+│   ├── application.rb
+│   ├── boot.rb
+│   ├── environment.rb
+│   └── database.yml
+├── Rakefile
+└── db/
+    └── migrate/
+```
+
+この段階では、Controller / View / Route / Model / Test helper / Minitest本体 / sample domain等は追加しない。
+- Rationale：Migrationの `up → rollback → up` 実行確認に必要なRails hostだけを先に用意し、Dummy Appをsample productや過剰なTest基盤へ拡張しないため。
+- 未決定：Dummy Appで使用するRails version、Ruby version、PostgreSQL接続設定、Migration取り込み方法・具体的実行コマンド。
+- Consequences：次の実装検討は上記最小ファイル群に限定する。Model / Authorization / Auditロジック / Minitest本体 / CIへはまだ進まない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#9-test-directory--dummy-rails-app)、[Test Strategy](test_strategy_v0_1.md#3-dummy-rails-application)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
