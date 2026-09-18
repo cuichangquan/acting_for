@@ -3216,3 +3216,33 @@ RuboCopは安定版1.91.0を確認し、gemspecのdevelopment dependency `~> 1.9
 Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で `db:prepare`、正式Test、RuboCopが全てexit 0。正式Test：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**。RuboCop 1.91.0：**42 files inspected, no offenses detected**。
 
 GitHub Actions [CI #2](https://github.com/cuichangquan/acting_for/actions/runs/35347319057)（commit `a79c59983682614086273a04d0a4a26b510b1967`）は **Success / 全5 jobs green**。正式4 matrixでDB準備とMinitest成功、RuboCop成功を確認。最終docs commitもmain push triggerで同じ正式CIを実行し、その最終run結果を完了報告で確認する。Runnable Quick Startは未実装、GemはNot released。
+
+
+## D230: Runnable Quick Start Implementation
+
+- 日付：2026-09-18
+- Status：**確定・実装済み・新規Rails Applicationでruntime verification成功**。
+- 根拠：ユーザー承認済みD230実装バッチ。
+- 関連：D060〜D064・D068〜D071・D229、[README Quick Start](../README.md#quick-start)。
+
+README Quick Startを設計例から実行可能な導入手順へ更新。RubyGems Release前のため `gem "acting_for", github: "cuichangquan/acting_for", branch: "main"` を使用する。repositoryは現時点でprivateでありアクセス権とGit認証が必要。実検証では既存SSH key / agentとGitのHTTPS-to-SSH rewriteを使用し、認証の前提とrewrite解除方法をREADMEへ明示した。BundlerはGitHub mainの実commitをlockする。Rails 8.0のJSON 3非互換に対しHost Gemfileへ `gem "json", "< 3"` を記載（D229の検証環境と同じ）。Release・tag・version変更は行わない。
+
+一時ディレクトリに `rails _8.0.5.1_ new shopping_demo --database=postgresql --minimal --skip-bundle --skip-git` で本当に新規Applicationを作成。既存Dummyだけで検証しない。Gem導入後の `bin/rails -T` でRails Engine標準task `acting_for:install:migrations` を確認し、`bin/rails acting_for:install:migrations` を実行してHost `db/migrate` へ3 Migrationがコピーされることを確認。timestampは固定しない。最小Host ModelはUser（name）とProduct（name / Integer price）だけ。`bin/rails db:create db:migrate` でHostとacting_for_* tablesの作成に成功。
+
+利用者向け手順はRails console中心。既存Model API `ActingFor::Agent.create!(identifier: "shopping-agent", name: "Shopping Agent")` でAgentを作成。Shopping Agent例（Principal User / Action purchase / Resource Product / Context amount）を維持し、正式Public `ActingFor.delegate` でamount <= 10_000のallowと10_000 < amount <= 30_000のrequire_approvalを作成。Hostが取得したProduct recordのpriceをContextへ渡し、正式Public `ActingFor.authorize` を実行。新Public API・signature・semantics・production schema・support matrixを変更しない。専用Controller / Route / View / UI / Approval Workflowやsample applicationは追加しない。
+
+README全体のdesign stage、not implemented、intended API、test code不存在、CI / gemspec / LICENSE未実装、Project documentsの古い状態表記、planned supportを現在の実装・正式CI確認済み状態へ整理。Not releasedを維持。Host Authorization AND ActingFor Authorization、require_approval != allow、Host Context検証責務を維持。Audit Contextはdefault {}で、raw Context全体の自動保存ではないことを明示。
+
+### D230 runtime verification（2026-09-18）
+
+Docker / Ruby **3.4.10** / Rails **8.0.5.1** / PostgreSQL **16.15** / development環境。GitHub main（開始baseline `fb445336b408615bfa699aee9d585c5f788d35f9`）からbundle install成功。標準taskによるMigrationコピー3件、db:migrate成功。最終READMEのshell commandとRuby blockを抽出し、新規App生成からの通し実行に成功。Ruby blockは一時runner scriptで順番に実行し、追加assertionで期待値を確認。Rails console起動も成功。
+
+- Agent：1件persisted。
+- Delegation：2件persisted。
+- 8,900：`[:allow, true, false, false]`。
+- 20,000：`[:require_approval, false, false, true]`。
+- 50,000：`[:deny, false, true, false]`。
+- 上記配列順：status / allowed? / denied? / approval_required?。
+- AuditEvent：3件自動保存、decisionはallow / require_approval / deny、全sanitized_contextは{}。`ActingFor::AuditEvent.last` はpersisted deny。
+
+既存Docker環境で正式 `bundle exec rake test` と `bundle exec rubocop` がexit 0：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**（seed 52868）。RuboCop **1.91.0：42 files inspected, no offenses detected**。Production code変更なし。新規App・一時script・検証volume・生成log / schema等は削除し、repositoryへ残さない。main push後の同じ正式GitHub Actions（4 matrix + RuboCop、全5 jobs）結果を完了報告で確認する。次の大きな工程はGem Releaseであり、本バッチでは実行しない。

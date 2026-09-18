@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D229
+D230
 ```
 
 ## Current Status
@@ -46,12 +46,14 @@ Audit authorization integration implemented
 Minitest unit / delegation / authorization / audit / engine / migration / host boundary tests implemented and Docker runtime verified
 Pre-CI Test Strategy coverage checked
 GitHub Actions formal four-matrix CI / PostgreSQL 16 / core RuboCop implemented and runtime verified
-Runnable Quick Start not implemented
+Runnable Quick Start implemented and verified in a new Rails application
 
 Not released
 ```
 
 ## Implemented
+
+Runnable Quick Start（D230）：Release前のGitHub `main` Gem導入から、Rails標準 `bin/rails acting_for:install:migrations`、最小User / Product、Agent作成、Public delegate / authorize、Decision全3結果、Audit保存まで新規Rails Applicationで実検証。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15。READMEから抽出したRuby codeをrunnerで実行し、Rails console起動も確認。README全体の古い未実装・planned support表記を整理。Production code変更なし。正式Test 298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCop違反なし。GemはNot released。詳細は[DECISIONS D230](DECISIONS.md#d230-runnable-quick-start-implementation)。
 
 v0.1正式CI（D229）：GitHub Actions PR / main push、Ruby 3.4 / 4.0 × Rails 8.0 / 8.1、PostgreSQL 16、Dummy `db:prepare` と正式Minitest、独立core RuboCop jobを実装。全5 jobs green。正式Testは298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCop 1.91.0は違反なし。Production修正はbehavior非変更のStyleのみ。詳細と実検証runは[DECISIONS D229](DECISIONS.md#d229-v01-ci-implementation)。
 
@@ -134,7 +136,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D229の正式CI実装・4 matrix・RuboCop runtime verificationが完了。次の大きな工程はRunnable Quick Start。Releaseは未実施。
+D230のRunnable Quick Start実装・新規Rails Applicationでのruntime verificationが完了。次の大きな工程はGem Release。Releaseは未実施。
 
 ## Important Rules
 
