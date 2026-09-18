@@ -9,7 +9,7 @@ class EngineIntegrationTest < ActiveSupport::TestCase
 
   test "dummy application is initialized with acting for engine loaded" do
     assert_predicate Rails.application, :initialized?
-    assert Rails.application.railties.any? { |railtie| railtie.is_a?(ActingFor::Engine) }
+    assert(Rails.application.railties.any?(ActingFor::Engine))
   end
 
   test "acting for engine isolates its namespace" do
@@ -84,14 +84,17 @@ class EngineIntegrationTest < ActiveSupport::TestCase
     context = ActiveRecord::Base.connection_pool.migration_context
     host_migrations = context.migrations
     assert host_migrations.any?
-    assert host_migrations.all? { |migration| Pathname.new(migration.filename).dirname == Rails.root.join("db/migrate") }
+    assert(host_migrations.all? do |migration|
+      Pathname.new(migration.filename).dirname == Rails.root.join("db/migrate")
+    end)
     assert_equal [], context.open.pending_migrations
 
     gem_root = ActingFor::Engine.root
     refute_equal Rails.root, gem_root
     source_context = ActiveRecord::MigrationContext.new(gem_root.join("db/migrate").to_s)
     source_migrations = source_context.migrations
-    assert_equal %w[CreateActingForAgents CreateActingForAuditEvents CreateActingForDelegations], source_migrations.map(&:name).sort
+    assert_equal %w[CreateActingForAgents CreateActingForAuditEvents CreateActingForDelegations],
+                 source_migrations.map(&:name).sort
     source_migrations.each do |source|
       host = host_migrations.find { |migration| migration.name == source.name }
       refute_nil host

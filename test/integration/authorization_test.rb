@@ -4,6 +4,7 @@ require "bigdecimal"
 class AuthorizationTest < ActiveSupport::TestCase
   class Resource
     extend ActiveModel::Naming
+
     attr_reader :id
 
     def initialize(id)
@@ -49,7 +50,8 @@ class AuthorizationTest < ActiveSupport::TestCase
   %i[allow require_approval].each do |first_effect|
     %i[allow require_approval].each do |specific_effect|
       %i[earlier later].each do |first_timestamp|
-        test "authorize prioritizes approval with #{first_effect} created first and #{specific_effect} specific and first timestamp #{first_timestamp}" do
+        test "authorize prioritizes approval with #{first_effect} created first and " \
+             "#{specific_effect} specific and first timestamp #{first_timestamp}" do
           second_effect = first_effect == :allow ? :require_approval : :allow
           delegations = [first_effect, second_effect].map do |effect|
             delegate(effect: effect, resource: effect == specific_effect ? @resource : Resource)
@@ -168,9 +170,9 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "authorize requires every constraint to pass" do
     delegate(constraints: [
-      { field: :amount, operator: :lte, value: 100 },
-      { field: :currency, operator: :eq, value: "JPY" }
-    ])
+               { field: :amount, operator: :lte, value: 100 },
+               { field: :currency, operator: :eq, value: "JPY" }
+             ])
     assert_equal :deny, authorize(context: { amount: 100, currency: "USD" }).status
   end
 
@@ -181,7 +183,7 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "authorize matches an exact top level symbol containing a dot" do
     delegate(constraints: [{ field: "order.amount", operator: :eq, value: 100 }])
-    assert_equal :allow, authorize(context: { :"order.amount" => 100 }).status
+    assert_equal :allow, authorize(context: { "order.amount": 100 }).status
   end
 
   {
@@ -343,19 +345,20 @@ class AuthorizationTest < ActiveSupport::TestCase
     end
   end
 
-  %i[password password_confirmation token access_token refresh_token api_key secret client_secret credential].each do |key|
+  %i[password password_confirmation token access_token refresh_token api_key secret client_secret
+     credential].each do |key|
     test "authorize rejects forbidden #{key} even when absent from context" do
       assert_invalid(audit_context_keys: [key])
     end
   end
 
   test "authorize deduplicates audit context keys" do
-    authorize(context: { amount: 100 }, audit_context_keys: [:amount, :amount])
+    authorize(context: { amount: 100 }, audit_context_keys: %i[amount amount])
     assert_equal({ "amount" => 100 }, audit.sanitized_context)
   end
 
   test "authorize ignores missing audit context keys" do
-    authorize(context: { amount: 100 }, audit_context_keys: [:amount, :missing])
+    authorize(context: { amount: 100 }, audit_context_keys: %i[amount missing])
     assert_equal({ "amount" => 100 }, audit.sanitized_context)
   end
 
@@ -380,7 +383,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test "authorize selects a literal top level audit key containing a dot" do
-    authorize(context: { :"order.amount" => 100 }, audit_context_keys: [:"order.amount"])
+    authorize(context: { "order.amount": 100 }, audit_context_keys: [:"order.amount"])
     assert_equal({ "order.amount" => 100 }, audit.sanitized_context)
   end
 
@@ -434,9 +437,9 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test "authorize does not mutate caller audit context keys" do
-    keys = [:amount, :amount, :missing]
+    keys = %i[amount amount missing]
     authorize(context: { amount: 100 }, audit_context_keys: keys)
-    assert_equal [:amount, :amount, :missing], keys
+    assert_equal %i[amount amount missing], keys
     refute_predicate keys, :frozen?
   end
 
@@ -445,7 +448,10 @@ class AuthorizationTest < ActiveSupport::TestCase
       delegate(effect: status) unless status == :deny
       original = ActiveRecord::StatementInvalid.new("simulated persistence failure")
       calls = 0
-      with_audit_create(->(*) { calls += 1; raise original }) do
+      with_audit_create(lambda { |*|
+        calls += 1
+        raise original
+      }) do
         assert_no_difference "ActingFor::AuditEvent.count" do
           error = assert_raises(ActingFor::AuditPersistenceError) { authorize }
           assert_same original, error.cause
@@ -493,7 +499,7 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "authorize propagates delegation lookup system failure instead of deny" do
     original = ActiveRecord::StatementInvalid.new("simulated delegation lookup failure")
-    subscriber = ->(_name, _start, _finish, _id, payload) do
+    subscriber = lambda do |_name, _start, _finish, _id, payload|
       raise original if payload[:sql].match?(/\bFROM\s+"acting_for_delegations"/i)
     end
     assert_no_difference "ActingFor::AuditEvent.count" do
@@ -506,11 +512,13 @@ class AuthorizationTest < ActiveSupport::TestCase
   private
 
   def authorize(**overrides)
-    ActingFor.authorize(**{ agent: @agent, principal: @principal, action: "purchase", resource: @resource }.merge(overrides))
+    ActingFor.authorize(agent: @agent, principal: @principal, action: "purchase",
+                        resource: @resource, **overrides)
   end
 
   def delegate(**overrides)
-    ActingFor.delegate(**{ agent: @agent, principal: @principal, action: "purchase", resource: @resource, effect: :allow }.merge(overrides))
+    ActingFor.delegate(agent: @agent, principal: @principal, action: "purchase", resource: @resource,
+                       effect: :allow, **overrides)
   end
 
   def audit
@@ -526,7 +534,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   def with_audit_create(replacement)
     klass = ActingFor::AuditEvent
     singleton = klass.singleton_class
-    owned = singleton.instance_methods(false).include?(:create!)
+    owned = singleton.method_defined?(:create!, false)
     original = klass.method(:create!)
     singleton.define_method(:create!, replacement)
     yield

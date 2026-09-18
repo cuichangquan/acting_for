@@ -1,0 +1,45 @@
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  Exclude:
+    - 'test/dummy/db/schema.rb'
+    - 'tmp/**/*'
+
+# Preserve the project's existing string style and mutability contracts.
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+Style/FrozenStringLiteralComment:
+  EnforcedStyle: never
+Style/MutableConstant:
+  Exclude:
+    - 'lib/acting_for/version.rb'
+
+# API and security contracts are documented in docs/, not class comments.
+Style/Documentation:
+  Enabled: false
+
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec
+# Publishing policy belongs to the later release step.
+Gemspec/RequireMFA:
+  Enabled: false
+
+# Existing validation branches, schema declarations and acceptance cases are
+# intentionally explicit. Avoid restructuring them solely for size metrics.
+# New production files remain subject to the default Metrics cops.
+Metrics:
+  Exclude:
+    - 'app/models/acting_for/audit_event.rb'
+    - 'app/models/acting_for/delegation.rb'
+    - 'app/services/acting_for/internal/authorization.rb'
+    - 'app/services/acting_for/internal/constraint_evaluator.rb'
+    - 'app/services/acting_for/internal/delegation_creator.rb'
+    - 'db/migrate/*.rb'
+    - 'test/**/*.rb'
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+# Preserve the documented public keyword signature.
+Style/KeywordParametersOrder:
+  Exclude:
+    - 'lib/acting_for.rb'

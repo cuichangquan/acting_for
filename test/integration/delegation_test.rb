@@ -6,6 +6,7 @@ class DelegationTest < ActiveSupport::TestCase
 
   class Resource
     extend ActiveModel::Naming
+
     attr_reader :id
 
     def initialize(id)
@@ -41,7 +42,7 @@ class DelegationTest < ActiveSupport::TestCase
   end
 
   {
-    "nil agent" => -> { nil },
+    "nil agent" => -> {},
     "wrong class agent" => -> { @principal },
     "unsaved agent" => -> { ActingFor::Agent.new(identifier: "unsaved") }
   }.each do |name, input|
@@ -58,7 +59,7 @@ class DelegationTest < ActiveSupport::TestCase
   end
 
   {
-    "nil principal" => -> { nil },
+    "nil principal" => -> {},
     "string principal" => -> { "1" },
     "hash principal" => -> { { id: 1 } },
     "plain object principal with an id" => -> { Struct.new(:id).new(1) },
@@ -118,7 +119,7 @@ class DelegationTest < ActiveSupport::TestCase
     "resource instance without id" => -> { ResourceWithoutId.new },
     "resource instance with nil id" => -> { Resource.new(nil) },
     "resource instance with empty string id" => -> { Resource.new("") },
-    "resource instance whose id converts to empty string" => -> { Resource.new(Class.new { def to_s; ""; end }.new) },
+    "resource instance whose id converts to empty string" => -> { Resource.new(Class.new { def to_s = "" }.new) },
     "string resource identifier" => -> { "Product:123" },
     "hash resource identifier" => -> { { type: "Product", id: 123 } }
   }.each do |name, input|
@@ -155,13 +156,13 @@ class DelegationTest < ActiveSupport::TestCase
   test "delegate canonicalizes symbol constraint keys field and operator" do
     constraints = [{ field: :amount, operator: :lte, value: 10_000 }]
     assert_equal [{ "field" => "amount", "operator" => "lte", "value" => 10_000 }],
-      delegate(constraints: constraints).reload.constraints
+                 delegate(constraints: constraints).reload.constraints
   end
 
   test "delegate accepts mixed string and symbol constraint keys" do
     constraints = [{ "field" => "amount", operator: "eq", "value" => 100 }]
     assert_equal [{ "field" => "amount", "operator" => "eq", "value" => 100 }],
-      delegate(constraints: constraints).reload.constraints
+                 delegate(constraints: constraints).reload.constraints
   end
 
   {
@@ -239,12 +240,15 @@ class DelegationTest < ActiveSupport::TestCase
   end
 
   test "delegate does not trim or downcase a constraint field" do
-    assert_equal " Amount ", delegate(constraints: [constraint("eq", 1, field: " Amount ")]).reload.constraints.first["field"]
+    assert_equal " Amount ",
+                 delegate(constraints: [constraint("eq", 1, field: " Amount ")]).reload.constraints.first["field"]
   end
 
   test "delegate preserves multiple constraints in caller order" do
     constraints = [constraint("lte", 100), constraint("eq", "JPY", field: "currency")]
-    assert_equal constraints.map { |entry| entry.transform_keys(&:to_s) }, delegate(constraints: constraints).reload.constraints
+    assert_equal constraints.map { |entry|
+      entry.transform_keys(&:to_s)
+    }, delegate(constraints: constraints).reload.constraints
   end
 
   test "delegate does not mutate the constraints array passed by the caller" do
@@ -342,7 +346,7 @@ class DelegationTest < ActiveSupport::TestCase
   private
 
   def delegate(**overrides)
-    ActingFor.delegate(**{ agent: @agent, principal: @principal, action: "purchase", effect: "allow" }.merge(overrides))
+    ActingFor.delegate(agent: @agent, principal: @principal, action: "purchase", effect: "allow", **overrides)
   end
 
   def assert_invalid(**overrides)

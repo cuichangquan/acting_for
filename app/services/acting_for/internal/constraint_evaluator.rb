@@ -47,7 +47,7 @@ module ActingFor
 
         def canonical_constraint?(constraint)
           return false unless constraint.is_a?(Hash)
-          return false unless constraint.keys.all? { |key| key.is_a?(String) }
+          return false unless constraint.keys.all?(String)
           return false unless constraint.keys.sort == CONSTRAINT_KEYS
 
           field = constraint["field"]

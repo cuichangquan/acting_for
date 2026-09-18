@@ -18,6 +18,7 @@ module ActingFor
           unless %w[allow require_approval].include?(effect)
             raise InvalidRequestError, "effect must be allow or require_approval"
           end
+
           constraints = canonical_constraints(constraints)
           validate_expiration(expires_at)
 
@@ -42,19 +43,16 @@ module ActingFor
           return [nil, nil] if resource.nil?
 
           klass = resource.is_a?(Class) ? resource : resource.class
-          unless klass.respond_to?(:model_name)
-            raise InvalidRequestError, "resource class must provide model_name"
-          end
+          raise InvalidRequestError, "resource class must provide model_name" unless klass.respond_to?(:model_name)
+
           model_name = klass.model_name
-          unless model_name.respond_to?(:name)
-            raise InvalidRequestError, "resource model_name must provide name"
-          end
+          raise InvalidRequestError, "resource model_name must provide name" unless model_name.respond_to?(:name)
+
           resource_type = model_name.name
           return [resource_type, nil] if resource.is_a?(Class)
 
-          unless resource.respond_to?(:id)
-            raise InvalidRequestError, "resource instance must provide id"
-          end
+          raise InvalidRequestError, "resource instance must provide id" unless resource.respond_to?(:id)
+
           id = resource.id
           raise InvalidRequestError, "resource id must not be nil" if id.nil?
 
@@ -88,18 +86,16 @@ module ActingFor
             operator = string_value(canonical["operator"], "#{name} operator")
             value = canonical["value"]
             valid_value = case operator
-            when "eq"
-              scalar_value?(value)
-            when "lt", "lte", "gt", "gte"
-              value.is_a?(Integer)
-            when "in"
-              value.is_a?(Array) && value.all? { |element| scalar_value?(element) }
-            else
-              raise InvalidRequestError, "#{name} operator must be eq, lt, lte, gt, gte or in"
-            end
-            unless valid_value
-              raise InvalidRequestError, "#{name} value has an invalid type for #{operator}"
-            end
+                          when "eq"
+                            scalar_value?(value)
+                          when "lt", "lte", "gt", "gte"
+                            value.is_a?(Integer)
+                          when "in"
+                            value.is_a?(Array) && value.all? { |element| scalar_value?(element) }
+                          else
+                            raise InvalidRequestError, "#{name} operator must be eq, lt, lte, gt, gte or in"
+                          end
+            raise InvalidRequestError, "#{name} value has an invalid type for #{operator}" unless valid_value
 
             { "field" => field, "operator" => operator, "value" => operator == "in" ? value.dup : value }
           end
@@ -115,9 +111,9 @@ module ActingFor
           unless expires_at.is_a?(Time) || expires_at.is_a?(ActiveSupport::TimeWithZone)
             raise InvalidRequestError, "expires_at must be a Time or ActiveSupport::TimeWithZone"
           end
-          unless expires_at > ActingFor.current_time
-            raise InvalidRequestError, "expires_at must be in the future"
-          end
+          return if expires_at > ActingFor.current_time
+
+          raise InvalidRequestError, "expires_at must be in the future"
         end
       end
     end

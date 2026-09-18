@@ -11,9 +11,9 @@ class ContextTrustBoundaryTest < ActiveSupport::TestCase
     resource.define_singleton_method(:reload) { raise "Core reloaded host resource" }
     inputs = { agent: agent, principal: principal, action: :purchase, resource: resource }
     ActingFor.delegate(**inputs, effect: :allow,
-      constraints: [{ field: :amount, operator: :lte, value: 100 }])
+                                 constraints: [{ field: :amount, operator: :lte, value: 100 }])
     host_queries = []
-    subscriber = ->(_name, _start, _finish, _id, payload) do
+    subscriber = lambda do |_name, _start, _finish, _id, payload|
       host_queries << payload[:sql] if payload[:sql].match?(/\bFROM\s+"?principals"?/i)
     end
 

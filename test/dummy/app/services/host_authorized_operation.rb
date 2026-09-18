@@ -10,7 +10,7 @@ class HostAuthorizedOperation
     return :stopped unless @host_authorized.call(principal, action, resource)
 
     decision = ActingFor.authorize(agent: agent, principal: principal,
-      action: action, resource: resource, context: context)
+                                   action: action, resource: resource, context: context)
     if decision.allowed?
       @business_logic.call
       :executed

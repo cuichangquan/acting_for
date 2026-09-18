@@ -17,14 +17,14 @@ class CreateActingForDelegations < ActiveRecord::Migration[8.0]
     add_foreign_key :acting_for_delegations, :acting_for_agents, column: :agent_id
     add_index :acting_for_delegations, :agent_id
     add_index :acting_for_delegations,
-      %i[agent_id principal_type principal_id action resource_type],
-      name: "idx_acting_for_delegations_authorization_lookup"
+              %i[agent_id principal_type principal_id action resource_type],
+              name: "idx_acting_for_delegations_authorization_lookup"
 
     add_check_constraint :acting_for_delegations,
-      "resource_type IS NOT NULL OR resource_id IS NULL",
-      name: "chk_acting_for_delegations_resource_scope"
+                         "resource_type IS NOT NULL OR resource_id IS NULL",
+                         name: "chk_acting_for_delegations_resource_scope"
     add_check_constraint :acting_for_delegations,
-      "effect IN ('allow', 'require_approval')",
-      name: "chk_acting_for_delegations_effect"
+                         "effect IN ('allow', 'require_approval')",
+                         name: "chk_acting_for_delegations_effect"
   end
 end

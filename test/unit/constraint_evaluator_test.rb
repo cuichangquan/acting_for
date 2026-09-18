@@ -67,7 +67,7 @@ class ConstraintEvaluatorTest < ActiveSupport::TestCase
     constraint = canonical_constraint("order.amount", "eq", 100)
 
     refute evaluate([constraint], { order: { amount: 100 } })
-    assert evaluate([constraint], { :"order.amount" => 100 })
+    assert evaluate([constraint], { "order.amount": 100 })
   end
 
   test "invalid constraint fails closed" do

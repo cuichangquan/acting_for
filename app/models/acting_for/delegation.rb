@@ -31,9 +31,7 @@ module ActingFor
     end
 
     def initial_timestamps
-      if expires_at && expires_at <= ActingFor.current_time
-        errors.add(:expires_at, "must be in the future")
-      end
+      errors.add(:expires_at, "must be in the future") if expires_at && expires_at <= ActingFor.current_time
       errors.add(:revoked_at, "must be nil on creation") unless revoked_at.nil?
     end
 
@@ -47,9 +45,9 @@ module ActingFor
       # JSON casting stringifies Hash keys; also check the original assigned value.
       values = [constraints]
       values << read_attribute_before_type_cast(:constraints) if constraints_came_from_user?
-      unless values.all? { |value| value.is_a?(Array) && value.all? { |entry| canonical_constraint?(entry) } }
-        errors.add(:constraints, "must be an Array of canonical constraints")
-      end
+      return if values.all? { |value| value.is_a?(Array) && value.all? { |entry| canonical_constraint?(entry) } }
+
+      errors.add(:constraints, "must be an Array of canonical constraints")
     end
 
     def canonical_constraint?(entry)

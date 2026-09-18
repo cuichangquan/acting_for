@@ -16,13 +16,14 @@ class CreateActingForAuditEvents < ActiveRecord::Migration[8.0]
     end
 
     add_check_constraint :acting_for_audit_events,
-      "resource_type IS NOT NULL OR resource_id IS NULL",
-      name: "chk_acting_for_audit_events_resource_scope"
+                         "resource_type IS NOT NULL OR resource_id IS NULL",
+                         name: "chk_acting_for_audit_events_resource_scope"
     add_check_constraint :acting_for_audit_events,
-      "decision IN ('allow', 'deny', 'require_approval')",
-      name: "chk_acting_for_audit_events_decision"
+                         "decision IN ('allow', 'deny', 'require_approval')",
+                         name: "chk_acting_for_audit_events_decision"
     add_check_constraint :acting_for_audit_events,
-      "reason_code IN ('delegation_allowed', 'delegation_requires_approval', 'no_matching_delegation')",
-      name: "chk_acting_for_audit_events_reason_code"
+                         "reason_code IN ('delegation_allowed', 'delegation_requires_approval', " \
+                         "'no_matching_delegation')",
+                         name: "chk_acting_for_audit_events_reason_code"
   end
 end

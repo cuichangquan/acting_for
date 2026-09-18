@@ -16,6 +16,8 @@ Gem::Specification.new do |spec|
   spec.files = Dir["lib/**/*", "app/**/*", "db/**/*", "README.md", "LICENSE*"].select { |file| File.file?(file) }
   spec.require_paths = ["lib"]
 
+  spec.add_development_dependency "rubocop", "~> 1.91"
+
   spec.add_dependency "activerecord", ">= 8.0", "< 8.2"
   spec.add_dependency "activesupport", ">= 8.0", "< 8.2"
   spec.add_dependency "railties", ">= 8.0", "< 8.2"

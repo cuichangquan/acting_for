@@ -7,7 +7,7 @@ module ActingFor
     }.freeze
 
     validates :agent_id, :agent_identifier, :principal_type, :principal_id,
-      :action, :decision, :reason_code, presence: true
+              :action, :decision, :reason_code, presence: true
     validates :decision, inclusion: { in: DECISION_REASONS.keys }
     validates :reason_code, inclusion: { in: DECISION_REASONS.values }
     validate :decision_reason_pair
@@ -31,7 +31,7 @@ module ActingFor
 
     def matched_delegations
       ids = matched_delegation_ids
-      unless ids.is_a?(Array) && ids.all? { |id| id.is_a?(Integer) } && ids.uniq.length == ids.length
+      unless ids.is_a?(Array) && ids.all?(Integer) && ids.uniq.length == ids.length
         errors.add(:matched_delegation_ids, "must be an Array of unique Integers")
         return
       end

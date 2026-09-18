@@ -20,6 +20,7 @@ module ActingFor
 
           action = string_value(action, "action")
           raise InvalidRequestError, "action must not be blank" if action.blank?
+
           resource_type, resource_id = resource_identity(resource)
           raise InvalidRequestError, "context must be a Hash" unless context.is_a?(Hash)
 
@@ -64,19 +65,16 @@ module ActingFor
           return [nil, nil] if resource.nil?
 
           klass = resource.is_a?(Class) ? resource : resource.class
-          unless klass.respond_to?(:model_name)
-            raise InvalidRequestError, "resource class must provide model_name"
-          end
+          raise InvalidRequestError, "resource class must provide model_name" unless klass.respond_to?(:model_name)
+
           model_name = klass.model_name
-          unless model_name.respond_to?(:name)
-            raise InvalidRequestError, "resource model_name must provide name"
-          end
+          raise InvalidRequestError, "resource model_name must provide name" unless model_name.respond_to?(:name)
+
           resource_type = model_name.name
           return [resource_type, nil] if resource.is_a?(Class)
 
-          unless resource.respond_to?(:id)
-            raise InvalidRequestError, "resource instance must provide id"
-          end
+          raise InvalidRequestError, "resource instance must provide id" unless resource.respond_to?(:id)
+
           id = resource.id
           raise InvalidRequestError, "resource id must not be nil" if id.nil?
 
@@ -88,15 +86,13 @@ module ActingFor
 
         def sanitized_context(context, audit_context_keys)
           unless audit_context_keys.is_a?(Array) &&
-              audit_context_keys.all? { |key| key.is_a?(Symbol) }
+                 audit_context_keys.all?(Symbol)
             raise InvalidRequestError, "audit_context_keys must be an Array of Symbols"
           end
 
           keys = audit_context_keys.uniq
           forbidden_key = keys.find { |key| FORBIDDEN_AUDIT_CONTEXT_KEYS.include?(key) }
-          if forbidden_key
-            raise InvalidRequestError, "audit_context_keys contains forbidden key: #{forbidden_key}"
-          end
+          raise InvalidRequestError, "audit_context_keys contains forbidden key: #{forbidden_key}" if forbidden_key
 
           keys.each_with_object({}) do |key, sanitized|
             next unless exact_symbol_key?(context, key)
@@ -112,11 +108,11 @@ module ActingFor
         def sanitized_audit_value(value, key)
           return value.to_s("F") if value.is_a?(BigDecimal)
           return value if value.nil? ||
-            value.is_a?(String) ||
-            value.is_a?(Integer) ||
-            value.is_a?(Float) ||
-            value.is_a?(TrueClass) ||
-            value.is_a?(FalseClass)
+                          value.is_a?(String) ||
+                          value.is_a?(Integer) ||
+                          value.is_a?(Float) ||
+                          value.is_a?(TrueClass) ||
+                          value.is_a?(FalseClass)
 
           raise InvalidRequestError, "unsupported audit context value for #{key}"
         end
@@ -170,8 +166,8 @@ module ActingFor
 
         def persist_audit_event!(attributes)
           ActingFor::AuditEvent.create!(attributes)
-        rescue ActiveRecord::ActiveRecordError => error
-          raise ActingFor::AuditPersistenceError, "Failed to persist audit event", cause: error
+        rescue ActiveRecord::ActiveRecordError => e
+          raise ActingFor::AuditPersistenceError, "Failed to persist audit event", cause: e
         end
       end
     end
