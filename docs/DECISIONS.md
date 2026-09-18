@@ -1082,6 +1082,205 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[PROJECT](PROJECT.md#43-v01全体のdefinition-of-done)、[PROJECT](PROJECT.md)。
 - 根拠：ユーザー承認済みのD060〜D076設計ドキュメント反映指示。
 
+## D077: First Implementation Unit
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Implementation Phaseの最初の実装単位はGem skeletonとする。
+- Rationale：最初の実装範囲を最小単位に限定する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：Core featureの実装には入らない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D078: Gem Skeleton Scope
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：第1実装範囲は `acting_for.gemspec`、`Gemfile`、`Rakefile`、`LICENSE`、`lib/acting_for.rb`、`lib/acting_for/version.rb`、`lib/acting_for/engine.rb` とする。Decision、Model、Migration、Authorization、ConstraintEvaluator、Audit、test/dummy、CIはまだ実装しない。
+- Rationale：実装対象と対象外を明確にする。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：必要なdirectoryのみ作成し、Testコード・Runnable Quick Startも追加しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D079: Gem Skeleton Completion Criteria
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`bundle install` と `require "acting_for"` が成功し、`ActingFor::VERSION` が参照でき、値が `"0.1.0"` であり、Rails環境で `ActingFor::Engine` が正常にロードできることを完了条件とする。
+- Rationale：依存関係と最小ロード経路の成立を確認する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：Gem skeletonの完了とv0.1全体の完成を区別する。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D080: Gemspec Dependencies
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Rubyは `>= 3.4, < 4.1`、activerecord / activesupport / railtiesはそれぞれ `>= 8.0, < 8.2` とする。rails meta-gemには依存しない。LicenseはMIT、versionは `ActingFor::VERSION` を参照する。
+- Rationale：対応範囲と必要なRuntime依存関係を明示する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：Gemfileへ依存関係を重複定義しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D081: Minimal Entry Point
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`lib/acting_for.rb` は `require "acting_for/version"`、`require "acting_for/engine"` と空の `module ActingFor` による最小Entry Pointとする。authorize、delegate、current_time、Configuration、Error classes、Business Logicは追加しない。
+- Rationale：入口へ未実装のAPIや業務ロジックを持ち込まない。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：Public APIの追加実装は後続工程とする。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D082: Minimal Engine
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`ActingFor::Engine < ::Rails::Engine` とし、クラス内は `isolate_namespace ActingFor` のみとする。initializer、routes、独自autoload設定、Migration hook、独自Railtie、その他Engine設定は追加しない。
+- Rationale：Rails Engineとnamespace分離の最小構造を維持する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：追加Engine設定を今回の範囲に含めない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D083: Version Constant
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`module ActingFor` 内に `VERSION = "0.1.0"` を定義する。Version専用classや追加APIは作らない。
+- Rationale：versionを単一の定数で管理する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：gemspecから同じ定数を参照する。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D084: Minimal Gemfile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Gemfileは `source "https://rubygems.org"` と `gemspec` のみとする。Rails依存関係やTest用Gemを重複・追加定義しない。
+- Rationale：依存関係をgemspecへ集約する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：今回追加Gemを導入しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D085: Minimal Rakefile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Rakefileは `require "bundler/gem_tasks"` のみとする。test task、rubocop task、release用独自task、migration task、独自namespaceは追加しない。
+- Rationale：標準Gem taskのみを利用する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：独自task・Release automationは実装しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D086: Minimal Gemspec Metadata
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：gemspecはRubyGems公開に必要な最小metadataと依存関係のみを持つ。summaryは `Rails-native delegated authorization for AI agents.` とする。詳細な製品説明・設計情報はREADME.mdとdocs/を正本とする。
+- Rationale：製品説明・設計情報の重複を避ける。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：未承認のmetadataを追加しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D087: Gem Package Files
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Gem package対象は `lib/**/*`、`app/**/*`、`db/**/*`、`README.md`、`LICENSE*` とする。test/、docs/を含めず、ファイル一覧取得に `git ls-files` を使わない。
+- Rationale：配布対象を限定し、ファイル一覧取得をGit commandに依存させない。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：対象patternに該当するファイルを収録する。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D088: License File
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Gem skeleton実装時に標準MIT License本文のLICENSEを作成する。独自条項は追加しない。
+- Rationale：配布物にLicense本文を含める。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：gemspecのMIT表記と一致させる。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D089: License Copyright
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：LICENSEのCopyrightは `Copyright (c) 2026 ChangQuan Cui` とする。
+- Rationale：承認済みの著作権表記を明示する。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：LICENSEへ指定表記を記載する。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D090: Gemspec Author
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`spec.authors = ["ChangQuan Cui"]` とする。v0.1ではemail metadataを設定しない。
+- Rationale：承認済みの著者情報のみを公開metadataに持たせる。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：emailを追加しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D091: Gemspec URLs
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`spec.homepage = "https://github.com/cuichangquan/acting_for"` とし、metadataは `"source_code_uri" => "https://github.com/cuichangquan/acting_for"` のみとする。その他のmetadata URIは現時点では追加しない。
+- Rationale：正本リポジトリを公開metadataから参照できるようにする。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：追加URIを独自判断で設定しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D092: Implementation Phase Start
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Gem skeletonについて事前設計を終了し、Implementation Phaseを開始する。
+- Rationale：承認済みの最小範囲の実装へ進む。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：Gem skeletonのみを実装し、Core feature implementationは開始しない。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D093: Explicit Rails Engine Require
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`lib/acting_for/engine.rb` の先頭で `require "rails/engine"` を行い、その後に `module ActingFor` 内で `class Engine < ::Rails::Engine` と `isolate_namespace ActingFor` を定義する。
+- Rationale：Rails未ロードのRubyプロセスでもD079の `require "acting_for"` を成立させる。
+- 未決定：本Decisionの範囲に追加の未決定事項はない。範囲外の未決定事項は既存決定のまま維持する。
+- Consequences：D081のEntry Pointを維持し、D082のEngineクラス構造・設定を変えずにRails Engineを明示的にロードする。
+- 関連文書：[PROJECT](PROJECT.md)。
+- 根拠：ユーザー承認済みのD077〜D093実装指示。
+
+## D094: Rails Entry Point for Standalone Load
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D093のrequireを後続Decisionとして修正する。D093の履歴は保持する。
+- Decision：`lib/acting_for/engine.rb` の先頭を `require "rails"` とする。その後は `module ActingFor` 内で `class Engine < ::Rails::Engine` を定義し、クラス内は `isolate_namespace ActingFor` のみとする。`require "rails/engine"` は置き換える。
+- Rationale：D093の `require "rails/engine"` は実環境で単独ロードに必要なRails / ActiveSupportの前提を満たさなかったため、Railsの標準入口を読み込む。
+- 未決定：本Decisionで追加の未決定事項は設けない。範囲外の未決定事項は維持する。
+- Consequences：D079の単独ロードを成立させる。D081のEntry Point、D082のEngineクラス構造、依存関係、Public APIは変更しない。
+- 関連文書：[PROJECT](PROJECT.md)、[Engine](../lib/acting_for/engine.rb)。
+- 根拠：ユーザー承認済みのD094追加決定。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
