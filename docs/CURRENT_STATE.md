@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D226
+D227
 ```
 
 ## Current Status
@@ -43,7 +43,7 @@ Authorization core implemented
 ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
 Audit authorization integration implemented
-Minitest unit / delegation / authorization / audit tests implemented and Docker runtime verified
+Minitest unit / delegation / authorization / audit / engine / migration tests implemented and Docker runtime verified
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -51,6 +51,8 @@ Not released
 ```
 
 ## Implemented
+
+Engine / Migration Integration Test（D227）：`test/integration/engine_integration_test.rb` に正式Test24件を追加。namespace共存用の最小Host `::Agent` をDummy側へ追加し、fresh boot / eager load・constant解決・Host Migration参照と適用・Model接続とassociationを確認した。既存262件を維持し、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**286 runs, 688 assertions, 0 failures, 0 errors, 0 skips**。Production code・schema修正なし。検証用volume・生成物は削除済み。
 
 Authorization / Audit Integration Test（D226）：`test/integration/authorization_test.rb` にPublic API経由の正式Test132件を追加。Decision・matching・effect precedence・Public入力・Audit snapshot / Context選択・保存失敗とcause・非persistence error境界を確認。既存Unit16件・Delegation114件と合わせ、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**262 runs, 615 assertions, 0 failures, 0 errors, 0 skips**。Production code修正なし。検証用volume・生成logは削除済み。
 
@@ -127,7 +129,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D226によりUnit / Delegation / Authorization / Audit persistenceの正式TestはDocker runtime verification完了。正式コマンドは `bundle exec rake test`、DB事前準備はDummyの `db:prepare`。次の候補はTest Strategyの残存coverage（Migration / Engine Integration）の実装単位を確認すること。CI / Host Authorization Boundaryの本格実装 / Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D227によりEngine / Migration Integrationも正式TestでDocker検証完了。正式コマンドは `bundle exec rake test`、DB事前準備はDummyの `db:prepare`。次の候補はTest Strategyの残存coverage（Host Authorization Boundary）の実装単位を確認すること。CI / Host Authorization Boundary実装 / Quick Start / Releaseには今回進んでいない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

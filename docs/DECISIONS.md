@@ -3155,3 +3155,24 @@ Auditは全Decisionで1件自動保存し、Agent / Principal / Action / Resourc
 既存Docker環境で `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
 
 **262 runs, 615 assertions, 0 failures, 0 errors, 0 skips**（seed 20416）。追加Authorization / Audit Integration Testは132件、既存Delegation Integration Test114件・Unit Test16件も全て成功。Production code修正なし。検証用volumeは `down -v` で削除し、log等の生成物はcommitしない。対応matrixやTest Strategy全体の完了を意味しない。
+
+## D227: Migration / Engine Integration Testを正式実装する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Test Strategy §9](test_strategy_v0_1.md#9-migration--engine-integration-test)、[Gem Structure](gem_structure_v0_1.md)、[Domain Model](domain_model_v0_1.md)、D060〜D066・D082・D094・D120〜D127・D222〜D224。
+
+`test/integration/engine_integration_test.rb` にRails ApplicationへGemを組み込んだ際のEngine / Migration / ActiveRecord integrationを検証する正式Test24件を追加する。既存のRails integration設計をExecutable Documentationとして固定し、新しい仕様は追加しない。
+
+対象：Engineの継承・boot後の登録・namespace isolation、HostとEngineの同名Agent constantの共存、主要Model / Public constantの解決、別プロセスでのfresh Dummy bootとRails標準eager load、3テーブルの存在・Model table接続、Dummy Host Migrationの正式参照先と適用済み状態、Gem source MigrationとHostコピーの役割分離、最小recordの作成・読み取り、Agent / Delegation / Host Principalのassociation、Public authorize経由のAudit作成・読み取り。
+
+namespace衝突確認用にDummy側へ最小の非ActiveRecord `::Agent` classを追加する。既存Host Principalを再利用し、新しいDB tableや業務Modelは追加しない。Migration timestamp filenameやversion番号は固定せず、Rails標準のmigration contextとHost directoryを確認する。Test内でMigrationのup / rollbackは実行せず、既存の手動column全件検証を複製しない。
+
+Production code・Gem本体Migration・DB schema・既存Decision・仕様は変更しない。CI / Host Authorization Boundary / Quick Start / Releaseには進まない。
+
+### D227 runtime verification（2026-09-18）
+
+既存Docker環境の空DBで `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
+
+**286 runs, 688 assertions, 0 failures, 0 errors, 0 skips**（seed 51215）。追加Engine / Migration Integration Test24件、既存Unit16件・Delegation114件・Authorization / Audit132件も全て成功。Production code修正なし。検証用volumeは `down -v` で削除し、log / schema等の生成物はcommitしない。対応matrixやTest Strategy全体の完了を意味しない。
