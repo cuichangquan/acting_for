@@ -2710,3 +2710,59 @@ Public APIは既決定の型・構造を保証し、未決定の意味ルール�
 6. 残っている未決定事項
 
 ユーザーが明示的に採用したら「提案」を「確定」に更新し、採用日を記録する。後で変更した場合も、以前の理由を消さずに変更履歴を残す。
+
+## D213: Decisionは最小のimmutable Value Objectとして実装する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Public API](public_api_v0_1.md#6-decision-public-api)、[Gem Structure](gem_structure_v0_1.md#5-decision-value-object)、[Test Strategy](test_strategy_v0_1.md#4-decision-unit-test)。
+
+`ActingFor::Decision` はAuthorization結果を表す最小のimmutable Value Objectとして実装する。
+
+- 配置は `lib/acting_for/decision.rb`
+- ActiveRecord Modelにはしない
+- DBへ永続化しない
+- statusは `:allow` / `:deny` / `:require_approval` の3種類だけ
+- 正式Public APIは既存D018 / D050どおり `status` / `allowed?` / `denied?` / `approval_required?` の4つだけ
+- `:require_approval` の場合、`allowed?` は必ずfalse
+- 初期化後は `freeze` し、状態変更不可とする
+- `initialize(status)` は内部実装で利用してよいが、Public APIとして保証しない
+- 不正なstatusを内部で渡した場合は `ArgumentError` とする
+- 不正statusを `ActingFor::InvalidRequestError` にはしない。InvalidRequestErrorはPublic入力不正のためであり、Decisionへの不正statusは内部プログラミングエラーとして扱う
+- constructorをprivate化しない
+- Factoryを追加しない
+
+v0.1では `reason_code` / `matched_delegation_ids` / `context` / `success?` / `permitted?` / `executable?` / `to_h` / 独自 `==` / 独自 `hash` / Factory / private constructor を追加しない。
+
+想定実装形は以下。ただしD213の設計反映時点では実装しない。
+
+```ruby
+module ActingFor
+  class Decision
+    STATUSES = %i[allow deny require_approval].freeze
+    private_constant :STATUSES
+
+    attr_reader :status
+
+    def initialize(status)
+      raise ArgumentError, "invalid decision status" unless STATUSES.include?(status)
+
+      @status = status
+      freeze
+    end
+
+    def allowed?
+      status == :allow
+    end
+
+    def denied?
+      status == :deny
+    end
+
+    def approval_required?
+      status == :require_approval
+    end
+  end
+end
+```

@@ -204,6 +204,14 @@ decision.approval_required?
 
 **require_approvalの場合、`allowed?` は必ずfalse。** v0.1では類似APIを増やさず、`success?`、`permitted?`、`executable?` は提供しない。
 
+### Decision実装方針（D213）
+
+`ActingFor::Decision` は最小のimmutable Value Objectとする。ActiveRecord ModelにはせずDBへ永続化しない。statusは `:allow` / `:deny` / `:require_approval` の3種類だけとし、初期化後は `freeze` して状態変更不可とする。
+
+`initialize(status)` は内部実装で利用してよいがPublic APIとして保証しない。不正なstatusはPublic入力不正ではなく内部プログラミングエラーとして `ArgumentError` とし、`ActingFor::InvalidRequestError` にはしない。constructorのprivate化やFactoryは導入しない。
+
+既存D018 / D050のPublic APIを維持し、v0.1では `reason_code` / `matched_delegation_ids` / `context` / `success?` / `permitted?` / `executable?` / `to_h` / 独自 `==` / 独自 `hash` 等を追加しない。
+
 ## 7. deny vs Exception
 
 **確定：D019 / Step 5項目5。** 通常の認可不成立と、API・システム上の異常を区別する。

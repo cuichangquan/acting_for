@@ -144,6 +144,8 @@ decision.approval_required?
 
 statusは `:allow` / `:deny` / `:require_approval`。`require_approval != allow` であり、承認が必要な場合の `allowed?` はfalse。v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
 
+D213により、Decisionは最小のimmutable Value Objectとして実装する。初期化後は `freeze` し、ActiveRecord ModelにはせずDBへ保存しない。`initialize(status)` は内部実装で利用可能だがPublic APIとして保証しない。不正なstatusは `ArgumentError` とし、`InvalidRequestError` へ変換しない。constructorをprivate化せずFactoryも追加しない。v0.1では `to_h`、独自 `==` / `hash` 等も追加しない。
+
 ## 6. Migration / DB Table Names
 
 MigrationはGem側の `db/migrate/` で管理する。Rails Engine標準のMigration提供機構をHost開発者が明示的に実行し、Host Applicationの `db/migrate/` へ取り込む。DBへの適用はHost Applicationの通常のMigrationプロセスに委ねる。独自Migration DSL・独自Migration Generator・自動Migration実行機構は提供しない（D060・D064）。Gem install / Gem update / Application boot時には自動コピーしない。

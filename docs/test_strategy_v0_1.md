@@ -46,6 +46,8 @@ Host側の停止・実行可能・Approval Workflowへ渡す境界は最小の�
 
 必須Security Invariantは **`require_approval != allow`**。特にstatusが `:require_approval` の場合、`allowed? == false`、`approval_required? == true` を必須Testとする。D050によりconstructorはPublic APIとして保証しない。Public利用ではauthorizeの戻り値を取得し、Unit Test内部の生成方法は固定しない。
 
+D213により、将来の正式Unit Testでは上記に加えてDecisionが初期化後にfreezeされること、不正statusが `ArgumentError` になることを確認する。ただしconstructor自体をPublic API contractとして扱わないD050は維持する。この反映ではTestコードを実装しない。
+
 ## 5. ConstraintEvaluator Unit Test
 
 `ActingFor::Internal::ConstraintEvaluator` では以下を最低限検証する。評価ルールは[Domain ModelのConstraint](domain_model_v0_1.md#8-constraint)を維持する。

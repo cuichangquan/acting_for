@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D212
+D213
 ```
 
 ## Current Status
@@ -113,7 +113,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-`ActingFor.delegate(...)` の実装・検証完了。現在地点はAuthorization実装の直前。Authorization / Decision / Audit authorization integrationは未実装。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+Decision実装方針はD213で確定済み。Decision自体はまだ未実装。次の明示指示で `ActingFor::Decision` の実装へ進む。Authorization / ConstraintEvaluator / Audit authorization integrationにはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
