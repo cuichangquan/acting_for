@@ -43,7 +43,7 @@ Authorization core implemented
 ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
 Audit authorization integration implemented
-Minitest test suite not implemented
+Minitest unit test foundation implemented (integration tests pending)
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -51,6 +51,8 @@ Not released
 ```
 
 ## Implemented
+
+Minitest Unit Test foundation：`test/test_helper.rb`、`Rakefile` の `Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb`。D221どおりDummy Rails環境 + `rails/test_help` を共通helperとして使用し、Decisionの3 status / freeze / invalid statusとConstraintEvaluatorのAND / strict type / boundary / missing・nil / Symbol key厳密一致 / nested非対応 / fail-closedを正式Unit Test化した。GitHub上でのファイル実装のみで、この反映ではruntime実行は行っていない。
 
 Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -121,7 +123,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D221で正式Minitest suiteの最初の実装単位を確定。`test/test_helper.rb`、`Rake::TestTask`、Decision / ConstraintEvaluator Unit Testから開始し、正式コマンドは `bundle exec rake test` とする。次の明示指示でこのUnit Test基盤を実装する。Public API Integration Test / CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D221のUnit Test基盤を実装済み。`test/test_helper.rb`、`Rake::TestTask`、Decision / ConstraintEvaluator Unit Testを追加し、正式コマンドは `bundle exec rake test`。Public API Integration Testはまだ未実装。次の重要事項は `ActingFor.delegate(...)` / `ActingFor.authorize(...)` / Audit persistenceのIntegration Test実装単位を確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

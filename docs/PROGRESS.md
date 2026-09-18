@@ -26,7 +26,7 @@
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
-| 17 | 正式Minitest suite | ⬜ 未実装 |
+| 17 | 正式Minitest suite | 🟨 Unit基盤・Decision / ConstraintEvaluator実装済み / Integration未実装 |
 | 18 | CI | ⬜ 未実装 |
 | 19 | Runnable Quick Start | ⬜ 未実装 |
 | 20 | Gem Release | ⬜ 未実装 |
@@ -49,7 +49,7 @@ Public API / Value Object実装
   Audit integration ✅
       ↓
 品質・公開：未着手
-  正式Tests ← 現在ここ → CI → Runnable Quick Start → Release
+  正式Tests 🟨（Unit実装済み / Integration ← 現在ここ） → CI → Runnable Quick Start → Release
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
@@ -69,6 +69,7 @@ Public API / Value Object実装
 - Public authorize basic input boundary implemented（D217）。agent / principal / action / resource / contextのvalidation・normalizationをInternal Authorizationで実装。
 - Audit Context sanitization implemented（D219）。audit_context_keys validation / dedup / forbidden key拒否 / strict Symbol key selection / canonical String key / BigDecimal decimal String化まで。
 - Audit authorization integration implemented（D218・D220）。AuditEvent snapshot / create! / reason_code / matched_delegation_ids / AuditPersistenceError wrapまで実装。正式Minitest suite未実装のためruntime verificationは未実施。
+- 正式Minitest Unit foundation implemented（D221）。`test_helper` / `Rake::TestTask` / Decision / ConstraintEvaluator Unit Testを追加。Integration Testは未実装で、この反映ではruntime verification未実施。
 
 今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 

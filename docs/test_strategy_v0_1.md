@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Not implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了したが、Testコードはまだ存在しない。Gem skeleton / Migration / Models / 最小Dummyは実装・検証済みだが、正式Minitest suiteは未実装。Gemは **Not released** であり、README Quick Startは実行できない。
+**Step 8: Complete / Design finalized / Partially implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。Test Strategyの設計は完了。D221に基づく共通Test runner / helperとDecision・ConstraintEvaluator Unit Testは実装済みで、Public API Integration Testは未実装。Gem skeleton / Migration / Models / 最小Dummyは実装・検証済み。Gemは **Not released** であり、README Quick Startは実行できない。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
