@@ -40,7 +40,7 @@ Delegation Public API implementation design finalized
 Delegation API implemented
 Decision implemented
 Authorization core implemented
-ActingFor.authorize Public Entry Point not implemented
+ActingFor.authorize Public Entry Point implemented (audit_context_keys / Audit pending)
 ConstraintEvaluator implemented
 Audit authorization integration not implemented
 Minitest test suite not implemented
@@ -52,7 +52,7 @@ Not released
 
 ## Implemented
 
-Authorization core：`app/services/acting_for/internal/authorization.rb`。D216どおり、DBでagent / principal / action / resource_type / active stateの候補を絞り、Ruby側でResource scopeとConstraintEvaluatorを評価してmatching Delegationを確定し、`require_approval > allow > deny` でDecisionを生成する。`ActingFor.authorize(...)` Public Entry PointとAuditEvent保存はまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+Authorization / Public authorize：`app/services/acting_for/internal/authorization.rb` と `lib/acting_for.rb`。D216・D217どおり、Public入力のagent / principal / action / resource / contextをInternal Authorizationでvalidation・normalizationし、DB候補抽出 → Ruby最終評価 → Decision生成まで実装した。`audit_context_keys` とAuditEvent保存・Audit integrationはまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Authorization core実装完了。D217で `ActingFor.authorize(...)` を薄いPublic Entry Pointとし、Public入力validation / normalizationを `ActingFor::Internal::Authorization` が担当する方針を確定。Public Entry Point自体はまだ未実装。次の明示指示でagent / principal / action / resource / contextのvalidation・normalizationと `ActingFor.authorize(...)` からInternal Authorizationへの受け渡しを実装する。`audit_context_keys` とAuditEvent保存・Audit integrationにはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)を参照。
+`ActingFor.authorize(...)` のPublic Entry Pointとagent / principal / action / resource / contextのvalidation・normalization実装完了。`audit_context_keys` とAuditEvent保存・Audit authorization integrationは未実装。次の重要事項はAudit integrationの実装単位を1項目ずつ確認すること。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md)を参照。
 
 ## Important Rules
 

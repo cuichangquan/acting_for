@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**状態：Design-stage API / Not implemented yet。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Modelsは実装済み。delegate / authorizeは未実装で、本更新では実装を開始しない。
+**状態：Design finalized / Partially implemented。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Models / delegate / Decision / ConstraintEvaluator / Authorization core / authorizeの基本入力境界は実装済み。`audit_context_keys` とAudit authorization integrationは未実装。
 
 Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。D190〜D212によりDelegation Public APIの実装設計を詳細化した。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 

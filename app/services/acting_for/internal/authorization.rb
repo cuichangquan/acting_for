@@ -2,7 +2,19 @@ module ActingFor
   module Internal
     class Authorization
       class << self
-        def call(agent:, principal:, action:, resource_type:, resource_id:, context:)
+        def call(agent:, principal:, action:, resource:, context:)
+          unless agent.is_a?(ActingFor::Agent) && agent.persisted?
+            raise InvalidRequestError, "agent must be a persisted ActingFor::Agent"
+          end
+          unless principal.is_a?(ActiveRecord::Base) && principal.persisted?
+            raise InvalidRequestError, "principal must be a persisted ActiveRecord record"
+          end
+
+          action = string_value(action, "action")
+          raise InvalidRequestError, "action must not be blank" if action.blank?
+          resource_type, resource_id = resource_identity(resource)
+          raise InvalidRequestError, "context must be a Hash" unless context.is_a?(Hash)
+
           matches = candidate_delegations(
             agent: agent,
             principal: principal,
@@ -17,6 +29,39 @@ module ActingFor
         end
 
         private
+
+        def string_value(value, name)
+          return value if value.is_a?(String)
+          return value.to_s if value.is_a?(Symbol)
+
+          raise InvalidRequestError, "#{name} must be a String or Symbol"
+        end
+
+        def resource_identity(resource)
+          return [nil, nil] if resource.nil?
+
+          klass = resource.is_a?(Class) ? resource : resource.class
+          unless klass.respond_to?(:model_name)
+            raise InvalidRequestError, "resource class must provide model_name"
+          end
+          model_name = klass.model_name
+          unless model_name.respond_to?(:name)
+            raise InvalidRequestError, "resource model_name must provide name"
+          end
+          resource_type = model_name.name
+          return [resource_type, nil] if resource.is_a?(Class)
+
+          unless resource.respond_to?(:id)
+            raise InvalidRequestError, "resource instance must provide id"
+          end
+          id = resource.id
+          raise InvalidRequestError, "resource id must not be nil" if id.nil?
+
+          resource_id = id.to_s
+          raise InvalidRequestError, "resource id must not be empty" if resource_id.empty?
+
+          [resource_type, resource_id]
+        end
 
         def candidate_delegations(agent:, principal:, action:, resource_type:)
           ActingFor::Delegation
