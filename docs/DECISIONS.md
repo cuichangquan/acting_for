@@ -1386,6 +1386,483 @@ test/dummy/
 - 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#11-runtime-dependencies)、[Test Strategy](test_strategy_v0_1.md#15-後続決定に対応する検証設計d035d043d046)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+## D102: Dummy App Ruby version
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Dummy AppのRuby versionはRuby 3.4とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D103: Migration Verification Database
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Migration検証DBはPostgreSQL 16とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D104: Database Connection Environment
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：database.ymlの接続情報は環境変数から取得し、password等をRepositoryへ固定保存しない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D105: Default Database Name
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：default DB名は `acting_for_dummy_test` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D106: Verification Rails Environment
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Migration検証は `RAILS_ENV=test` のみで行う。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D107: Default Database Connection
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：default接続はlocalhost:5432 / postgresとし、passwordにはdefaultを設けない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D108: No Repository Env File
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`.env` はRepositoryへ追加せず、秘密情報は環境変数で渡す。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D109: Database Adapter
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：DB adapterは `postgresql` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D110: Database Name Override
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`POSTGRES_DB` でDB名を上書き可能とし、未指定時は `acting_for_dummy_test` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D111: Manual Minimal Dummy App
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`rails new` は使わず、最小Dummy Appを手動作成する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D112: Dummy Application Class
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`Dummy::Application < Rails::Application` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D113: Dummy Rails Defaults
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`config.load_defaults 8.0` を使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D114: Minimal Rails Components
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`rails/all` は使わず、railsとactive_record/railtieを使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D115: Test Database Configuration Only
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：database.ymlはtestのみとする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D116: Dummy Boot
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：config/boot.rbは `require "bundler/setup"` のみとする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D117: Dummy Application Requires
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：application.rbでrails / active_record/railtie / acting_forを読み込む。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D118: Dummy Environment Initialization
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：environment.rbで `Rails.application.initialize!` を実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D119: Dummy Rake Tasks
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Rakefileで `Rails.application.load_tasks` を実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D120: Host Migration Installation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Gem MigrationをHost同様 `test/dummy/db/migrate` へ取り込んで検証する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D121: Standard Engine Migration Installation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Rails Engine標準Migration取り込み機構を使い、独自copy task / generatorは作らない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D122: Migration Verification Cycle
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：up → rollback → upを行い、table / index / FK / CHECK constraintまで確認する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D123: Empty Database First Up
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：最初のupは空DBから開始する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D124: Inspect Database Structure
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：command成功だけでなくDB構造自体を確認する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D125: Exclude Dummy Schema
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`test/dummy/db/schema.rb` はGit管理しない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D126: Migration Installation Task
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`railties:install:migrations` を利用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D127: Track Copied Migration Fixtures
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`test/dummy/db/migrate/*.acting_for.rb` はIntegration検証用fixtureとしてGit管理する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D128: Test Migration Commands
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`RAILS_ENV=test` で `db:migrate → db:rollback → db:migrate` を実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D129: Clean Dedicated Test Database
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：検証開始時は専用test DBをクリーンな状態から使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D130: Rails 8.0 Verification Gemfile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`gemfiles/rails_8_0.gemfile` を追加する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D131: Verification Bundle Gemfile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`BUNDLE_GEMFILE=gemfiles/rails_8_0.gemfile` で検証する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D132: Verification Gemspec Reference
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：rails_8_0.gemfileから `gemspec path: ".."` でGem本体を参照する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D133: Rails 8.0 Dependency Constraints
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：activerecord / activesupport / railtiesは `~> 8.0.0` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D134: PostgreSQL Verification Gem
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：検証用Gemfileへpgを追加する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D135: Preserve Runtime Dependencies
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：root Gemfile / acting_for.gemspecのruntime dependencyは変更しない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D136: Minimal Verification Gemfile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：rails_8_0.gemfileは最小構成とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D137: Ruby Version in Runtime
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Ruby versionはGemfileで固定せず、実行環境でRuby 3.4を使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D138: No Dummy Gemfile
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Dummy App独自Gemfileは作らない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D139: Rake Without Binstubs
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：bin/rails / bin/rakeは作らず、 `bundle exec rake` を利用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D140: Preserve Generated Migration Filenames
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Dummy側Migration filenameはRailsが生成したtimestampをそのまま使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D141: Standard Database Lifecycle Tasks
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：DB作成・削除はRails標準db:create / db:dropを使用し、独自setup scriptは作らない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D142: Single Verification Commit
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Dummy App実装・Migration検証・Decision反映をまとめて1commitにする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D143: Fix Source Migrations
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Migration問題時はDummyコピーだけを修正せず、Gem本体Migrationを修正して再コピーする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D144: Final Structure Inspection
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：最終up後にcolumn / default / index / FK / CHECK constraintまで確認する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D145: Verify Rollback Table Removal
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：rollback後は3テーブルがすべて削除されたことを確認する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D146: Docker Verification Isolation
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Migration検証環境をDockerへ完全分離し、MacへRuby / Rails / PostgreSQLを直接installしない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D147: Two Docker Services
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：app + dbの2サービスとする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D148: Migration Compose File
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`compose.migration.yml` を使用する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D149: Docker Only Bundle Install
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：bundle installもDocker内だけで実施する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D150: Disposable PostgreSQL Data
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：PostgreSQLデータは検証後破棄可能にする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D151: Migration Dockerfile Path
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Dockerfileは `docker/migration/Dockerfile` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D152: Ruby Docker Image
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Ruby imageは `ruby:3.4-bookworm` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D153: Repository Bind Mount
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Repositoryを `/app` へbind mountし、working_dirは `/app` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D154: Docker Database Connection
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Docker network内DB接続はhost=db、port=5432、user=postgres、database=acting_for_dummy_testとする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D155: App Container Environment
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：app containerは `RAILS_ENV=test`、`BUNDLE_GEMFILE=/app/gemfiles/rails_8_0.gemfile` とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D156: Docker Verification Cleanup
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：検証後に `docker compose ... down -v` を実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D157: Start Database First
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：dbを先に `up -d` で起動する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D158: Ephemeral App Container
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：appは常駐させず、 `docker compose run --rm app` で実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D159: Install Gems First in Docker
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：最初にDocker内でbundle installを実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D160: Verification Command Order
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：検証順はdb:create → railties:install:migrations → db:migrate → 構造確認 → rollback → 削除確認 → db:migrate → 最終構造確認とする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D161: PostgreSQL SQL Inspection
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：構造確認はPostgreSQL SQLでも実施する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D162: Final Volume Cleanup
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：最後に `down -v` を実行する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D163: PostgreSQL Healthcheck
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：PostgreSQLへ `pg_isready` healthcheckを設定する。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D164: No Published Database Port
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：DB portをMacへpublishしない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D165: Required PostgreSQL Password
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：`POSTGRES_PASSWORD` は必須環境変数とし、Composeへpasswordを固定記載しない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D166: Bundle Named Volume
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：Bundle用GemはDocker named volumeへ保存し、 `down -v` で削除可能にする。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## D167: Psql Structure Inspection
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Decision：構造確認にはdb container内psqlを利用し、独自検証Rubyコード / Rake taskは作らない。
+- 根拠：ユーザー承認済みのD102〜D167完了反映・Commit指示。
+
+## Migration Runtime Verification完了記録（2026-09-18）
+
+D098・D122〜D145・D160の完了条件を確認した実施結果であり、新しいDecisionではない。基準commitは `0a6ba3eee733ee28890344746edf3af40632191e`。
+
+- 環境：Docker内のみ。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16 / RAILS_ENV=test。
+- 空の専用DBからup成功 → `db:rollback STEP=3` 成功 → 対象3テーブルすべての削除確認 → 再up成功。初回と再up後のDB構造は一致した。
+- db container内のpsqlで、acting_for_agents / acting_for_delegations / acting_for_audit_eventsの計31カラムの型・NULL・defaultが設計と一致することを確認した。全Primary Keyはbigint。
+- agents.identifierのunique index、delegations.agent_idのindex、Authorization lookupの5カラム複合index（agent_id, principal_type, principal_id, action, resource_type）の存在・順序を確認した。
+- Delegations → AgentsのFKを確認し、cascade deleteなし。DelegationsのCHECKは2件（resource scope / effect）、AuditEventsは3件（resource scope / decision / reason_code）。
+- AuditEventsにはupdated_at、FK、Primary Key以外のindexがないことを確認した。
+- Gem本体Migrationは問題なく、修正不要だった。DummyコピーはRails生成filenameと出典コメントを維持し、Migration本体の内容を保持する。
+- `config.eager_load` 未設定warningは検証結果へ影響していないため、今回変更しない。
+- 最後に `down -v` を実行し、検証用DB・Gem volumeの削除を確認した。Model / Authorization / Auditロジック / Minitest本体 / CIには進んでいない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。

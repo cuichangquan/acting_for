@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D101
+D167
 ```
 
 ## Current Status
@@ -32,14 +32,15 @@ D101
 ```text
 Design substantially finalized
 Gem skeleton implemented
-Core authorization logic implementation not started
-
-Migration files implemented (runtime DB execution not yet verified)
+Migration implemented
+Migration runtime verification completed
+Minimal Dummy Rails App implemented for migration verification
+Docker migration verification environment implemented
 Model not implemented
 Delegation API not implemented
 Authorization not implemented
-Audit not implemented
-Test not implemented
+Audit logic not implemented
+Minitest test suite not implemented
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -59,7 +60,9 @@ db/migrate/
 
 Implemented schema follows the existing Domain Model decisions for columns, defaults, indexes, Foreign Key, and DB CHECK constraints.
 
-Ruby syntax check completed for all 3 Migration files. PostgreSQLへのup / down実行確認はまだ行っていない。
+Migration検証環境：最小 `test/dummy` host、`compose.migration.yml`、`docker/migration/Dockerfile`、`gemfiles/rails_8_0.gemfile`、Rails標準taskでDummy側へコピーした3 Migration（Git管理する検証用fixture）。
+
+Docker内のRuby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16 / RAILS_ENV=testで、空DBからup → rollback（STEP=3）→ upに成功。rollback後の3テーブル削除と再up後の構造一致を確認した。table / column / default / index / FK / CHECK constraintは設計と一致。検証用volumeは `down -v` で削除済み。詳細結果は[DECISIONS](DECISIONS.md)を参照。
 
 Gem skeleton：
 
@@ -90,11 +93,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration runtime verification用の最小 `test/dummy` Rails ApplicationはRails 8.0を基準に作成する（D101）。
+Migration implementationはD098の完了条件を満たし完了。
 
-Dummy App自体はまだ未実装。Model / Authorization / Auditロジック / Minitest本体 / CIにも進まない。
-
-次に、Dummy Appで使用するRuby versionを1項目として決める。
+次はModel implementationを開始するかどうかを、次の重要Decisionとして検討する。まだModel実装は開始しない。
 
 ## Important Rules
 

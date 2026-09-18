@@ -1,0 +1,7 @@
+test:
+  adapter: postgresql
+  host: <%= ENV.fetch("POSTGRES_HOST", "localhost").inspect %>
+  port: <%= ENV.fetch("POSTGRES_PORT", "5432").inspect %>
+  username: <%= ENV.fetch("POSTGRES_USER", "postgres").inspect %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD").inspect %>
+  database: <%= ENV.fetch("POSTGRES_DB", "acting_for_dummy_test").inspect %>
