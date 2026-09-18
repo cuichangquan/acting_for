@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・`ActingFor.delegate(...)`・Decision・ConstraintEvaluator・Authorization core・Public `ActingFor.authorize(...)` の基本入力境界が完了。現在はAudit integration実装前。
+> 設計の大部分・基盤実装・`ActingFor.delegate(...)`・Decision・ConstraintEvaluator・Authorization core・Public `ActingFor.authorize(...)` の基本入力境界とAudit Context sanitizationが完了。現在はAuditEvent persistence integration実装前。
 
 ## 全体進捗
 
@@ -22,7 +22,7 @@
 | 10 | ActiveRecord Model実装 | ✅ 完了 |
 | 11 | Delegation Public API実装設計 | ✅ 完了 |
 | 12 | ActingFor.delegate実装 | ✅ 完了 |
-| 13 | Authorization実装 | 🟨 Core・Public基本入力実装済み / Audit未実装 |
+| 13 | Authorization実装 | 🟨 Core・Public入力・Audit Context sanitization実装済み / Audit persistence未実装 |
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ⬜ 未実装 |
@@ -44,7 +44,7 @@ Public API / Value Object実装
   delegate ✅
   Decision ✅
   Authorization core ✅
-  authorize Public API ✅（audit_context_keys / Audit pending）
+  authorize Public API ✅（audit_context_keys sanitizationまで）
   ConstraintEvaluator ✅
   Audit integration ← 現在ここ
       ↓
@@ -66,7 +66,8 @@ Public API / Value Object実装
 - Decision Value Object implemented（D213）。正式Minitest suite / CIは未実装のためruntime verificationは未実施。
 - ConstraintEvaluator implemented（D214・D215）。正式Minitest suite / CIは未実装のためruntime verificationは未実施。
 - Authorization core implemented（D216）。DB候補抽出 → Ruby最終評価 → Decision生成まで。
-- Public authorize basic input boundary implemented（D217）。agent / principal / action / resource / contextのvalidation・normalizationをInternal Authorizationで実装。audit_context_keys / Audit integration / runtime verificationは未実施。
+- Public authorize basic input boundary implemented（D217）。agent / principal / action / resource / contextのvalidation・normalizationをInternal Authorizationで実装。
+- Audit Context sanitization implemented（D219）。audit_context_keys validation / dedup / forbidden key拒否 / strict Symbol key selection / canonical String key / BigDecimal decimal String化まで。AuditEvent persistence / runtime verificationは未実施。
 
 今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 

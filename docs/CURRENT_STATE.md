@@ -40,7 +40,7 @@ Delegation Public API implementation design finalized
 Delegation API implemented
 Decision implemented
 Authorization core implemented
-ActingFor.authorize Public Entry Point implemented (audit_context_keys / Audit pending)
+ActingFor.authorize Public Entry Point implemented (audit_context_keys sanitization implemented / Audit persistence pending)
 ConstraintEvaluator implemented
 Audit authorization integration not implemented
 Minitest test suite not implemented
@@ -52,7 +52,7 @@ Not released
 
 ## Implemented
 
-Authorization / Public authorize：`app/services/acting_for/internal/authorization.rb` と `lib/acting_for.rb`。D216・D217どおり、Public入力のagent / principal / action / resource / contextをInternal Authorizationでvalidation・normalizationし、DB候補抽出 → Ruby最終評価 → Decision生成まで実装した。`audit_context_keys` とAuditEvent保存・Audit integrationはまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+Authorization / Public authorize：`app/services/acting_for/internal/authorization.rb` と `lib/acting_for.rb`。D216・D217・D219どおり、Public入力のagent / principal / action / resource / contextに加え、`audit_context_keys` のvalidation / normalizationとsanitized context生成まで実装した。Audit ContextはSymbol key完全一致で選択し、canonical String keyへ変換、BigDecimalは10進数String化する。AuditEvent保存・reason_code / matched_delegation_ids・AuditPersistenceError integrationはまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-`ActingFor.authorize(...)` のPublic Entry Pointと基本入力境界は実装済み。D218でAuditEvent保存責務、D219で `audit_context_keys` のvalidation / normalizationとsanitized context生成規則を確定。Audit integration自体はまだ未実装。次の明示指示で `audit_context_keys` のPublic受け渡しとInternal Authorization内のsanitized context生成を実装する。AuditEvent INSERT / reason_code / matched_delegation_ids / AuditPersistenceError実装にはまだ進まない。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#16-audit-contextの安全性)、[Gem Structure](gem_structure_v0_1.md)を参照。
+`audit_context_keys` のPublic受け渡しとInternal Authorization内のvalidation / normalization・sanitized context生成をD219どおり実装済み。AuditEvent保存・reason_code / matched_delegation_ids・AuditPersistenceError integrationは未実装。次の重要事項はD218と既存D031 / D034に基づくAuditEvent INSERTと保存失敗処理の実装方針を確認すること。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md)を参照。
 
 ## Important Rules
 

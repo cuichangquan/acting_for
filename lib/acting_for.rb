@@ -4,9 +4,10 @@ require "acting_for/errors"
 require "acting_for/decision"
 
 module ActingFor
-  def self.authorize(agent:, principal:, action:, resource: nil, context: {})
+  def self.authorize(agent:, principal:, action:, resource: nil, context: {}, audit_context_keys: [])
     Internal::Authorization.call(
-      agent: agent, principal: principal, action: action, resource: resource, context: context
+      agent: agent, principal: principal, action: action, resource: resource, context: context,
+      audit_context_keys: audit_context_keys
     )
   end
 
