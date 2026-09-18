@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Test suite implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick Start・Releaseは未実装。Gemは **Not released**。
+**Step 8: Complete / Design finalized / Test suite implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
@@ -239,11 +239,11 @@ System failure → Exception
 
 後続D067・D072・D073により、正式CI基盤はGitHub Actions、triggerはPull Requestとmain branchへのpush。少なくとも正式Ruby / Rails matrix・PostgreSQL・既存の必須Test・RuboCopを検証し、RuboCop violationはCI failureとする。scheduled / cron CI、独自Style Guide、大量の独自Cop、大規模custom rule set、複数plugin群はv0.1必須でない。
 
-D229でRuboCop / workflow実装詳細を確定・実装した（第18節）。Quick Start最終コード、Release Notes本文、CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。正式Testは後続D221〜D228で実装済み。CI設定はD229で実装・検証済み。Quick Start最終コード・Release本文は未実装。
+D229でRuboCop / workflow実装詳細を確定・実装した（第18節）。Quick Start最終コードはD230で検証済み、Release Notes本文はD231でdraft準備。CHANGELOG方式、release / gem push / GitHub Release / tagの自動化は未決定。Release Notes公開先は後続D074でGitHub Releasesに確定し、D075で最初のversion `0.1.0` / tag `v0.1.0` を確定した。正式Testは後続D221〜D228で実装済み。CI設定はD229で実装・検証済み。Release Notesはdraftであり、正式公開は未実施。
 
 Step 8時点で保留していたException / Audit Context、Resource / Delegation、Agent validation、AuditEvent詳細は後続D031〜D034で確定した。設計時点ではTest Strategyの再構築やTestコード実装は行わず、Delegation Public APIの具体的なAcceptance Criteriaは後続D190〜D212に基づく第16節に反映する。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。Migration / Modelsは実装・Docker検証済み。正式Test suiteとAuthorization / Audit integrationはD221〜D228で実装・検証済み。
 
-Step 8の設計は **Complete / Design finalized**。Gem / Test / Migration / Model / Service / Decision / AuditEvent / 最小Dummyの後続実装は完了。CIはD229で実装・検証済み。Runnable Quick Start・Releaseは未実装。新しいConfigurationやGeneratorを完了条件に追加しない。
+Step 8の設計は **Complete / Design finalized**。Gem / Test / Migration / Model / Service / Decision / AuditEvent / 最小Dummyの後続実装は完了。CIはD229で実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。新しいConfigurationやGeneratorを完了条件に追加しない。
 
 ## 15. 後続決定に対応する検証設計（D035・D043〜D046）
 
@@ -396,7 +396,7 @@ Exception classはPublic contractだが、message全文一致と複数不正時�
 | §13 Acceptance Criteria | 上記Testで全項目coverage済み。Agent差異は既存different-agent matching Test、approval自動実行禁止はD228で確認 |
 | §15 Principal ID / 時刻 / 精度 | bigint / UUIDのassociation・authorize・Audit IDは追加principal_id_integration_test。時刻固定とBigDecimal精度は既存Testでcoverage済み |
 | §14〜15 CI / 静的解析 | D229で実装・GitHub Actions全5 jobs green：PR / main push、Ruby 3.4 / 4.0 × Rails 8.0 / 8.1、PostgreSQL 16、正式Test、core RuboCop |
-| §14〜15 Quick Start / Release | 未実装、Quick Start / Release工程で検証予定：Runnable Quick Start、README / Security・Responsibility Boundaryと実装の一致、Ruby / Rails公式support status再確認、GitHub Release Notes、0.1.0 / v0.1.0 |
+| §14〜15 Quick Start / Release | D230でRunnable Quick Start検証済み。D231でartifact導入・README / Security・Responsibility照合、support status、GitHub Release Notes draftを確認。0.1.0 / v0.1.0の公開操作は未実施 |
 
 CI前の確定済みTest coverageに残存未実装項目なし。D228時点ではCI・Quick Start・Releaseは未完了。後続D229でCIを実装・検証した。
 

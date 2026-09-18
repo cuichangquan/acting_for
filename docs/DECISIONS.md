@@ -3246,3 +3246,98 @@ Docker / Ruby **3.4.10** / Rails **8.0.5.1** / PostgreSQL **16.15** / developmen
 - AuditEvent：3件自動保存、decisionはallow / require_approval / deny、全sanitized_contextは{}。`ActingFor::AuditEvent.last` はpersisted deny。
 
 既存Docker環境で正式 `bundle exec rake test` と `bundle exec rubocop` がexit 0：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**（seed 52868）。RuboCop **1.91.0：42 files inspected, no offenses detected**。Production code変更なし。新規App・一時script・検証volume・生成log / schema等は削除し、repositoryへ残さない。main push後の同じ正式GitHub Actions（4 matrix + RuboCop、全5 jobs）結果を完了報告で確認する。次の大きな工程はGem Releaseであり、本バッチでは実行しない。
+
+## D231: v0.1 Release Readiness Gate
+
+- 日付：2026-09-19（Asia/Tokyo）。
+- Status：**確定・検証済み。最終CI確認待ち**。
+- 根拠：ユーザー承認済みD231。Readiness Gateのみであり、Release承認ではない。
+- 開始baseline：`bef259433a4066301875c4025a7f9f5befeabd61`（`docs: make quick start runnable`）。branch main / clean status、origin/main / GitHub main SHA一致をfetch・SSH ls-remote・GitHub APIで確認。
+- VERSION / gemspec：`acting_for` / `0.1.0`、Ruby `>= 3.4, < 4.1`、activerecord / activesupport / railties `>= 8.0, < 8.2`、MIT、authors `ChangQuan Cui`、require_paths `lib`。homepage / source_code_uriはcanonical repo URL。dependency / version / license / Public API / semantics / schema / support matrix変更なし。
+
+### Built gem / package verification
+
+`gem build --strict acting_for.gemspec --output <temporary directory>/acting_for-0.1.0.gem` 成功。**warningsなし**。filename `acting_for-0.1.0.gem`、size **16,384 bytes**、SHA256：
+
+```text
+7de2ea24f1e06ff48de23ef55bf2f3827583da1d47aa796dd7a58cce7a16141c
+```
+
+artifactのGem::Package specification、`gem unpack`、local install後の `gem contents acting_for -v 0.1.0` を確認。17 filesはgemspecのallowlistと一致：README / LICENSE 2、lib 5、app Models 4 / Internal Services 3、db/migrate 3。Entry Point / VERSION / Engine、全Model / Service / Migrationが含まれる。`.git` / `.github` / `.env` / credentials / master.key / key / log / tmp / test DB / schema / vendor / Docker data / local-machine files / Gemfile.lock / private verification filesの混入なし。test / docs / CIを含めないのは意図どおり。MIT LICENSE本文一致。metadata不足・packaging漏れなし、gemspec変更不要。
+
+homepage / source_code_uri、README / docs / LICENSE / Issuesのリンクはcanonical repo内の存在するtargetへ向く。repo privateのため外部アクセスは現在できず、public化後に匿名アクセスを確認するRelease actionとして計画へ記録。private自体はGate blockerではない。
+
+### Secret / privacy audit
+
+tracked全59 files（開始baseline）と作業treeのhidden files / ignore / packageを簡易監査。password / token / api_key / secret / private key / credentials / .env / AWS / GitHub / RubyGems key / DB password / local absolute pathを確認。候補はAudit禁止keyとTest fixture、boundary文書の例、ENV参照、isolated CI service用固定DB passwordのみ。実credential・rotation判断を必要とするleak・個人machine absolute pathなし。authors / MIT copyright / canonical GitHub identityは意図した公開metadata。ignoreされたlocal `.DS_Store` はpackage / commitへ含めない。
+
+既存git全56 commitsへ高確度private-key / GitHub-token / AWS-key pattern scanも実施、該当なし。簡易監査であり全種類のsecret不存在を数学的に保証するものではない。値は検証報告に出力しない。新security scanner dependencyなし。
+
+### Local artifact install / new Rails App
+
+一時Docker networkと新規container（Ruby **3.4.10**、Rails **8.0.5.1**、PostgreSQL **16.15**）で、built `.gem` を `gem install <artifact> --local --no-document`。新規 `rails _8.0.5.1_ new shopping_demo --database=postgresql --minimal --skip-bundle --skip-git` を生成。Host Gemfileは `gem "acting_for", "~> 0.1.0"` とD230の `json < 3`。Git / path sourceを使わず、installed `/usr/local/bundle/gems/acting_for-0.1.0` をBundlerが使用することをassert。Host依存GemのみRubyGemsから取得（最初のbundle --localはpropshaft未installで失敗し、通常bundle installで成功）。
+
+`require "acting_for"`、VERSION 0.1.0、Rails::Engine継承 / Engine load成功。Rails標準 `bin/rails acting_for:install:migrations` で3 Migrationコピー。最小User / Product生成、`bin/rails db:create db:migrate` で空DBから全5 migrationsとacting_for_* tables作成成功。README Ruby blocksを抽出し順番にrunnerで実行、追加assertionsで結果を確認：
+
+| 対象 | 結果 |
+| --- | --- |
+| Agent / Delegation | Agent 1 / Delegation 2 persisted |
+| 8,900 | `[:allow, true, false, false]` |
+| 20,000 | `[:require_approval, false, false, true]` |
+| 50,000 | `[:deny, false, true, false]` |
+| AuditEvent | 3件自動保存、allow / require_approval / deny、全sanitized_context `{}` |
+
+配列はstatus / allowed? / denied? / approval_required?。GitHub sourceではなく配布artifactの実動作を確認。新規App / DB / installed gems / temporary scripts / unpacked package / containers / anonymous volumes / networkを検証後cleanup。built `.gem` はgit管理せず、一時生成物をrepositoryへ残さない。
+
+### Documentation / Security / Responsibility consistency
+
+README、Public API、Security Model、PROJECT、既存DECISIONSとproduction実装を照合。Agent、delegate、authorize、Decision全3結果、constraints、expiration、revocation、Audit / audit_context_keys、Host Authorization / Context Trust / MCP boundary、Ruby / Rails / PostgreSQL / migration installationは一致。現在状態のstale表現のみdocsで整理し、過去Decision本文は変更しない。PROJECTの詳細設計工程5.1〜5.7は履歴であることを明示。
+
+- Agent authentication・Agent / Principal resolutionはHost責務。Resource / ContextをHostが確定。
+- Hostの現在認可とActingFor allowの積集合。CoreはHost認可libraryを呼ばず、business operationを実行しない。
+- require_approvalはallowではなく、Approval WorkflowはHost責務。
+- Audit persistence failureではDecisionを返さず例外。System / API failureをdenyへ変換しない。
+- Audit Contextは明示選択、default `{}`。raw全Context保存の保証なし。
+- MCP / OAuth / OIDC serverではなくAgent framework非依存。
+- Model-level保護とDB直接操作、Decision再利用不可 / TOCTOU / business atomicityの既存境界を維持。
+
+D012 / D030 / D024・D025・D049等の責務・Security決定に矛盾なし。新仕様なし。READMEはpre-release / Not released / GitHub main installation / private access説明を維持。RubyGems公開後の `gem "acting_for", "~> 0.1.0"`、private / SSH説明の削除、status更新は[Release plan](release_plan_v0_1_0.md)で確定し、今回Releasedへ書き換えない。
+
+### Support status / external state（確認日 2026-09-19）
+
+| 対象 | 公式status |
+| --- | --- |
+| Ruby 3.4 / 4.0 | normal maintenance。終了日TBD（[Ruby公式](https://www.ruby-lang.org/en/downloads/branches/)） |
+| Rails 8.0 | bug-fix終了2026-05-07、security support終了2026-11-07（[Rails公式](https://rubyonrails.org/maintenance)） |
+| Rails 8.1 | bug-fix終了2026-10-10、security support終了2027-10-10（[Rails公式](https://rubyonrails.org/maintenance)） |
+| PostgreSQL 16 | supported、16.15、終了2028-11-09（[PostgreSQL公式](https://www.postgresql.org/support/versioning/)） |
+
+正式対象を公開する重大support blockerなし。D046 matrixは維持。Rails 8.0終了が近いためActual Release直前も再確認。
+
+- exact `acting_for`：RubyGems API `/api/v1/gems/acting_for.json` HTTP **404**、`gem search --remote --exact acting_for` **該当なし**、`https://rubygems.org/gems/acting_for` HTTP **404**。現時点未登録・availability確認。予約・将来availability保証ではなく、push直前に再確認する。
+- Repository：GitHub connector APIで **private**。変更なし。
+- tags：local tag list / remote SSH ls-remoteで空、`v0.1.0` 未作成。
+- GitHub Releases：API collection `[]`、未作成。
+- RubyGems authentication：local credentials **not configured**、GEM_HOST_API_KEY **not configured**。準備可能だがアカウント本人確認 / 初期owner / publish認証方式は実行前の人間確認事項。secret表示・API key生成・設定変更なし。MFA / Trusted Publishing policyは今回選択しない。
+
+### D076 Definition of Done
+
+| # | 項目 | 結果 / 証跡 |
+| --- | --- | --- |
+| 1 | v0.1確定機能の実装 | PASS：production照合・packaged runtime verification |
+| 2 | 必須自動Test | PASS：298 runs / 755 assertions / 0 failures / 0 errors / 0 skips |
+| 3 | 正式CI matrix | BLOCKED：D231 main push後の正式全4 matrix確認待ち |
+| 4 | RuboCop | PASS：1.91.0、42 files、no offenses |
+| 5 | Runnable Quick Start | PASS：D230 + D231 built artifactから新規App検証 |
+| 6 | READMEと実装 | PASS：照合済み、Not released維持 |
+| 7 | Security Boundary | PASS：上記契約 / 実装 / 正式Test一致 |
+| 8 | Responsibility Boundary | PASS：Host / Core / framework / MCP / authentication / approval一致 |
+| 9 | GitHub Release Notes | PASS：[draft](release_notes_v0_1_0.md)完成、公開先GitHub Releases |
+
+正式Test / RuboCopはisolated tracked-sourceコピーで `bundle exec rake -f test/dummy/Rakefile db:prepare` → `bundle exec rake test` → `bundle exec rubocop`、全exit 0（seed 17311）。production変更なし。CI trigger / matrix / release automation変更なし。
+
+### Final Gate
+
+**NOT READY：D231 main push後の正式GitHub Actions全5 jobs確認待ち。** その他の技術的blockerなし。CI結果を確認後、本D231のGate結果を確定する。
+
+Release Notesは[docs/release_notes_v0_1_0.md](release_notes_v0_1_0.md)、Actual Release順序・認証確認・失敗時再開は[docs/release_plan_v0_1_0.md](release_plan_v0_1_0.md)。D231完了後のmain HEADが現在のrelease候補。公開transaction内のREADME更新commitを含む最終mainをtag候補とし、artifact-source SHA / checksumとの対応を記録する。公開承認とRubyGems account / authentication確認は次工程。**Not released**。gem push / repo public化 / tag作成・push / GitHub Release / version bump / release automation有効化は一切実施しない。

@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-18
+更新日：2026-09-19
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D230
+D231
 ```
 
 ## Current Status
@@ -47,11 +47,15 @@ Minitest unit / delegation / authorization / audit / engine / migration / host b
 Pre-CI Test Strategy coverage checked
 GitHub Actions formal four-matrix CI / PostgreSQL 16 / core RuboCop implemented and runtime verified
 Runnable Quick Start implemented and verified in a new Rails application
+Built gem / package / artifact installation / documentation / support verification completed
+v0.1 Release Readiness Gate: NOT READY (D231 final CI pending)
 
 Not released
 ```
 
 ## Implemented
+
+D231：built `acting_for-0.1.0.gem` strict build / package audit / secret・privacy簡易監査 / 新規Rails Appへのlocal artifact installとMigration・全Decision・Audit確認が成功。Release Notes draftとActual Release planを準備。Security / Responsibility / README照合済み。正式Test 298 / 755、RuboCop違反なし。support確認日2026-09-19。repo private、RubyGems未登録、tag / GitHub Releaseなし。最終CI確認待ち。詳細は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。Not released。
 
 Runnable Quick Start（D230）：Release前のGitHub `main` Gem導入から、Rails標準 `bin/rails acting_for:install:migrations`、最小User / Product、Agent作成、Public delegate / authorize、Decision全3結果、Audit保存まで新規Rails Applicationで実検証。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15。READMEから抽出したRuby codeをrunnerで実行し、Rails console起動も確認。README全体の古い未実装・planned support表記を整理。Production code変更なし。正式Test 298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCop違反なし。GemはNot released。詳細は[DECISIONS D230](DECISIONS.md#d230-runnable-quick-start-implementation)。
 
@@ -136,7 +140,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D230のRunnable Quick Start実装・新規Rails Applicationでのruntime verificationが完了。次の大きな工程はGem Release。Releaseは未実施。
+D231 main push後の正式CIを確認してGateを確定する。その後、別途ユーザーの公開承認とRubyGems account / authentication確認を受け、[Actual Release plan](release_plan_v0_1_0.md)へ進む。Release未実施。
 
 ## Important Rules
 

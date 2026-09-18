@@ -1,8 +1,8 @@
 # ActingFor v0.1 Public API Design
 
-更新日：2026-09-18
+更新日：2026-09-19
 
-**状態：Design finalized / Partially implemented。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Models / delegate / Decision / ConstraintEvaluator / Authorization / `audit_context_keys` sanitization / AuditEvent persistenceまで実装済み。正式Minitest suite / CIは未実装。
+**状態：Design finalized / Implemented。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Models / delegate / Decision / ConstraintEvaluator / Authorization / `audit_context_keys` sanitization / AuditEvent persistenceまで実装済み。正式Minitest suite / CI / Runnable Quick StartはD221〜D230で実装・検証済み。Not released。
 
 Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。D190〜D212によりDelegation Public APIの実装設計を詳細化した。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 
@@ -260,7 +260,7 @@ ActingForはallow / deny / require_approvalの3状態を持つため、Bang API�
 
 ## 9. Delegation API
 
-**D021の専用API方針を後続決定D032で詳細化（設計のみ・未実装）。** 作成Public APIは `ActingFor.delegate(...)` のみ。v0.1では `ActingFor.delegate!` を提供しない。認可内容はimmutableで、変更はrevoke + createとする。
+**D021の専用API方針を後続決定D032で詳細化（実装・検証済み）。** 作成Public APIは `ActingFor.delegate(...)` のみ。v0.1では `ActingFor.delegate!` を提供しない。認可内容はimmutableで、変更はrevoke + createとする。
 
 ### 作成シグネチャ
 
@@ -577,7 +577,7 @@ persist済みAuditEventのupdate / destroyをModelレベルでも禁止する。
 
 ## 14. Open Questions
 
-Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。基盤の実装状況は[CURRENT_STATE](CURRENT_STATE.md)を参照。delegate / authorize / Decision / Audit authorization integrationは未実装。
+Step 5の10項目は完了。後続決定D031〜D034でException class、Audit Context選択、Resource identity、Delegation API / validation、Agent validation、AuditEvent詳細を確定した。後続D035〜D048で時刻・実行境界・運用方針・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。基盤の実装状況は[CURRENT_STATE](CURRENT_STATE.md)を参照。delegate / authorize / Decision / Audit authorization integrationは実装・正式Test検証済み。
 
 Gem構成・配置、Rails標準Migration方式、独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で設計決定済み。Migration / Models / revoke!は実装・検証済み。D190〜D212によりdelegateの実装設計を確定した。Authorization query等の未対象事項は引き続き後続工程で扱う。
 

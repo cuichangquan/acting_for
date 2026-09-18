@@ -660,15 +660,9 @@ AuditEvent
 
 Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10、全項目がD015〜D025で決定済み。最新の決定範囲と10項目の進捗は[Step 5の正本](public_api_v0_1.md)を参照。後続決定D031〜D034でException、Audit Context、Resource、Delegation、Agent validation、AuditEvent詳細を確定した。
 
-D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
+D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。v0.1のModel / Service / Migration / Public APIは実装・正式Test検証済み。
 
-次の事項は引き続き**未確定**。
-
-- Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
-- Migrationの実コード・taskの具体的なコマンド名
-- その他の[残るSecurity詳細](security_model_v0_1.md#27-今回決めないこと)
-
-Gem構成・配置、Rails標準Migration方式、v0.1での独自Generator非提供は[Step 7の正本](gem_structure_v0_1.md)（D028）で決定した。Domain Modelの仕様は変更せず、Gemは未実装のままとする。
+Model validation / callback、atomic revoke!、Authorization query、Migration実コード / Rails標準taskは後続実装Decisionで解消済み。未確定・対象外の事項は[Security Model §27](security_model_v0_1.md#27-今回決めないこと)を参照。Domain Modelの仕様は変更せず、GemはNot released。
 
 ### 既存認可とContextの後続決定（D024・D025）
 

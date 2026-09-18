@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 7は完了（Complete / Design finalized）。** 本書をGem Structure Designの正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gem skeleton / Migration / Models / 最小Dummyは実装済み。D190〜D212によりDelegation Public APIの実装設計を詳細化したが、delegate / authorize / Decision等は未実装・未リリース。以下の構成には実装予定を含み、今回コードファイルは作成しない。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
+**Step 7は完了（Complete / Design finalized）。** 本書をGem Structure Designの正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gem skeleton / Migration / Models / 最小Dummyは実装済み。D190〜D212によりDelegation Public APIの実装設計を詳細化したが、delegate / authorize / Decision / Audit integrationは実装・正式Test / CI検証済み。Gemは未リリース。以下は設計上の構成を示す。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 
 [Step 4 Domain Model Design](domain_model_v0_1.md)、[Step 5 Public API Design](public_api_v0_1.md)、[Step 6 README Quick Start](../README.md#quick-start)の決定を維持する。進捗は[PROJECT](PROJECT.md#5-進行順)、決定理由は[DECISIONS](DECISIONS.md)を参照。後続のStep 8「Test Strategy」は[正本](test_strategy_v0_1.md)（D029）で設計完了した。
 
@@ -231,7 +231,7 @@ Public Exceptionは `lib/acting_for/errors.rb` にまとめる（D191・D199）�
 
 テストではDummy Rails Applicationを持つ構成を採用し、最低限 `test/dummy/` を想定する。Rails Engine integration、ActiveRecord、Migration、Rails autoload、Host Applicationとのintegrationを実際のRails環境で検証できるようにするためである。
 
-Step 7時点では `test/` という構造のみを決め、Test Frameworkは未決定だった。後続の[Step 8 Test Strategy](test_strategy_v0_1.md)（D029）で **Minitest採用・RSpec不採用** を確定した。Unit / Integrationの境界と検証シナリオはStep 8正本に従う。`test/dummy` は最小Rails integration hostとし、sample product / demo applicationにはしない。最小Dummy Rails Appは実装済み。正式Minitest suiteは未実装。
+Step 7時点では `test/` という構造のみを決め、Test Frameworkは未決定だった。後続の[Step 8 Test Strategy](test_strategy_v0_1.md)（D029）で **Minitest採用・RSpec不採用** を確定した。Unit / Integrationの境界と検証シナリオはStep 8正本に従う。`test/dummy` は最小Rails integration hostとし、sample product / demo applicationにはしない。最小Dummy Rails Appは実装済み。正式Minitest suiteはD221〜D228で実装・検証済み。
 
 D221により、正式Minitest suiteの最初の実装単位は `test/test_helper.rb`、`Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb` とする。`test_helper` は `test/dummy` Rails環境と `rails/test_help` を利用し、正式実行コマンドは `bundle exec rake test`、discoveryは `test/**/*_test.rb`。Public API Integration Testは後続へ分離し、CIはまだ実装しない。
 
@@ -281,7 +281,7 @@ Internalは利用者向けAPIではなく、READMEでは原則としてInternal 
 
 この分類はStep 5のPublic APIの細部を追加確定するものではない。Step 7時点で保留していた `ActingFor.delegate(...)` の全引数・default・validationとdelegate!非提供は後続D032で確定した。ModelをPublicに分類することも、DelegationをActiveRecord直接操作中心にする意味ではない。
 
-Public分類はDecision constructorや任意Model更新の保証ではない。D049のcaller認証・認可はHost責務、D053のDelegation immutability、D054のatomic revoke!、D056のAuditEvent update / destroy禁止をModel / Public境界にも適用する。Model制約とrevoke!は実装済み。delegate / authorize / Decisionは未実装。
+Public分類はDecision constructorや任意Model更新の保証ではない。D049のcaller認証・認可はHost責務、D053のDelegation immutability、D054のatomic revoke!、D056のAuditEvent update / destroy禁止をModel / Public境界にも適用する。Model制約とrevoke!は実装済み。delegate / authorize / Decisionは実装・検証済み。
 
 ## 13. 未決定事項と次工程
 
@@ -289,9 +289,8 @@ Public分類はDecision constructorや任意Model更新の保証ではない。D
 
 以下は引き続き未決定であり、本書では追加確定しない。
 
-- Authorization queryの具体的SQL
+- Authorization queryは実装済み。Internal SQL / private method構成はPublic互換性保証外。
 - install generatorの将来設計（v0.1では独自Generatorを作らない）
-- 実装クラスの細かなprivate method構成
 - Approval Workflow、MCP Adapter、OAuth / OIDC Adapterの具体設計・実装
 
 | Step | 状態 |
@@ -300,6 +299,6 @@ Public分類はDecision constructorや任意Model更新の保証ではない。D
 | Step 5 Public API Design | Complete / 10 of 10 / Design finalized |
 | Step 6 README Quick Start Design | Complete / Design-stage Quick Start finalized |
 | Step 7 Gem Structure Design | Complete / Design finalized / 基盤実装済み |
-| Step 8 Test Strategy | Complete / Design finalized / Not implemented（D029） |
+| Step 8 Test Strategy | Complete / Design finalized / Test suite implemented（D221〜D228） |
 
-D190により次の実装単位は `ActingFor.delegate(...)`。既存revoke!を利用し、Authorization / Decision / Audit authorization integrationには進まない。Gemは **Not released**。今回の作業は設計反映のみで、API実装は次の明示指示で開始する。
+D190〜D230の実装・検証は完了。次工程はD231結果を確認したうえで、別途明示承認後のActual Release。Gemは **Not released**。

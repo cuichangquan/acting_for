@@ -1,6 +1,6 @@
 # ActingFor Progress
 
-更新日：2026-09-18
+更新日：2026-09-19
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
@@ -29,7 +29,7 @@
 | 17 | 正式Minitest suite | ✅ CI前の確定済みcoverage実装・Docker検証済み |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
-| 20 | Gem Release | ⬜ 未実装 |
+| 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、最終CI確認待ち |
 
 ## 現在の位置
 
@@ -55,6 +55,8 @@ Public API / Value Object実装
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D231 Release Readiness Gate：strict built gem・17 files package audit・secret / privacy簡易監査・built artifactから新規Rails App導入 / Migration / 全Decision / Audit検証成功。Release Notes draft / Actual Release plan完成。support / Security / Responsibility / README照合済み。最終CI確認待ち、Not released。
 
 - Gem skeleton implemented。
 - Migration implemented and runtime verified。

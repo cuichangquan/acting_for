@@ -1,11 +1,11 @@
 # ActingFor 開発方針
 
-更新日：2026-09-18
+更新日：2026-09-19
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：Implementation Phase開始（D077〜D094）。**Gem skeleton implemented / Core feature implementation not started**。Security Model Design・Step 8 Test Strategyは設計完了・未実装。Step 7の設計は確定済みで、Gem skeletonのみ実装済み。Step 6はDesign-stage Quick Start finalized、Step 5は10 / 10、Completeを維持する。Model、Migration、Authorization、Delegation API、Audit、Test、CI、Runnable Quick Start、Releaseは引き続き未実装・未実施。Gem全体の完成・リリースではなく、Quick Startはまだ実行できない。
+- 現在の段階：v0.1実装・正式Test・4 matrix CI / RuboCop・Runnable Quick Startは完了（D221〜D230）。D231で配布artifact・documentation・security・support・Release Notesを最終照合する。Gemは **Not released**。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、検証証跡は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -251,7 +251,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 
 ### 4.3 v0.1全体のDefinition of Done
 
-**状態：後続D076で正式決定（設計のみ・未実装）。** ActingFor `0.1.0` は少なくとも以下を満たした時点で完成とする。
+**状態：D076で正式決定。達成結果はD231で確認。** ActingFor `0.1.0` は少なくとも以下を満たした時点で完成とする。
 
 1. v0.1として確定した機能の実装完了。
 2. 必須自動Test成功。
@@ -263,7 +263,7 @@ Agentの本人確認はActingForの責務ではない。OAuth / OIDC / MCPなど
 8. Responsibility Boundaryと実装が一致。
 9. GitHub Release Notesを公開できる状態。
 
-v0.1対象外機能はDoDに含めない。Gem skeletonのみ実装済み・未リリースであり、上記条件を達成済みという意味ではない。
+v0.1対象外機能はDoDに含めない。公開操作はDoD達成とは別にユーザー承認を必要とする。Releaseは未実施。
 
 **従来Proposalの履歴：** D057〜D059時点では全体はProposalだった。以下の旧提案は履歴として保持し、D076に整合する範囲のみ正式決定へ更新する。「一つの公開コマンド」等、D076より広い未承認条件は引き続きProposalであり、追加の必須条件としない。
 
@@ -277,15 +277,11 @@ v0.1対象外機能はDoDに含めない。Gem skeletonのみ実装済み・未�
 
 ### 4.3.1 v0.1必須の検査と公開成果物（D057〜D059）
 
-後続D229で正式GitHub Actions CIとcore RuboCopを実装・検証済み。具体設定とruntime verificationは[DECISIONS D229](DECISIONS.md#d229-v01-ci-implementation)。以下の設計時点の未実装・未決定表記のうちCI / RuboCopはD229で解消。Quick Start / Releaseは未実装。
+D229で正式GitHub Actions CI・core RuboCop、D230でRunnable Quick Startを実装・検証済み。D231で[Release Notes draft](release_notes_v0_1_0.md)を準備する。
 
-**確定（設計のみ・未実装）。**
-
-- **Static Analysis（D057）：** v0.1の必須static analysisは **RuboCop** とする。Sorbet、Steep、Brakeman、独自security scannerはv0.1必須要件に含めない。RuboCopのversion、具体的configuration、rule set、plugin、CIへの具体的組み込み方法、rake taskの具体名は未決定とし、実装工程で決める。
-- **Runnable Quick Start（D058）：** v0.1ではREADMEの **実行可能な最小Quick Start** を必須成果物とする。対象はGem導入、Migration適用、Agent作成、Delegation作成、`ActingFor.authorize(...)`、`ActingFor::Decision` の結果確認。Approval Workflow、MCP、OAuth / OIDC、Agent Authentication実装、UI、独立したサンプルRailsアプリは含めない。独立したサンプルアプリの提供はv0.1必須要件としない。
-- **Release Notes（D059）：** v0.1公開時には **Release Notes** を必須とする。最低限、v0.1の主要機能、対応Ruby / Rails / DB、Public API、v0.1対象外機能、既知の制約、0.xであり破壊的変更の可能性があることを記載する。自動CHANGELOG生成、詳細な変更履歴生成基盤、Release Notes自動生成システムはv0.1必須要件としない。
-
-今回はRuboCop設定ファイル、READMEのRunnableコード、Release Notes本文を作成しない。既存READMEはDesign-stageのままであり、実行可能という意味ではない。具体的設定・コマンド・配置等の未決定事項は4.5に記録する。
+- **Static Analysis（D057・D067）：** core RuboCopを必須とし、violationはCI failure。具体設定はD229。Sorbet、Steep、Brakeman、独自security scannerは必須に含めない。
+- **Runnable Quick Start（D058・D068〜D071）：** 新規Rails AppでGem導入 → Migration → Agent → delegate → authorize → Decision / Audit確認。HostのApproval Workflow、認証、UI、独立sample appは必須に含めない。
+- **Release Notes（D059・D074）：** 主要機能、対応環境、Public API、対象外、既知の制約、0.xのbreaking change可能性をGitHub Releasesへ公開する。D231のrepo内draftは正式公開ではない。自動CHANGELOGは必須でなく、今回作成しない。
 
 ### 4.3.2 後続決定による導入・検証・公開方針（D060〜D075）
 
@@ -312,16 +308,14 @@ v0.1対象外機能はDoDに含めない。Gem skeletonのみ実装済み・未�
 
 ### 4.5 スコープ確定後も別途決める設計
 
-Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D056でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
+Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)で確定。後続決定D031〜D056でAudit Context / Exception、Resource / Delegation、Agent validation、AuditEvent詳細を確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。確定したv0.1実装は完了。現在進捗はCURRENT_STATEを参照。
 
-D057〜D059で必須static analysisの選定、Runnable Quick Startの範囲、Release Notesの最低限の内容を解消した。後続D060〜D076でMigration方針、Quick Startの実行境界、CI基盤・trigger、Release Notes公開先、version / tag、DoDを確定した。以下は引き続き未確定。
+D057〜D076の検証・公開方針をD229〜D231で具体化した。Model / Service / Migration、Rails標準task、正式Test / CI、README最終コードは実装済み。Release Notes本文はD231のdraftを参照。未確定・今回設定しない事項は以下。
 
-- README Runnable Quick Startの最終コード・具体的コマンド、Release Notes本文、CHANGELOG方式（公開先は後続D074でGitHub Releasesに確定）
-- release automation、gem push automation、GitHub Release自動作成、tag自動作成
-- Gem実装詳細
-- Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL
-- Migration Rubyコード・taskの具体名・timestamp・filenameの最終形
-- [Security Modelに残る詳細](security_model_v0_1.md#27-今回決めないこと)
+- Release authentication方式（local API key / MFA / Trusted Publishing等）。
+- release automation、gem push automation、GitHub Release / tagの自動作成。
+- CHANGELOG方式（自動生成は必須でなく、今回追加しない）。
+- Approval Workflow、MCP / OAuth / OIDC Adapterなどv0.1対象外の具体設計。
 
 ### 4.6 対応環境・公開方針（D045〜D048）
 
@@ -336,11 +330,11 @@ v0.1の正式対応DB adapterは **PostgreSQLのみ**。他adapterを意図的�
 | 4.0 | 8.0 | PostgreSQL |
 | 4.0 | 8.1 | PostgreSQL |
 
-Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。これは設計上の対象であり、現在検証済み・リリース済みという意味ではない。CIはまだ実装しない。
+Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。正式4 matrix CIはD229で検証済み。D231で公式support statusを再確認。Releaseは未実施。
 
-将来gemspecへ設定するv0.1のversion constraintはRuby `>= 3.4`, `< 4.1`、Rails `>= 8.0`, `< 8.2` とする。dependencyとしてinstall可能であることと正式サポートは区別し、正式サポートはD046のCI matrixで検証済みの組み合わせだけとする。今回はgemspecを作成・変更しない（D047）。
+gemspecに設定済みのv0.1のversion constraintはRuby `>= 3.4`, `< 4.1`、Rails `>= 8.0`, `< 8.2` とする。dependencyとしてinstall可能であることと正式サポートは区別し、正式サポートはD046のCI matrixで検証済みの組み合わせだけとする。D047の範囲を維持する。
 
-ActingForは **MIT License** で公開する。LICENSE / gemspecへMITを明記するが、今回はLICENSEファイルを作成せず、gemspecも作成・変更しない（D048）。
+ActingForは **MIT License** で公開する。LICENSE / gemspecにMITを明記済み（D048）。
 
 ## 5. 進行順
 
@@ -351,18 +345,20 @@ ActingForは **MIT License** で公開する。LICENSE / gemspecへMITを明記�
 | 3 | 用語定義 | 完了。本文とD011に記録 |
 | 4 | ドメインモデル設計 | 完了。基本方針D013と詳細ルールD014を[設計書](domain_model_v0_1.md)に記録 |
 | 5 | Public API設計 | 完了（Complete）。進捗は10 / 10。D015〜D025で全項目決定済み。[正本](public_api_v0_1.md) |
-| 6 | README Quick Start | 完了（Complete / Design-stage Quick Start finalized）。D026・D027、[README](../README.md#quick-start)に反映済み。実行不可 |
-| 7 | Gem Structure Design | 設計完了（Complete / Design finalized）。Gem skeletonのみ実装済み（D077〜D094）。D028、[正本](gem_structure_v0_1.md) |
-| 8 | Test Strategy | 完了（Complete / Design finalized / Not implemented）。D029、[正本](test_strategy_v0_1.md)。Testコード未実装 |
-| 未採番 | Security Model Design | 完了（Complete / Design finalized / Not implemented）。D030、[正本](security_model_v0_1.md) |
+| 6 | README Quick Start | 完了（Complete / Design-stage Quick Start finalized）。D026・D027、[README](../README.md#quick-start)に反映済み。D230でRunnable版検証済み |
+| 7 | Gem Structure Design | 設計完了（Complete / Design finalized）。v0.1実装完了。D028、[正本](gem_structure_v0_1.md) |
+| 8 | Test Strategy | 設計完了・正式Test実装済み。D029、[正本](test_strategy_v0_1.md)。D221〜D228・D229で実検証済み |
+| 未採番 | Security Model Design | 設計完了・実装照合済み。D030、[正本](security_model_v0_1.md) |
 | 未採番 | 未決定事項の詰め | 進行中。D031〜D076で詳細化。未決定事項は残る。D077〜D094でGem skeletonの実装を開始 |
-| 10 | 実装開始 | Gem skeleton implemented（D077〜D094）。Core feature implementation not started |
+| 10 | 実装開始 | v0.1 Core実装・正式Test・CI・Quick Start完了。Release未実施 |
 
 MCPとの責務境界は正式確定済み（2.1〜2.3、D012）。Step 4はD013・D014で完了。Step 5「Public API設計」もD015〜D025で完了。Step 6もD026・D027で完了（Design-stage Quick Start finalized）。Step 7もD028で設計完了し、後続D077〜D094でGem skeletonのみ実装済み。Step 8もD029で完了（Complete / Design finalized / Not implemented）。
 
 競合の初期調査、ポジショニングの方向性整理、ActingForへの改名は引き継ぎ済み。競合調査は過去の初期調査として扱い、最新状況を検証した記録とはしない。
 
 Step 7決定に伴い、従来Step 9に置いていたテスト方針をStep 8へ変更した。当時はセキュリティモデル設計の後続の順番を固定しなかった。D030でSecurity Model Designを未採番のまま完了し、次工程を「未決定事項の詰め」とする。既存の工程番号・過去履歴は維持する。D030時点ではGem未実装だったが、後続D077〜D094でGem skeletonを実装した。
+
+> 以下5.1〜5.7は各設計・初期実装工程の履歴。当時の未実装・未決定表記は現在状態ではない。現在はD230までのv0.1実装・検証が完了し、D231でRelease Readinessを確認する。
 
 ### 5.1 Step 5の検討項目
 
@@ -422,7 +418,7 @@ D060〜D076でMigration、Quick Start実行境界、RuboCop合否、CI基盤・t
 
 D057〜D059で必須static analysis（RuboCop）、READMEのRunnable Quick Start、公開時のRelease Notesを確定した。詳細は4.3.1を参照。設定・本文・実装はまだ作成しない。
 
-後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。実装は引き続きNot implemented。
+後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。確定したv0.1実装は完了。現在進捗はCURRENT_STATEを参照。
 
 D031でAudit Contextのaudit_context_keysと4つのException class、D032でResource identityとDelegation API / validation、D033でAgent validation、D034でAuditEventのreason_code / decision / matched_delegation_ids / sanitized contextを設計確定した。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Security Model](security_model_v0_1.md)を参照する。
 
@@ -446,7 +442,7 @@ Model、Migration、Authorization、Delegation API、Audit、Testコード・tes
 | --- | --- |
 | v0.1の完了条件を確定する | 履歴：後続D076で正式DoDを確定。4.3の旧Proposalのうち、より広い未承認条件は未承認のまま残す |
 | require_approval後のホスト要件を決める | 確定済みの責任分界を前提に、承認する人、承認対象との紐付け、内容変更、再利用、再認可を整理する |
-| 残る実装詳細を確認する | 確定済み設計を前提に、Migration実コード・taskやModel validation等を確認する。Core featureの実装開始は今回の対象外 |
+| 残る実装詳細を確認する | 履歴：v0.1実装詳細は後続実装Decisionで確定・実装・検証済み。Release前の状態はD231を参照 |
 
 Issueを作成したら、この表の対応する行をIssueへのリンクに置き換える。詳細と進捗はIssue側で管理し、本文を重複管理しない。
 
@@ -454,14 +450,14 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 | 管理先 | 役割 |
 | --- | --- |
-| README.md | Gemの紹介とDesign-stage Quick Start。実行可能な手順は実装・検証後に掲載 |
+| README.md | Gemの紹介・実行可能なQuick Start（D230） |
 | docs/PROJECT.md | 開発方針、スコープ、進行順 |
 | docs/DECISIONS.md | 決定事項、理由、提案・確定・保留の区別 |
 | docs/domain_model_v0_1.md | v0.1ドメインモデルの確定設計と後続工程の未決定事項 |
 | docs/public_api_v0_1.md | Step 5 Public API設計の正本。決定済み範囲と未決定事項・進捗 |
 | docs/gem_structure_v0_1.md | Step 7 Gem Structure Designの正本。Design finalized / Not implemented |
-| docs/test_strategy_v0_1.md | Step 8 Test Strategy Designの正本。Complete / Design finalized / Not implemented |
-| docs/security_model_v0_1.md | v0.1 Security Model Designの正本。Complete / Design finalized / Not implemented |
+| docs/test_strategy_v0_1.md | Step 8 Test Strategy Designの正本。Complete / Design finalized。現在実装・検証済み |
+| docs/security_model_v0_1.md | v0.1 Security Model Designの正本。Complete / Design finalized。現在実装・検証済み |
 | GitHub Issues | 開発タスク、懸念点、未解決の質問 |
 
 - 会話の区切りで、決まった内容を該当ファイルへ反映する。
@@ -474,9 +470,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-1. Gem skeletonは実装済み（D077〜D094）。Core feature implementation not started。Security Model Designは設計完了・未実装（D030）で、残る未決定事項の検討は継続する。
-2. [Security Modelの未決定事項](security_model_v0_1.md#27-今回決めないこと)を継続検討する。D031〜D094の確定範囲以外の具体的実装方式・設定値・新規APIは追加確定しない。
-3. [残る未確定事項](domain_model_v0_1.md#22-次に決めること)に従い、Migration実コード・taskや具体的Model / Service実装の確認等を後続工程で扱い、D076の正式DoDと未承認の旧Proposalを区別して扱う。
+D231のGate結果と[Release transaction plan](release_plan_v0_1_0.md)を確認し、別途ユーザーの明示承認後に公開する。Release authentication方式の選択・認証確認は実行前の確認事項。version `0.1.0` / tag `v0.1.0`、既存仕様・境界・matrixを維持する。
 
 ## 9. 初版の根拠
 
