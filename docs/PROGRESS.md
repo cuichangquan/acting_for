@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・`ActingFor.delegate(...)`・Decision・ConstraintEvaluator・Authorization core・Public `ActingFor.authorize(...)` の基本入力境界とAudit Context sanitizationが完了。現在はAuditEvent persistence integration実装前。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。現在は正式Minitest suite実装前。
 
 ## 全体進捗
 
@@ -22,10 +22,10 @@
 | 10 | ActiveRecord Model実装 | ✅ 完了 |
 | 11 | Delegation Public API実装設計 | ✅ 完了 |
 | 12 | ActingFor.delegate実装 | ✅ 完了 |
-| 13 | Authorization実装 | 🟨 Core・Public入力・Audit Context sanitization実装済み / Audit persistence未実装 |
+| 13 | Authorization実装 | ✅ 完了 |
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
-| 16 | Audit Authorization Integration | ⬜ 未実装 |
+| 16 | Audit Authorization Integration | ✅ 完了 |
 | 17 | 正式Minitest suite | ⬜ 未実装 |
 | 18 | CI | ⬜ 未実装 |
 | 19 | Runnable Quick Start | ⬜ 未実装 |
@@ -44,12 +44,12 @@ Public API / Value Object実装
   delegate ✅
   Decision ✅
   Authorization core ✅
-  authorize Public API ✅（audit_context_keys sanitizationまで）
+  authorize Public API ✅
   ConstraintEvaluator ✅
-  Audit integration ← 現在ここ
+  Audit integration ✅
       ↓
 品質・公開：未着手
-  正式Tests → CI → Runnable Quick Start → Release
+  正式Tests ← 現在ここ → CI → Runnable Quick Start → Release
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
@@ -67,7 +67,8 @@ Public API / Value Object実装
 - ConstraintEvaluator implemented（D214・D215）。正式Minitest suite / CIは未実装のためruntime verificationは未実施。
 - Authorization core implemented（D216）。DB候補抽出 → Ruby最終評価 → Decision生成まで。
 - Public authorize basic input boundary implemented（D217）。agent / principal / action / resource / contextのvalidation・normalizationをInternal Authorizationで実装。
-- Audit Context sanitization implemented（D219）。audit_context_keys validation / dedup / forbidden key拒否 / strict Symbol key selection / canonical String key / BigDecimal decimal String化まで。AuditEvent persistence / runtime verificationは未実施。
+- Audit Context sanitization implemented（D219）。audit_context_keys validation / dedup / forbidden key拒否 / strict Symbol key selection / canonical String key / BigDecimal decimal String化まで。
+- Audit authorization integration implemented（D218・D220）。AuditEvent snapshot / create! / reason_code / matched_delegation_ids / AuditPersistenceError wrapまで実装。正式Minitest suite未実装のためruntime verificationは未実施。
 
 今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 

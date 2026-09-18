@@ -40,9 +40,9 @@ Delegation Public API implementation design finalized
 Delegation API implemented
 Decision implemented
 Authorization core implemented
-ActingFor.authorize Public Entry Point implemented (audit_context_keys sanitization implemented / Audit persistence pending)
+ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
-Audit authorization integration not implemented
+Audit authorization integration implemented
 Minitest test suite not implemented
 CI not implemented
 Runnable Quick Start not implemented
@@ -52,7 +52,7 @@ Not released
 
 ## Implemented
 
-Authorization / Public authorize：`app/services/acting_for/internal/authorization.rb` と `lib/acting_for.rb`。D216・D217・D219どおり、Public入力のagent / principal / action / resource / contextに加え、`audit_context_keys` のvalidation / normalizationとsanitized context生成まで実装した。Audit ContextはSymbol key完全一致で選択し、canonical String keyへ変換、BigDecimalは10進数String化する。AuditEvent保存・reason_code / matched_delegation_ids・AuditPersistenceError integrationはまだ未実装。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
+Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
 ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。正式Minitest suite / CIは未実装のため、この反映ではruntime verificationは行っていない。
 
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-`audit_context_keys` sanitizationはD219どおり実装済み。D220でAuditEvent snapshot、`create!` 1回、matched_delegation_idsのcanonical sort、AuditPersistenceErrorのwrap境界を確定。Audit persistence integration自体はまだ未実装。次の明示指示でAuditEvent保存と `InternalError` / `AuditPersistenceError` を実装する。正式Minitest suite / CIにはまだ進まない。詳細は[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#14-auditevent)、[Gem Structure](gem_structure_v0_1.md)を参照。
+D220までのAuthorization / Audit integration実装完了。`ActingFor.authorize(...)` はDecision生成後にAuditEventを自動保存し、保存成功後だけDecisionを返す。次の重要事項は正式Minitest suiteの実装方針を1項目ずつ確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

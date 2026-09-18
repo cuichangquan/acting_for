@@ -23,7 +23,7 @@ module ActingFor
           resource_type, resource_id = resource_identity(resource)
           raise InvalidRequestError, "context must be a Hash" unless context.is_a?(Hash)
 
-          sanitized_context(context, audit_context_keys)
+          audit_context = sanitized_context(context, audit_context_keys)
 
           matches = candidate_delegations(
             agent: agent,
@@ -35,7 +35,20 @@ module ActingFor
               ConstraintEvaluator.call(constraints: delegation.constraints, context: context)
           end
 
-          ActingFor::Decision.new(decision_status(matches))
+          decision = ActingFor::Decision.new(decision_status(matches))
+          audit_attributes = audit_event_attributes(
+            agent: agent,
+            principal: principal,
+            action: action,
+            resource_type: resource_type,
+            resource_id: resource_id,
+            decision: decision,
+            matches: matches,
+            sanitized_context: audit_context
+          )
+          persist_audit_event!(audit_attributes)
+
+          decision
         end
 
         private
@@ -133,6 +146,32 @@ module ActingFor
           return :allow if matches.any? { |delegation| delegation.effect == "allow" }
 
           :deny
+        end
+
+        def audit_event_attributes(
+          agent:, principal:, action:, resource_type:, resource_id:, decision:, matches:, sanitized_context:
+        )
+          decision_value = decision.status.to_s
+
+          {
+            agent_id: agent.id,
+            agent_identifier: agent.identifier,
+            principal_type: principal.class.polymorphic_name,
+            principal_id: principal.id.to_s,
+            action: action,
+            resource_type: resource_type,
+            resource_id: resource_id,
+            decision: decision_value,
+            reason_code: ActingFor::AuditEvent::DECISION_REASONS.fetch(decision_value),
+            matched_delegation_ids: matches.map(&:id).sort,
+            sanitized_context: sanitized_context
+          }
+        end
+
+        def persist_audit_event!(attributes)
+          ActingFor::AuditEvent.create!(attributes)
+        rescue ActiveRecord::ActiveRecordError => error
+          raise ActingFor::AuditPersistenceError, "Failed to persist audit event", cause: error
         end
       end
     end
