@@ -3132,3 +3132,26 @@ Dummy側に最小Host `Principal < ActiveRecord::Base` と `principals` テー�
 **130 runs, 328 assertions, 0 failures, 0 errors, 0 skips**（seed 47832）。追加Delegation Integration Testは114件、既存Decision / ConstraintEvaluator Unit Testは16件で全て成功。検証用volumeは `down -v` で削除し、log等の生成物はcommitしない。
 
 Authorization / Audit Integration Test、CI、Quick Start、Releaseには進まない。正式Test suiteや対応matrix全体の完了を意味しない。
+
+## D226: ActingFor.authorizeとAudit persistenceの正式Integration Testを実装する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Test Strategy §6〜§8](test_strategy_v0_1.md#6-actingforauthorize-integration-test)、[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、D216〜D220。
+
+`test/integration/authorization_test.rb` に `ActingFor.authorize(...)` とAudit persistenceを1つの正式Integration Test実装単位として追加する。既存仕様をExecutable Documentationとして固定し、新しい仕様は追加しない。Test名は英語で1 Testにつき1つの意味を表し、例外message全文・Internal private method・具体的SQLに依存しない。
+
+検証対象：allow / deny / require_approval、複数matchのrequire_approval優先、ID・作成順・created_at・specificityによらない結果、Agent / Principal / Action / Resource / active state / Constraint matching、nil Resourceの非wildcard、期限境界・取消・strict type・missing / nil・nested非対応・不正保存Constraintのfail-closed、Public入力validationとException境界。
+
+Auditは全Decisionで1件自動保存し、Agent / Principal / Action / Resourceのsnapshot、decision / reason_code、全match IDの昇順canonical representation、sanitized_context、created_atを検証する。allowlistのArray<Symbol>限定・重複除去・禁止key全9種・missing key・Symbol key厳密一致・String keyへのindifferent access禁止・raw context非fallback・対応scalar型・unsupported value拒否・BigDecimal精度保持・caller入力非破壊を確認する。
+
+全DecisionでAudit保存失敗時にDecisionを返さず、ActiveRecord persistence errorのみ `AuditPersistenceError` へwrapしcauseを保持することを確認する。Test内の `AuditEvent.create!` fault injectionはensureで元のmethodへ復元し、実際のAudit Model validation failureも確認する。Audit snapshot組み立て等の非persistence errorや非ActiveRecord errorは一律wrapしない。
+
+既存Dummy Principalを再利用し、ResourceはTest内の最小ActiveModel-style classとする。時刻はRails time helperで固定。不正保存Constraintやcreated_atはTest fixtureとしてvalidationを迂回して設定する。Production code・Gem本体Migration・DB schema・既存Decision・仕様は変更しない。CI / Host Authorization Boundaryの本格実装 / Quick Start / Releaseには進まない。
+
+### D226 runtime verification（2026-09-18）
+
+既存Docker環境で `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
+
+**262 runs, 615 assertions, 0 failures, 0 errors, 0 skips**（seed 20416）。追加Authorization / Audit Integration Testは132件、既存Delegation Integration Test114件・Unit Test16件も全て成功。Production code修正なし。検証用volumeは `down -v` で削除し、log等の生成物はcommitしない。対応matrixやTest Strategy全体の完了を意味しない。

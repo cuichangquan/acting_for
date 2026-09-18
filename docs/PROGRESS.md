@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit TestとDelegation Integration TestはDocker検証完了。Authorization / Audit Integration Testは未実装。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit Integration TestはDocker検証完了。Test Strategy全体・対応matrixは未完了。
 
 ## 全体進捗
 
@@ -26,7 +26,7 @@
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
-| 17 | 正式Minitest suite | 🟨 Unit・Delegation Integration実装・Docker検証済み / Authorization・Audit Integration未実装 |
+| 17 | 正式Minitest suite | 🟨 Unit・Delegation・Authorization・Audit Integration実装・Docker検証済み / Strategy全体は未完了 |
 | 18 | CI | ⬜ 未実装 |
 | 19 | Runnable Quick Start | ⬜ 未実装 |
 | 20 | Gem Release | ⬜ 未実装 |
@@ -48,8 +48,8 @@ Public API / Value Object実装
   ConstraintEvaluator ✅
   Audit integration ✅
       ↓
-品質・公開：Unit・Delegation Integration検証済み
-  正式Tests 🟨（Unit・Delegation Integration検証済み / Authorization・Audit Integration ← 現在ここ） → CI → Runnable Quick Start → Release
+品質・公開：Unit・Public API / Audit Integration検証済み
+  正式Tests 🟨（Unit・Delegation・Authorization・Audit検証済み / 残存coverage確認 ← 現在ここ） → CI → Runnable Quick Start → Release
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
@@ -68,9 +68,10 @@ Public API / Value Object実装
 - Authorization core implemented（D216）。DB候補抽出 → Ruby最終評価 → Decision生成まで。
 - Public authorize basic input boundary implemented（D217）。agent / principal / action / resource / contextのvalidation・normalizationをInternal Authorizationで実装。
 - Audit Context sanitization implemented（D219）。audit_context_keys validation / dedup / forbidden key拒否 / strict Symbol key selection / canonical String key / BigDecimal decimal String化まで。
-- Audit authorization integration implemented（D218・D220）。AuditEvent snapshot / create! / reason_code / matched_delegation_ids / AuditPersistenceError wrapまで実装。正式Integration Testによるruntime verificationは未実施。
-- 正式Minitest Unit foundation implemented（D221）。`test_helper` / `Rake::TestTask` / Decision / ConstraintEvaluator Unit Testを追加。D222〜D224のTest infrastructure修正とDB準備によりDocker検証成功：16 runs / 53 assertions / 0 failures / 0 errors / 0 skips。Authorization / Audit Integration Testは未実装。
+- Audit authorization integration implemented（D218・D220）。AuditEvent snapshot / create! / reason_code / matched_delegation_ids / AuditPersistenceError wrapまで実装。D226の正式Integration Testでruntime verification完了。
+- 正式Minitest Unit foundation implemented（D221）。`test_helper` / `Rake::TestTask` / Decision / ConstraintEvaluator Unit Testを追加。D222〜D224のTest infrastructure修正とDB準備によりDocker検証成功：16 runs / 53 assertions / 0 failures / 0 errors / 0 skips。Authorization / Audit Integration TestはD226で追加・検証済み。
 - Delegation Integration Test implemented（D225）：114件追加。既存Unit16件と合わせDocker検証成功：130 runs / 328 assertions / 0 failures / 0 errors / 0 skips。
+- Authorization / Audit Integration Test implemented（D226）：132件追加。既存Unit・Delegation Testと合わせDocker検証成功：262 runs / 615 assertions / 0 failures / 0 errors / 0 skips。Production code修正なし。
 
 今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 

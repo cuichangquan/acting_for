@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D225
+D226
 ```
 
 ## Current Status
@@ -43,8 +43,7 @@ Authorization core implemented
 ActingFor.authorize implemented with automatic AuditEvent persistence
 ConstraintEvaluator implemented
 Audit authorization integration implemented
-Minitest unit tests and delegation integration tests implemented and Docker runtime verified
-Authorization / Audit integration tests pending
+Minitest unit / delegation / authorization / audit tests implemented and Docker runtime verified
 CI not implemented
 Runnable Quick Start not implemented
 
@@ -53,11 +52,13 @@ Not released
 
 ## Implemented
 
+Authorization / Audit Integration Test（D226）：`test/integration/authorization_test.rb` にPublic API経由の正式Test132件を追加。Decision・matching・effect precedence・Public入力・Audit snapshot / Context選択・保存失敗とcause・非persistence error境界を確認。既存Unit16件・Delegation114件と合わせ、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**262 runs, 615 assertions, 0 failures, 0 errors, 0 skips**。Production code修正なし。検証用volume・生成logは削除済み。
+
 Delegation Integration Test（D225）：`test/integration/delegation_test.rb` にPublic API仕様の正常・異常系114件を追加。Dummyに最小Host Principal model / Migrationを追加した。既存Unit Test16件と合わせ、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で `db:prepare` と正式 `bundle exec rake test` が成功（exit 0）：**130 runs, 328 assertions, 0 failures, 0 errors, 0 skips**。Production code・Gem本体Migration・仕様は変更していない。
 
 Minitest Unit Test foundation：`test/test_helper.rb`、`Rakefile` の `Rake::TestTask`、`test/unit/decision_test.rb`、`test/unit/constraint_evaluator_test.rb`。D221どおりDummy Rails環境 + `rails/test_help` を共通helperとして使用し、Decisionの3 status / freeze / invalid statusとConstraintEvaluatorのAND / strict type / boundary / missing・nil / Symbol key厳密一致 / nested非対応 / fail-closedを正式Unit Test化した。D222〜D224でDummy rootとMigration確認先を一致させ、`db:prepare` 後の正式 `bundle exec rake test` がDocker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で成功：**16 runs, 53 assertions, 0 failures, 0 errors, 0 skips**。検証用volumeは削除済み。
 
-Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。このAuthorization / Audit integrationの正式Integration Testによるruntime verificationは未実施。
+Authorization / Public authorize / Audit integration：`app/services/acting_for/internal/authorization.rb`、`lib/acting_for.rb`、`lib/acting_for/errors.rb`。D216〜D220どおり、Public入力validation / normalization、Delegation評価、Decision生成、Audit Context sanitization、AuditEvent snapshot保存まで実装した。AuditEventは `create!` を1回だけ呼び、matched_delegation_idsはID昇順でcanonical保存する。`ActiveRecord::ActiveRecordError` のみ `AuditPersistenceError` へwrapしcauseを保持する。D226の正式Integration Testでruntime verification完了。
 
 ConstraintEvaluator：`app/services/acting_for/internal/constraint_evaluator.rb`。D214・D215と既存Constraint仕様どおり、`eq` / `lt` / `lte` / `gt` / `gte` / `in`、複数条件AND、strict type、missing / nil不成立、invalid constraint fail-closed、トップレベルSymbol key厳密参照を実装した。`ActingFor.authorize(...)` / Authorization / Audit integration / DB queryには進んでいない。D221の正式Unit Testでruntime verification済み。
 
@@ -126,7 +127,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D225のDelegation Integration Testと既存Unit TestはDocker runtime verification完了。正式コマンドは `bundle exec rake test`、DB事前準備はDummyの `db:prepare`。次の候補は `ActingFor.authorize(...)` / Audit persistenceのIntegration Test実装単位を確認すること。CI / Runnable Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
+D226によりUnit / Delegation / Authorization / Audit persistenceの正式TestはDocker runtime verification完了。正式コマンドは `bundle exec rake test`、DB事前準備はDummyの `db:prepare`。次の候補はTest Strategyの残存coverage（Migration / Engine Integration）の実装単位を確認すること。CI / Host Authorization Boundaryの本格実装 / Quick Start / Releaseにはまだ進まない。詳細は[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 
