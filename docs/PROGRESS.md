@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。CI matrix・RuboCop・Quick Start・Releaseは未完了。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Quick Start・Releaseは未完了。
 
 ## 全体進捗
 
@@ -27,7 +27,7 @@
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
 | 17 | 正式Minitest suite | ✅ CI前の確定済みcoverage実装・Docker検証済み |
-| 18 | CI | ⬜ 未実装 |
+| 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ⬜ 未実装 |
 | 20 | Gem Release | ⬜ 未実装 |
 
@@ -49,7 +49,7 @@ Public API / Value Object実装
   Audit integration ✅
       ↓
 品質・公開：正式TestのCI前coverage実装・Docker検証済み
-  正式Tests ✅ → CI（未実装 ← 現在ここ） → Runnable Quick Start → Release
+  正式Tests ✅ → CI ✅ → Runnable Quick Start（未実装 ← 現在ここ） → Release
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
@@ -74,8 +74,9 @@ Public API / Value Object実装
 - Authorization / Audit Integration Test implemented（D226）：132件追加。既存Unit・Delegation Testと合わせDocker検証成功：262 runs / 615 assertions / 0 failures / 0 errors / 0 skips。Production code修正なし。
 - Engine / Migration Integration Test implemented（D227）：24件追加。既存262件と合わせDocker検証成功：286 runs / 688 assertions / 0 failures / 0 errors / 0 skips。Production code・schema修正なし。
 - Host Authorization Boundary / 残存coverage（D228）：Host Test8件・その他既存仕様4件追加。既存286件と合わせDocker検証成功：298 runs / 755 assertions / 0 failures / 0 errors / 0 skips。Production code変更なし。Context Trust / Fail Closedの既存coverageも確認済み。Test Strategy §17に実装状態を記録。
+- v0.1正式CI（D229）：PR / main push、正式4 matrix、PostgreSQL 16、`db:prepare` / Minitest、core RuboCop独立jobを実装。GitHub Actions全5 jobs green。Productionはbehavior非変更のStyle修正のみ。
 
-今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
+今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式CI matrix全体とRuboCopはD229で検証成功。Quick Startは未実装。GemはNot released。
 
 ## 設計の正本
 

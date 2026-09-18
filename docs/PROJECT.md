@@ -277,6 +277,8 @@ v0.1対象外機能はDoDに含めない。Gem skeletonのみ実装済み・未�
 
 ### 4.3.1 v0.1必須の検査と公開成果物（D057〜D059）
 
+後続D229で正式GitHub Actions CIとcore RuboCopを実装・検証済み。具体設定とruntime verificationは[DECISIONS D229](DECISIONS.md#d229-v01-ci-implementation)。以下の設計時点の未実装・未決定表記のうちCI / RuboCopはD229で解消。Quick Start / Releaseは未実装。
+
 **確定（設計のみ・未実装）。**
 
 - **Static Analysis（D057）：** v0.1の必須static analysisは **RuboCop** とする。Sorbet、Steep、Brakeman、独自security scannerはv0.1必須要件に含めない。RuboCopのversion、具体的configuration、rule set、plugin、CIへの具体的組み込み方法、rake taskの具体名は未決定とし、実装工程で決める。
@@ -314,9 +316,7 @@ Step 4のドメインモデルと詳細ルールは[D014](DECISIONS.md#d014-v01-
 
 D057〜D059で必須static analysisの選定、Runnable Quick Startの範囲、Release Notesの最低限の内容を解消した。後続D060〜D076でMigration方針、Quick Startの実行境界、CI基盤・trigger、Release Notes公開先、version / tag、DoDを確定した。以下は引き続き未確定。
 
-- RuboCop version / configuration / rule set / plugin、rake task名、CI workflow・組み込み方法の詳細
 - README Runnable Quick Startの最終コード・具体的コマンド、Release Notes本文、CHANGELOG方式（公開先は後続D074でGitHub Releasesに確定）
-- GitHub Actions YAML、CI job構成・cache方式・具体的CI command・service設定
 - release automation、gem push automation、GitHub Release自動作成、tag自動作成
 - Gem実装詳細
 - Model validation / callback、revoke!の具体的ActiveRecordコード、Authorization queryの具体的SQL

@@ -3197,3 +3197,22 @@ Production code・Gem本体Migration・schema意味・認可 / 委任 / Approval
 Dockerの空DBで `bundle install` → `bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式 `bundle exec rake test` が成功（exit 0）。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=test。
 
 **298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**（seed 63244）。D228 Host Boundary8件・その他既存仕様4件が実行され、既存286件も全て成功。Production code修正なし。生成log / schema等と今回の検証用volumeは削除し、commitしない。CI前の確定済みcoverageに残存未実装項目なし。正式対応matrix全体・Quick Start・Releaseの完了を意味しない。
+
+## D229: v0.1 CI Implementation
+
+- 日付：2026-09-18
+- Status：**確定・実装済み・正式CI runtime verification成功**。
+- 根拠：ユーザー承認済みD229実装バッチ。
+- 関連：D046・D057・D067・D072・D073、[Test Strategy](test_strategy_v0_1.md)。
+
+正式CIを `.github/workflows/ci.yml` のGitHub Actionsで実装。triggerはPull Requestとmain branchへのpushのみ。scheduled / cronは追加しない。Test jobはRuby 3.4 / 4.0 × Rails 8.0 / 8.1の正式4 matrix、PostgreSQL 16 service、`RAILS_ENV=test` とDummy既存の `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` 契約を使用する。`ruby/setup-ruby` のbundler-cacheでinstallし、`bundle exec rake -f test/dummy/Rakefile db:prepare` → 正式Minitest `bundle exec rake test` を実行する。Rails 8.1用Gemfileは8.0用と同じ最小構成でactiverecord / activesupport / railtiesを8.1系列へ固定する。
+
+RuboCopは安定版1.91.0を確認し、gemspecのdevelopment dependency `~> 1.91` として追加。**core RuboCop only / pluginなし / 最小config / 独自Style Guide・独自Copなし**。Ruby 3.4 / Rails 8.0の独立jobで `bundle exec rubocop` を実行し、violationはCI failureとする。TargetRubyVersion 3.4、NewCops enable、既存double quotes・String mutability・Public keyword signatureを維持する。生成schema / tmp / vendorを除外。契約文書がdocsにあるためDocumentation、後続Release工程のためRequireMFAを無効化。Metricsは既存の明示的validationを持つ5 production files、Migration、Testのみ除外し、keyword数をparameter metricsから除く。新production filesのMetrics defaultは維持する。
+
+初回RuboCop調査後、安全なStyle修正をdiff reviewして適用した。Production修正は整形、等価なguard / predicate表現、ローカル変数名のみ。Public API・behavior・Security boundary・schema意味・Test semantics・既存Decisionは変更しない。ローカル依存解決でRails 8.0とJSON 3の `quirks_mode` 非互換を確認し、検証用matrix Gemfileで `json < 3` を指定した。runtime dependency / production patchは追加しない。初回CIのRuboCopはvendor内の依存Gemのplugin設定を誤読して失敗したため、vendorを除外して解消。checkoutをNode 24対応v6へ更新した。新Decision番号は追加しない。
+
+### D229 runtime verification（2026-09-18）
+
+Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で `db:prepare`、正式Test、RuboCopが全てexit 0。正式Test：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**。RuboCop 1.91.0：**42 files inspected, no offenses detected**。
+
+GitHub Actions [CI #2](https://github.com/cuichangquan/acting_for/actions/runs/35347319057)（commit `a79c59983682614086273a04d0a4a26b510b1967`）は **Success / 全5 jobs green**。正式4 matrixでDB準備とMinitest成功、RuboCop成功を確認。最終docs commitもmain push triggerで同じ正式CIを実行し、その最終run結果を完了報告で確認する。Runnable Quick Startは未実装、GemはNot released。

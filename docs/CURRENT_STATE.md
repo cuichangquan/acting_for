@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D228
+D229
 ```
 
 ## Current Status
@@ -45,13 +45,15 @@ ConstraintEvaluator implemented
 Audit authorization integration implemented
 Minitest unit / delegation / authorization / audit / engine / migration / host boundary tests implemented and Docker runtime verified
 Pre-CI Test Strategy coverage checked
-CI not implemented
+GitHub Actions formal four-matrix CI / PostgreSQL 16 / core RuboCop implemented and runtime verified
 Runnable Quick Start not implemented
 
 Not released
 ```
 
 ## Implemented
+
+v0.1正式CI（D229）：GitHub Actions PR / main push、Ruby 3.4 / 4.0 × Rails 8.0 / 8.1、PostgreSQL 16、Dummy `db:prepare` と正式Minitest、独立core RuboCop jobを実装。全5 jobs green。正式Testは298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCop 1.91.0は違反なし。Production修正はbehavior非変更のStyleのみ。詳細と実検証runは[DECISIONS D229](DECISIONS.md#d229-v01-ci-implementation)。
 
 Host Authorization Boundary / 残存coverage（D228）：Host boundary Test8件、Context Resource責務境界・Delegation lookup failure・bigint / UUID Principal IDの既存仕様Test4件を追加。既存286件を維持し、Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15で正式 `bundle exec rake test` が成功（exit 0）：**298 runs, 755 assertions, 0 failures, 0 errors, 0 skips**。Dummyに最小Host operationとUUID Principal fixtureを追加。Production code変更なし。Context形式不正・field不足とFail Closedの大部分は既存Testでcoverage済み。CI前の確定済みcoverageに残存未実装項目なし。詳細は[Test Strategy §17](test_strategy_v0_1.md#17-d228後のcoverage確認2026-09-18)。
 
@@ -132,7 +134,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D228と既存仕様の残存coverage実装・確認が完了。次の大きな工程はCI（正式Ruby / Rails matrix・PostgreSQL・正式Test・RuboCop）。CI詳細の未決定事項は既存正本に従い確認する。Quick Start / Releaseは未実装。
+D229の正式CI実装・4 matrix・RuboCop runtime verificationが完了。次の大きな工程はRunnable Quick Start。Releaseは未実施。
 
 ## Important Rules
 
