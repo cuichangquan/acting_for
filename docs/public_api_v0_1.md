@@ -391,6 +391,8 @@ ActingFor.authorize(
 
 String / Symbolの暗黙変換やindifferent accessは行わない。対象はトップレベルkeyのみで、`:"order.amount"` をnested pathとして解釈しない。nested path構文や判定規則は新設しない。
 
+D219により、key選択時は上記Symbol key完全一致を維持し、選択後の `sanitized_context` ではcanonical keyをStringとする。たとえば `context: { amount: 100 }` と `audit_context_keys: [:amount]` からは `{ "amount" => 100 }` を生成する。Authorization用Context自体のkeyは変換せず、呼び出し元のHashも破壊しない。
+
 選択されたkeyの保存可能valueは **String / Integer / Float / BigDecimal / TrueClass / FalseClass / nil** のみ。Hash / Array / その他structured・unsupported valueが選択された場合はsilent ignoreせずInvalidRequestErrorとする。sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。Audit用の型規則からConstraint値の対応型を拡大しない。
 
 以下はbuilt-in forbidden secret keys。contextに存在するかにかかわらず、allowlistへ指定した時点でInvalidRequestErrorとし保存を許可しない。

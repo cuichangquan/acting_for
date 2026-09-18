@@ -2942,3 +2942,42 @@ Decision return
 
 `audit_context_keys` のvalidation / normalization / sanitized context生成は本Decisionでは実装詳細を確定せず、次のDecisionで別項目として扱う。
 
+## D219: audit_context_keysの処理とsanitized_context canonicalization
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Public API](public_api_v0_1.md#10-audit)、[Domain Model](domain_model_v0_1.md#16-audit-contextの安全性)、[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)、[Test Strategy](test_strategy_v0_1.md#8-auditevent--audit保存失敗-integration-test)。
+
+`ActingFor.authorize(...)` の `audit_context_keys: []` はPublic Entry Pointから `ActingFor::Internal::Authorization` へそのまま渡し、Internal Authorizationがvalidation / normalizationと `sanitized_context` 生成を担当する。
+
+既存D031・D044のAudit Context規則を実装境界としてそのまま維持する。
+
+- `audit_context_keys` は `Array<Symbol>` のみ許可する
+- nil、単一Symbol、String要素、String / Symbol混在Array等は `ActingFor::InvalidRequestError`
+- 重複Symbolは許可し、内部で重複除去する
+- built-in forbidden secret keyはContextに存在するかに関係なく、allowlistへ指定した時点で `InvalidRequestError`
+- ContextはトップレベルSymbol keyとの完全一致だけで選択する
+- String keyへの暗黙変換、indifferent access、nested path解釈は行わない
+- 指定keyがContextに存在しない場合は無視する
+- 選択可能valueはString / Integer / Float / BigDecimal / TrueClass / FalseClass / nilのみ
+- Hash / Array / その他unsupported valueが選択された場合は `InvalidRequestError`
+- BigDecimalはFloatへ変換せず、精度を失わない10進数Stringへ変換する
+- 保存対象がない場合は `{}` とし、raw Contextへfallbackしない
+- 呼び出し元の `context` / `audit_context_keys` は破壊しない
+- Audit Sanitizer等の追加Serviceは作らず、Internal Authorization内で処理する
+
+`sanitized_context` のcanonical keyは **String** とする。
+
+```ruby
+context: { amount: 100 }
+audit_context_keys: [:amount]
+
+# sanitized_context
+{ "amount" => 100 }
+```
+
+key選択時はD031どおりSymbolで厳密比較し、選択後にAudit JSON objectへ保存するcanonical representationとしてString keyへ変換する。これにより、Authorization用Contextのkey semanticsは変更しない。
+
+本Decisionは `audit_context_keys` と `sanitized_context` 生成までを確定する。AuditEvent INSERT、reason_code / matched_delegation_idsの保存、AuditPersistenceErrorの実装はD218に基づく後続実装単位で扱う。
+

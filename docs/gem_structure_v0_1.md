@@ -142,7 +142,9 @@ D217により、`ActingFor.authorize(...)` は `lib/acting_for.rb` の薄いPubl
 
 D218により、Authorization DecisionのAuditEvent保存も `ActingFor::Internal::Authorization` の責務に含める。別の `AuditRecorder` / `AuditService` 等は追加しない。Internal Authorizationはmatching Delegation集合を内部で保持し、そのIDを `matched_delegation_ids` としてAuditEventへ保存する。Public DecisionへAudit用属性は追加しない。
 
-処理順序は「matching Delegation確定 → Decision生成 → AuditEvent保存 → Decision return」。Audit保存失敗時は既存仕様どおりDecisionを返さず `ActingFor::AuditPersistenceError` をraiseし、denyへ変換しない。`audit_context_keys` のvalidation / normalization / sanitized context生成は次のDecisionで別途扱う。
+処理順序は「matching Delegation確定 → Decision生成 → AuditEvent保存 → Decision return」。Audit保存失敗時は既存仕様どおりDecisionを返さず `ActingFor::AuditPersistenceError` をraiseし、denyへ変換しない。
+
+D219により、`audit_context_keys` のvalidation / normalizationとsanitized context生成も `ActingFor::Internal::Authorization` が担当する。Array<Symbol>、forbidden secret keys、許可scalar型、BigDecimalの10進数String化等はD031・D044を維持し、別Sanitizer Serviceは追加しない。Context選択時はSymbol key完全一致、生成するsanitized_contextのcanonical keyはStringとする。Public入力objectは破壊しない。
 
 ## 5. Decision Value Object
 

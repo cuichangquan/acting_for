@@ -110,6 +110,7 @@ AuditEventは `ActingFor.authorize(...)` 経由で検証する。allow / deny / 
 - matching Delegationなしのdenyでは `matched_delegation_ids = []`。
 - 複数matchでは該当Delegationを追跡できること。
 - ContextはFilter / Sanitizerを経由し、allowlist優先で必要最小限を保存する既存方針に従う。生のContextをそのまま保存する契約にしない。
+- D219に従い、`audit_context_keys` はArray<Symbol>のみ、重複除去、forbidden secret key拒否、missing key無視、unsupported value拒否、BigDecimalの精度保持String化を検証する。Symbol keyで選択し、sanitized_contextのcanonical keyがStringになることも検証する。
 - 記録するのはAuthorization Decision。Business operation success / failureは対象外。
 - Step 8時点で未決定だったAudit Context選択APIは後続D031、reason_code正式一覧とAuditEvent詳細はD034で確定した。現行仕様は各正本を参照し、Testへの詳細反映は後続工程で確認する。
 

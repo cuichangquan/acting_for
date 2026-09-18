@@ -490,6 +490,8 @@ password、password_confirmation、token、access_token、refresh_token、api_ke
 
 custom Audit Filter / Sanitizer、Proc、callback、sanitizer class、global allowlist config、initializer設定はv0.1で提供しない。sanitized Audit ContextのBigDecimalはFloatへ変換せず、精度を失わない10進数StringとしてJSONへ保存する。例：`BigDecimal("12345.67")` → JSON `"12345.67"`。その他の既決定scalar型の仕様は変更しない（D044）。正式な入力例と詳細は[Audit Context selection](public_api_v0_1.md#10-audit)に従う。
 
+D219により、sanitized_contextのcanonical keyはStringとする。Context選択時はトップレベルSymbol key完全一致のままとし、選択後のAudit JSON object表現だけString keyへ変換する。例：`context: { amount: 100 }` / `audit_context_keys: [:amount]` → `{ "amount" => 100 }`。raw Authorization Context自体は変更しない。
+
 ## 17. v0.1 テーブル構成
 
 ActingFor自身が作る主要テーブルは3つに限定する。
