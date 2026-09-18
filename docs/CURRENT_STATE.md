@@ -37,7 +37,7 @@ Minimal Dummy Rails App implemented for migration verification
 Docker migration verification environment implemented
 ActiveRecord Models implemented and Docker verified
 Delegation Public API implementation design finalized
-Delegation API not implemented
+Delegation API implemented
 Authorization not implemented
 Decision not implemented
 Audit authorization integration not implemented
@@ -49,6 +49,10 @@ Not released
 ```
 
 ## Implemented
+
+Delegation Public API：`lib/acting_for.rb` の `ActingFor.delegate(...)`、`lib/acting_for/errors.rb`、`app/services/acting_for/internal/delegation_creator.rb`。D190〜D212どおり実装し、既存Modelは変更していない。
+
+Docker / Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15 / RAILS_ENV=testでDelegation API **110 checks passed**、既存Model **213 checks passed**。Migrationのrollback（STEP=3）→ up、3テーブル削除と再適用後のcolumn / default / NULL / index / FK / CHECK一致も確認済み。一時検証scriptを使用し、正式Minitest suiteは追加していない。
 
 ActiveRecord Models / time helper：
 
@@ -109,9 +113,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Model implementationは完了。
-
-D190〜D212の設計反映完了後、`ActingFor.delegate(...)` の実装を開始する。今回の作業は設計反映までとし、次のChat / 次の明示指示で実装を開始する。詳細は[Public API](public_api_v0_1.md#9-delegation-api)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+`ActingFor.delegate(...)` の実装・検証完了。現在地点はAuthorization実装の直前。Authorization / Decision / Audit authorization integrationは未実装。詳細は[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
 
 ## Important Rules
 

@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分と基盤実装が完了し、最初のPublic API `ActingFor.delegate(...)` の実装直前。
+> 設計の大部分・基盤実装・最初のPublic API `ActingFor.delegate(...)` が完了。現在はAuthorization実装の直前。
 
 ## 全体進捗
 
@@ -20,8 +20,8 @@
 | 8 | Gem skeleton実装 | ✅ 完了 |
 | 9 | Migration実装 | ✅ 完了 |
 | 10 | ActiveRecord Model実装 | ✅ 完了 |
-| 11 | Delegation Public API実装設計 | ✅ 完了 / 実装直前 |
-| 12 | ActingFor.delegate実装 | ⬜ 未実装 |
+| 11 | Delegation Public API実装設計 | ✅ 完了 |
+| 12 | ActingFor.delegate実装 | ✅ 完了 |
 | 13 | Authorization実装 | ⬜ 未実装 |
 | 14 | ConstraintEvaluator実装 | ⬜ 未実装 |
 | 15 | Decision実装 | ⬜ 未実装 |
@@ -40,9 +40,10 @@
 基盤実装：完了
   Gem skeleton → Migration → Models
       ↓
-Public API実装：未着手
-  delegate ← 現在ここ（実装設計完了）
-  authorize / ConstraintEvaluator / Decision / Audit integration
+Public API実装：delegate完了
+  delegate ✅
+  authorize ← 現在ここ（実装直前）
+  ConstraintEvaluator / Decision / Audit integration
       ↓
 品質・公開：未着手
   正式Tests → CI → Runnable Quick Start → Release
@@ -56,9 +57,11 @@ Public API実装：未着手
 - Migration implemented and runtime verified。
 - ActiveRecord Models implemented。
 - Docker Model verification：213 checks passed。
-- Migration regression passed。
+- Delegation API implemented / Docker verification：110 checks passed。
+- 既存Model regression：213 checks passed。
+- Migration regression passed（rollback後3テーブル削除、再up後schema一致）。
 
-検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
+今回の検証結果は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式Test suiteや正式CI matrix全体の完了を意味しない。GemはNot released。
 
 ## 設計の正本
 
