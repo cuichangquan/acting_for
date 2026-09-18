@@ -1294,6 +1294,19 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D096: Migration Compatibility Version
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D046で正式サポート対象をRails 8.0 / 8.1とし、D095で次の実装単位をMigration implementationと確定した。Migration classの互換バージョンを確定する。
+- Decision：v0.1の3つのMigration classはすべて `ActiveRecord::Migration[8.0]` を継承する。例：`class CreateActingForAgents < ActiveRecord::Migration[8.0]`。Rails 8.1向けに `[8.1]` へ分けない。
+- Rationale：正式サポート範囲の最小Rails versionである8.0をMigration APIの基準とし、Rails 8.0 / 8.1の両方で同一Migrationを扱えるようにするため。
+- 未決定：Migration Rubyコードの具体形、timestamp・最終filename。
+- Consequences：`acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events` の3 Migrationで同じ互換バージョンを使用する。Model / Authorization / Auditロジック / Test / CIにはまだ進まない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)、[Test Strategy](test_strategy_v0_1.md)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。

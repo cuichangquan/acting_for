@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D095
+D096
 ```
 
 ## Current Status
@@ -77,19 +77,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-**Migration implementation** を次の実装単位として進める（D095）。
+Migration implementationへ進む前提条件として、3 Migrationの互換バージョンは `ActiveRecord::Migration[8.0]` に統一する（D096）。
 
-対象は次の3テーブルに限定する。
-
-```text
-acting_for_agents
-acting_for_delegations
-acting_for_audit_events
-```
-
-この実装単位ではModel、Authorization、Auditロジック、Test、CIへは進まない。
-
-次に、Migration実装へ入る前の重要事項を1項目ずつ確定する。
+次に、Migration実装へ入るかどうかを1項目として判断する。実装する場合も対象はD095の3テーブルに限定し、Model / Authorization / Auditロジック / Test / CIへは進まない。
 
 ## Important Rules
 
