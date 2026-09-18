@@ -1373,6 +1373,19 @@ test/dummy/
 - 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#9-test-directory--dummy-rails-app)、[Test Strategy](test_strategy_v0_1.md#3-dummy-rails-application)。
 - 根拠：ユーザー明示承認（2026-09-18）。
 
+
+## D101: Dummy App Rails Version
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D046で正式サポート対象をRails 8.0 / 8.1とし、D096でMigration互換バージョンを `ActiveRecord::Migration[8.0]`、D100でMigration検証用 `test/dummy` の最小構成を確定した。
+- Decision：Migration runtime verification用の最小 `test/dummy` Rails Applicationは **Rails 8.0** を基準に作成する。
+- Rationale：正式サポート対象の最小Rails versionでMigration適用可否を確認し、`ActiveRecord::Migration[8.0]` の互換基準と揃えるため。
+- 未決定：Dummy Appで使用するRuby version、PostgreSQL接続設定、Migration取り込み方法・具体的実行コマンド。
+- Consequences：今回のDummy App実装はRails 8.0前提で進める。Rails 8.1の正式検証は後続のIntegration Test / CI matrixで扱い、今回のMigration verificationに含めない。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Gem Structure](gem_structure_v0_1.md#11-runtime-dependencies)、[Test Strategy](test_strategy_v0_1.md#15-後続決定に対応する検証設計d035d043d046)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。

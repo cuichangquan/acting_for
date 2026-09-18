@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D100
+D101
 ```
 
 ## Current Status
@@ -90,11 +90,11 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Migration runtime verification用の `test/dummy` は、D100で確定した最小構成だけを先行作成する。
+Migration runtime verification用の最小 `test/dummy` Rails ApplicationはRails 8.0を基準に作成する（D101）。
 
-まだDummy App自体は未実装。Model / Authorization / Auditロジック / Minitest本体 / CIにも進まない。
+Dummy App自体はまだ未実装。Model / Authorization / Auditロジック / Minitest本体 / CIにも進まない。
 
-次に、Dummy AppでMigration検証に使用するRails versionを1項目として決める。
+次に、Dummy Appで使用するRuby versionを1項目として決める。
 
 ## Important Rules
 
