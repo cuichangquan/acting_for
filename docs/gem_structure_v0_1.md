@@ -134,6 +134,11 @@ D216により、AuthorizationのDelegation評価は **DB candidate lookup → Ru
 
 D216の次の実装単位はInternal Authorization coreまでとし、AuditEvent保存と `ActingFor.authorize(...)` Public Entry Point統合は後続へ分離する。
 
+
+D217により、`ActingFor.authorize(...)` は `lib/acting_for.rb` の薄いPublic Entry Pointに限定し、agent / principal / action / resource / contextのPublic入力validation / normalizationは `ActingFor::Internal::Authorization` が担当する。agentはpersist済みActingFor::Agent、principalはpersist済みActiveRecord record、actionはString / Symbolをcanonical Stringへ正規化しblank / 不正typeをInvalidRequestError、resourceはD032 / D201の既存規則でresource_type / resource_idへ正規化、contextはHashのみを許可する。入力objectは破壊しない。
+
+`AuthorizationValidator` / `AuthorizationNormalizer` 等へ過剰分割せず、validation順序やprivate method構成をPublic contractにしない。`audit_context_keys` はAudit integration時に扱い、D217の実装単位には含めない。
+
 ## 5. Decision Value Object
 
 `ActingFor::Decision` は `lib/acting_for/decision.rb` に配置する。ActiveRecord ModelでもServiceでもなく、Public APIとして利用されるValue Objectである。

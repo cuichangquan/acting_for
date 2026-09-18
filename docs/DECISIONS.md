@@ -2862,3 +2862,47 @@ require_approval > allow > deny
 
 この実装単位ではAuditEvent保存と `ActingFor.authorize(...)` Public Entry Pointの統合にはまだ進まない。まずInternal Authorization coreのcandidate lookup・final matching・Decision生成を実装対象とする。
 
+## D217: authorizeのPublic入力validation / normalizationはInternal Authorizationが担当する
+
+- 日付：2026-09-18
+- Status：**確定**。
+- 根拠：ユーザー承認済み。
+- 関連文書：[Public API](public_api_v0_1.md#4-authorize-arguments)、[Gem Structure](gem_structure_v0_1.md#4-internal-authorization-services)、[Domain Model](domain_model_v0_1.md#7-resource)。
+
+`lib/acting_for.rb` の `ActingFor.authorize(...)` は薄いPublic Entry Pointに限定し、Public入力のvalidation / normalizationは `ActingFor::Internal::Authorization` が担当する。
+
+概念上の流れ：
+
+```text
+ActingFor.authorize(...)
+        ↓
+ActingFor::Internal::Authorization.call(...)
+        ↓
+Public input validation / normalization
+        ↓
+D216 Authorization core
+```
+
+Internal Authorizationが担当するPublic入力規則：
+
+- `agent` はpersist済み `ActingFor::Agent`
+- `principal` はpersist済み `ActiveRecord::Base` record
+- `action` はString / Symbolのみ。SymbolはStringへ正規化
+- `action` のnil / empty / whitespace-only / その他typeは `ActingFor::InvalidRequestError`
+- `action` はtrim / downcaseしない
+- `resource` は既存D032 / D201と同じ規則で `resource_type / resource_id` へ正規化
+- `context` はHashのみ許可し、その他typeは `ActingFor::InvalidRequestError`
+- Public入力objectを破壊しない
+- Public入力不正を通常のdeny Decisionへ変換しない
+
+構造上の方針：
+
+- `lib/acting_for.rb` に非自明なvalidation / normalizationを集中させない
+- `AuthorizationValidator` / `AuthorizationNormalizer` 等の追加Serviceは作らない
+- Base Service / ApplicationServiceを追加しない
+- validation順序や細かなprivate method構成をPublic contractにしない
+
+`audit_context_keys` のvalidation / normalizationは本Decisionの実装単位に含めず、Audit authorization integration時に扱う。
+
+このDecisionはPublic authorizeのvalidation / normalization責務を確定するものであり、AuditEvent保存・AuditPersistenceError・Audit Context selectionの実装には進まない。
+

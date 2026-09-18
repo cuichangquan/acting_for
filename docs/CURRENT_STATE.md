@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D216
+D217
 ```
 
 ## Current Status
@@ -121,7 +121,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-Authorization core実装完了。`ActingFor.authorize(...)` Public Entry PointとAudit authorization integrationは未実装。次の重要事項はPublic authorizeの入力validation / normalizationとInternal Authorizationへの受け渡し方針を確認すること。AuditEvent保存にはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)、[Test Strategy](test_strategy_v0_1.md)を参照。
+Authorization core実装完了。D217で `ActingFor.authorize(...)` を薄いPublic Entry Pointとし、Public入力validation / normalizationを `ActingFor::Internal::Authorization` が担当する方針を確定。Public Entry Point自体はまだ未実装。次の明示指示でagent / principal / action / resource / contextのvalidation・normalizationと `ActingFor.authorize(...)` からInternal Authorizationへの受け渡しを実装する。`audit_context_keys` とAuditEvent保存・Audit integrationにはまだ進まない。詳細は[Public API](public_api_v0_1.md)、[Domain Model](domain_model_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)を参照。
 
 ## Important Rules
 
