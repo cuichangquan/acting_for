@@ -4,6 +4,7 @@ AllCops:
   Exclude:
     - 'test/dummy/db/schema.rb'
     - 'tmp/**/*'
+    - 'vendor/**/*'
 
 # Preserve the project's existing string style and mutability contracts.
 Style/StringLiterals:
