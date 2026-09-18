@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D094
+D095
 ```
 
 ## Current Status
@@ -77,9 +77,19 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-次のImplementation単位を決める。有力候補は **Migration implementation**。想定対象は `acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events`。
+**Migration implementation** を次の実装単位として進める（D095）。
 
-ただし、Gem skeletonの次をMigrationとすること自体は正式Decisionとして未確定。ユーザーの明示承認を待つこと。
+対象は次の3テーブルに限定する。
+
+```text
+acting_for_agents
+acting_for_delegations
+acting_for_audit_events
+```
+
+この実装単位ではModel、Authorization、Auditロジック、Test、CIへは進まない。
+
+次に、Migration実装へ入る前の重要事項を1項目ずつ確定する。
 
 ## Important Rules
 

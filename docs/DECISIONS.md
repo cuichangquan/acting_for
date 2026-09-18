@@ -1281,6 +1281,19 @@ ActingForは **MIT License** で公開する。将来LICENSE / gemspecへMITを�
 - 関連文書：[PROJECT](PROJECT.md)、[Engine](../lib/acting_for/engine.rb)。
 - 根拠：ユーザー承認済みのD094追加決定。
 
+
+## D095: Migration Implementation as Second Implementation Unit
+
+- 日付：2026-09-18
+- Status：**確定**。
+- Context / 既存決定との関係：D077でImplementation Phaseの最初の実装単位をGem skeletonとし、D094まででGem skeleton実装とstandalone load修正が完了した。次のImplementation単位を確定する。
+- Decision：Gem skeletonの次の実装単位は **Migration implementation** とする。対象は `acting_for_agents`、`acting_for_delegations`、`acting_for_audit_events` の3テーブルに限定する。この実装単位ではModel、Authorization、Auditロジック、Test、CIへは進まない。
+- Rationale：3テーブルのschema・主要constraint・index方針は既存設計で十分に確定しており、後続のModel実装の土台としてMigrationを先に実装するのが自然である。実装範囲を小さく保ち、既存Decisionを一度に複数レイヤへ展開しない。
+- 未決定：Migration Rubyコードの具体形、timestamp・最終filename、実装時に必要となるRails Migration APIの細部。
+- Consequences：次の実装検討はMigration implementationに限定する。Model / Authorization / Audit / Test / CIは引き続き未実装とする。
+- 関連文書：[Current State](CURRENT_STATE.md)、[Domain Model](domain_model_v0_1.md#17-v01-テーブル構成)、[Gem Structure](gem_structure_v0_1.md#6-migration--db-table-names)。
+- 根拠：ユーザー明示承認（2026-09-18）。
+
 ## 追記する際の項目
 
 新しい決定には、次を記録する。
