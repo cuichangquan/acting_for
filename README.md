@@ -14,6 +14,37 @@ An agent is a separate actor from the user it represents. A Rails application ne
 
 ActingFor focuses on this delegated authorization problem inside Rails applications.
 
+## Official Demo
+
+[ActingFor Demo](https://github.com/cuichangquan/acting_for_demo) is the official reference application for ActingFor. It shows the public API in a real Rails host application, provides automated host-integration tests, and serves as the environment for human manual verification. Both repositories are currently private and in pre-release verification.
+
+```text
+ActingFor Gem
+     ↓ official reference
+ActingFor Demo
+     ↓
+Rails integration
+Automated verification
+Human manual verification
+     ↓
+Feedback to ActingFor
+```
+
+The demo complements but does not replace this repository's core CI. `acting_for/test` is the formal test suite for gem behavior, the Public API, and the Security Contract; `acting_for_demo/test` verifies use of the public API from a real host application and must not depend on `ActingFor::Internal::*`. Issues found during demo integration are feedback for ActingFor rather than reasons to bypass the gem contract.
+
+This repository remains the source of truth for gem behavior, the Public API, and the Security Contract. The demo is the source of truth for its host-integration example and manual-verification workflow, while its compatibility record tracks the exact ActingFor source it verifies. The intended release flow is:
+
+```text
+ActingFor implementation / release candidate
+  → core CI
+  → RubyGems release
+  → Demo dependency update
+  → Demo integration tests
+  → Demo smoke verification
+  → Human manual verification
+  → Compatibility record
+```
+
 ## Model
 
 - **Principal**: the party on whose behalf an agent acts.
