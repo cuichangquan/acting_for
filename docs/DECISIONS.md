@@ -3345,3 +3345,42 @@ D231検証commit `25c90f23ed14a7d4bffa58b867ff0c4790f38a40` の正式GitHub Acti
 技術的readinessと公開権限は別。Actual Release前にユーザーの明示公開承認、RubyGems account / initial owner / authentication方式確認が必要。local publish credential未設定は次工程の確認事項として残し、今回設定・生成しない。
 
 Release Notesは[docs/release_notes_v0_1_0.md](release_notes_v0_1_0.md)、Actual Release順序・認証確認・失敗時再開は[docs/release_plan_v0_1_0.md](release_plan_v0_1_0.md)。D231完了後のmain HEADが現在のrelease候補。公開transaction内のpre-push README更新commitをartifact source / tag候補としてpinし、artifact / tag全内容を一致させる。公開後のstatus更新でmainを進めるがtagは動かさない。公開承認とRubyGems account / authentication確認は次工程。**Not released**。gem push / repo public化 / tag作成・push / GitHub Release / version bump / release automation有効化は一切実施しない。
+
+
+## D232: Delegation lifecycle security regression tests
+
+- 日付：2026-09-20（Asia/Tokyo）。
+- Status：**確定・実装済み / 正式CI確認待ち**。
+- 根拠：ユーザーがRelease前のSecurity Invariant Test強化を承認。最初の1項目としてDelegation immutability + `revoke!` lifecycleを正式Minitest化する。
+- 目的：Public APIの入力・認可結果だけでなく、「作成済みDelegationの権限内容を書き換えない」「取消はidempotentで最初の取消時刻を保持する」という既存Security Contractを回帰Testで直接固定する。
+- Production code / Public API / schema / semanticsは変更しない。
+
+追加：
+
+```text
+test/integration/delegation_lifecycle_test.rb
+```
+
+検証対象：
+
+- persisted Delegationのagent / principal / action / resource_type / resource_id / constraints / effect / expires_atを通常のActiveRecord updateで変更できない。
+- `revoked_at` を通常updateで直接変更できず、取消は `revoke!` を使う。
+- `revoke!` はrevoked_at / updated_atをtrusted current timeで更新する。
+- 同じDelegationへの再度の `revoke!` は例外にせず、最初のrevoked_at / updated_atを保持する。
+- staleな別instanceから後で `revoke!` しても最初の取消時刻を上書きしない。
+- unsaved Delegationの `revoke!` は `ActiveRecord::RecordNotSaved`。
+- revoke後は当該DelegationがAuthorizationに使われず、他の有効なduplicate Delegationまで取消さない。
+
+このバッチではThreadを用いた実並行Testは追加しない。まず既存のatomic conditional update契約を、決定的でflakyになりにくいlifecycle regression testとして固定する。実並行Testは必要性・安定性を別項目で検討する。
+
+実装commit：
+
+```text
+fd928818ceec2ef01e1f07fc3ef95037060785a8
+test: cover delegation immutability and revocation
+
+ca4db84df0a8021e065679515cb4bcc6153071e8
+test: keep lifecycle tests at public model boundary
+```
+
+正式4 matrix CI / RuboCopの結果は未確認。次のStepはこのD232 current mainのCI確認とし、成功確認前に次のSecurity Test batchへ進まない。
