@@ -407,3 +407,22 @@ CI前の確定済みTest coverageに残存未実装項目なし。D228時点で�
 RuboCop 1.91系列はgemspec development dependency。Ruby 3.4 / Rails 8.0の独立jobで `bundle exec rubocop` を実行し、violationはCI failure。coreのみ・pluginなし・最小config。既存style / mutability / signatureを維持し、生成物と依存Gemを除外、既存の明示的validation / Migration / acceptance casesに限るMetrics除外を設定。独自Style Guide・独自Copは作らない。
 
 GitHub Actions正式4 matrixとRuboCopは全green。ローカルDocker正式Testは298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCopは42 files / no offenses。実検証runと自律修正の記録は[DECISIONS D229](DECISIONS.md#d229-v01-ci-implementation)。Quick Start / Releaseは後続工程。
+
+
+## 19. Post-readiness Security Invariant regression hardening（D232）
+
+D231のRelease Readiness Gate完了後、Release前の追加hardeningとして、既存Security Contractをより直接的な回帰Testで固定する。D232では最初の1項目としてDelegation lifecycleのみを対象とし、新しい仕様・Public API・production behaviorは追加しない。
+
+`test/integration/delegation_lifecycle_test.rb` で次を確認する。
+
+- persisted Delegationの認可内容（agent / principal / action / Resource scope / constraints / effect / expires_at）を通常updateで書き換えられない。
+- revoked_atの通常updateを禁止し、取消経路を `revoke!` に限定する既存Model boundaryを確認する。
+- `revoke!` がrevoked_at / updated_atを更新する。
+- `revoke!` の再実行で最初の取消timestampを保持する。
+- stale instanceからの後続revokeでも最初の取消timestampを上書きしない。
+- unsaved Delegationの取消を拒否する。
+- revoke後のAuthorizationは当該Delegationを使用せず、別の有効Delegationは影響を受けない。
+
+Threadを使う実並行TestはD232の必須範囲に含めない。CIの安定性を損なうflaky Testを先回りで追加せず、まずatomic `WHERE id = ? AND revoked_at IS NULL` behaviorのobservable contractを決定的なTestで固定する。
+
+D232実装後の正式CI結果はCURRENT_STATE / DECISIONSで追跡する。
