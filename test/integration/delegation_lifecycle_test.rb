@@ -1,6 +1,11 @@
 require "test_helper"
 
 class DelegationLifecycleTest < ActiveSupport::TestCase
+  IMMUTABLE_ATTRIBUTES = %w[
+    agent_id principal_type principal_id action resource_type resource_id
+    constraints effect expires_at revoked_at
+  ].freeze
+
   class Resource
     extend ActiveModel::Naming
 
@@ -35,7 +40,7 @@ class DelegationLifecycleTest < ActiveSupport::TestCase
   }.each do |name, changes|
     test "persisted delegation cannot change its #{name}" do
       delegation = resource_delegation
-      original = delegation.attributes.slice(*ActingFor::Delegation::IMMUTABLE_ATTRIBUTES)
+      original = delegation.attributes.slice(*IMMUTABLE_ATTRIBUTES)
 
       assert_raises(ActiveRecord::RecordInvalid) do
         delegation.update!(**instance_exec(&changes))
