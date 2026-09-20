@@ -56,7 +56,9 @@ Public API / Value Object実装
 
 ## 実装・検証済みの実績
 
-- D232 Security hardening：Delegation immutability / revoke! lifecycleの正式Integration Testを追加。通常updateによる権限内容改ざん防止、revoke timestamp / idempotency / stale instance、unsaved revoke、revoke後Authorization、duplicate Delegation非波及を対象化。Production code変更なし。正式CI確認待ち。\n\n- D231 Release Readiness Gate：strict built gem・17 files package audit・secret / privacy簡易監査・built artifactから新規Rails App導入 / Migration / 全Decision / Audit検証成功。Release Notes draft / Actual Release plan完成。support / Security / Responsibility / README照合済み。RELEASE READY / D076全9項目PASS / CI全5 jobs green、Not released。
+- D232 Security hardening：Delegation immutability / revoke! lifecycleの正式Integration Testを追加。通常updateによる権限内容改ざん防止、revoke timestamp / idempotency / stale instance、unsaved revoke、revoke後Authorization、duplicate Delegation非波及を対象化。Production code変更なし。正式CI確認待ち。
+
+- D231 Release Readiness Gate：strict built gem・17 files package audit・secret / privacy簡易監査・built artifactから新規Rails App導入 / Migration / 全Decision / Audit検証成功。Release Notes draft / Actual Release plan完成。support / Security / Responsibility / README照合済み。RELEASE READY / D076全9項目PASS / CI全5 jobs green、Not released。
 
 - Gem skeleton implemented。
 - Migration implemented and runtime verified。
