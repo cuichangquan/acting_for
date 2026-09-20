@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-19
+更新日：2026-09-20
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D231
+D232
 ```
 
 ## Current Status
@@ -49,13 +49,14 @@ GitHub Actions formal four-matrix CI / PostgreSQL 16 / core RuboCop implemented 
 Runnable Quick Start implemented and verified in a new Rails application
 Built gem / package / artifact installation / documentation / support verification completed
 v0.1 Release Readiness Gate: RELEASE READY / D076 all 9 PASS
+Post-readiness Delegation lifecycle security regression tests implemented; formal CI verification pending
 
 Not released
 ```
 
 ## Implemented
 
-D231：built `acting_for-0.1.0.gem` strict build / package audit / secret・privacy簡易監査 / 新規Rails Appへのlocal artifact installとMigration・全Decision・Audit確認が成功。Release Notes draftとActual Release planを準備。Security / Responsibility / README照合済み。正式Test 298 / 755、RuboCop違反なし。support確認日2026-09-19。repo private、RubyGems未登録、tag / GitHub Releaseなし。D231 CI #5全5 jobs green、D076全9項目PASS、RELEASE READY。詳細は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。Not released。
+D232：Release前の追加Security hardeningとして、Delegation immutability / revoke! lifecycleの正式Integration Testを追加。persist済みDelegationの認可内容の通常update禁止、revoked_at直接update禁止、revoke!のtimestamp更新・idempotency・stale instance時のfirst timestamp保持、unsaved revoke拒否、revoke後Authorization、duplicate Delegation非波及を検証する。Production code / Public API / schema変更なし。正式CI確認待ち。詳細は[DECISIONS D232](DECISIONS.md#d232-delegation-lifecycle-security-regression-tests)。\n\nD231：built `acting_for-0.1.0.gem` strict build / package audit / secret・privacy簡易監査 / 新規Rails Appへのlocal artifact installとMigration・全Decision・Audit確認が成功。Release Notes draftとActual Release planを準備。Security / Responsibility / README照合済み。正式Test 298 / 755、RuboCop違反なし。support確認日2026-09-19。repo private、RubyGems未登録、tag / GitHub Releaseなし。D231 CI #5全5 jobs green、D076全9項目PASS、RELEASE READY。詳細は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。Not released。
 
 Runnable Quick Start（D230）：Release前のGitHub `main` Gem導入から、Rails標準 `bin/rails acting_for:install:migrations`、最小User / Product、Agent作成、Public delegate / authorize、Decision全3結果、Audit保存まで新規Rails Applicationで実検証。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15。READMEから抽出したRuby codeをrunnerで実行し、Rails console起動も確認。README全体の古い未実装・planned support表記を整理。Production code変更なし。正式Test 298 runs / 755 assertions / 0 failures / 0 errors / 0 skips、RuboCop違反なし。GemはNot released。詳細は[DECISIONS D230](DECISIONS.md#d230-runnable-quick-start-implementation)。
 
@@ -140,7 +141,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D231はRELEASE READY。別途ユーザーの公開承認とRubyGems account / initial owner / authentication確認を受け、[Actual Release plan](release_plan_v0_1_0.md)へ進む。Release未実施。
+D232を含むGitHub `main` の正式4 matrix CI / RuboCop結果を確認する。成功確認後、次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
 
 ## Important Rules
 
