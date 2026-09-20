@@ -14,6 +14,46 @@ An agent is a separate actor from the user it represents. A Rails application ne
 
 ActingFor focuses on this delegated authorization problem inside Rails applications.
 
+## How a delegated purchase flows
+
+A simple Shopping Agent example makes the responsibility boundary concrete:
+
+```text
+Principal (User)
+ │
+ │ "You may buy products up to ¥1,000."
+ ▼
+Shopping Agent
+ │
+ │ Wants to purchase a Product priced at ¥800
+ ▼
+Rails Host Application
+ │
+ │ Loads the trusted price from the database
+ ▼
+ActingFor
+ │
+ ├─ Which Agent is acting?
+ ├─ On whose behalf is it acting?
+ ├─ Is :purchase delegated?
+ ├─ Does the Delegation cover this Product?
+ ├─ Is the Delegation still valid?
+ ├─ Has it been revoked?
+ ├─ Does ¥800 satisfy the ¥1,000 constraint?
+ │
+ ▼
+ALLOW
+ │
+ ├─ AuditEvent is saved automatically
+ ▼
+Rails Host Application
+ │
+ ▼
+Purchase is created
+```
+
+This example assumes the host application has also confirmed that the Principal itself is currently allowed to purchase. ActingFor evaluates the Agent's delegated authority; the host application remains responsible for its own authorization and for executing the business operation.
+
 ## Official Demo
 
 [ActingFor Demo](https://github.com/cuichangquan/acting_for_demo) is the official reference application for ActingFor. It shows the public API in a real Rails host application, provides automated host-integration tests, and serves as the environment for human manual verification. Both repositories are currently private and in pre-release verification.
