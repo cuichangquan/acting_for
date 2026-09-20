@@ -27,13 +27,13 @@ class DelegationLifecycleTest < ActiveSupport::TestCase
     "action" => -> { { action: "refund" } },
     "resource type" => -> { { resource_type: "OtherResource" } },
     "resource id" => -> { { resource_id: "999" } },
-    "constraints" => -> {
+    "constraints" => lambda do
       {
         constraints: [
           { "field" => "amount", "operator" => "lte", "value" => 50_000 }
         ]
       }
-    },
+    end,
     "effect" => -> { { effect: "require_approval" } },
     "expiration" => -> { { expires_at: Time.current + 2.hours } },
     "revocation timestamp through ordinary update" => -> { { revoked_at: Time.current } }
