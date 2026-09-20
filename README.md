@@ -44,13 +44,132 @@ allow / require_approval / deny
 Rails Host Application enforces the Decision
 ```
 
+## How does an external AI Agent reach ActingFor?
+
+ActingFor starts **after** the Rails Host Application knows which Agent is making the request.
+
+An external caller such as ChatGPT, Claude, an MCP client, or a custom Agent must first be authenticated or otherwise reliably identified by the host application. The host then resolves that external identity to a local `ActingFor::Agent`.
+
+```text
+External AI Agent
+(ChatGPT / Claude / MCP Client / custom Agent)
+        │
+        │ OAuth token / JWT / API credential /
+        │ another trusted authentication mechanism
+        ▼
+Rails Host Application
+        │
+        ├─ 1. Authenticate or identify the external Agent
+        ├─ 2. Resolve it to an ActingFor::Agent
+        ├─ 3. Resolve the Principal
+        ├─ 4. Load the Resource and trusted Context
+        ▼
+ActingFor.authorize(...)
+        │
+        ├─ Delegation
+        ├─ Constraints
+        ├─ Expiration
+        └─ Revocation
+        ▼
+allow / require_approval / deny
+```
+
+**Authentication answers “Which Agent is this?” ActingFor answers “What may this Agent do on behalf of this Principal?”**
+
+### Agent and User are different records
+
+An Agent does not need a second record in the host application's `users` table.
+
+```text
+users
+└─ User A                         ← Principal
+
+acting_for_agents
+└─ Shopping Agent                ← Agent
+
+acting_for_delegations
+└─ User A → Shopping Agent → purchase
+```
+
+Conceptually:
+
+```ruby
+user
+# => #<User id: 1>
+
+shopping_agent
+# => #<ActingFor::Agent id: 10>
+```
+
+The host may call these values `current_user` and `current_agent`, but ActingFor does not provide a `current_agent` authentication helper. Agent authentication and external-identity resolution belong to the host application.
+
+### Responsibility split
+
+| Question | Responsibility |
+| --- | --- |
+| Which external Agent sent this request? | Host application / authentication layer |
+| Which `ActingFor::Agent` does that identity map to? | Host application |
+| Which Principal is the Agent acting for? | Host application + Delegation relationship |
+| May this Agent perform `purchase` for that Principal? | ActingFor |
+| Do amount, expiry, and revocation constraints pass? | ActingFor |
+| Should the business operation actually run? | Host application |
+
+### Do I need Agent Authentication before installing ActingFor?
+
+No. ActingFor can be installed independently.
+
+However, if an external AI Agent will call the Rails application directly, the host must authenticate or otherwise reliably identify that Agent and resolve it to an `ActingFor::Agent` before calling `ActingFor.authorize(...)`.
+
+If the application already knows the Agent through an internal trusted workflow, ActingFor can be used without adding an external Agent authentication system first.
+
+### Example integration: OAuth with Doorkeeper
+
+ActingFor does **not** require Doorkeeper. Doorkeeper is one possible Rails OAuth integration that can sit in front of ActingFor.
+
+```text
+User authentication
+        │
+        ▼
+Doorkeeper / OAuth
+        │
+        │ authenticated OAuth client + resource owner
+        ▼
+Rails Host Application
+        │
+        ├─ resolve Principal
+        └─ resolve ActingFor::Agent
+        ▼
+ActingFor.authorize(...)
+```
+
+An illustrative mapping might look like:
+
+```ruby
+oauth_application = doorkeeper_token.application
+user = User.find(doorkeeper_token.resource_owner_id)
+
+shopping_agent = ActingFor::Agent.find_by!(
+  identifier: oauth_application.uid
+)
+
+decision = ActingFor.authorize(
+  agent: shopping_agent,
+  principal: user,
+  action: :purchase,
+  resource: product,
+  context: { amount: product.price }
+)
+```
+
+This mapping is only an integration example. An OAuth client is not necessarily identical to one AI Agent instance. A host application may need an additional identity-mapping layer when one OAuth client represents multiple Agents.
+
 ## Why ActingFor?
 
 A Rails application needs to know which Agent is acting, whose authority it uses, and whether the requested Action fits the granted scope. ActingFor provides this delegated-authorization layer while leaving authentication, existing host authorization, approval workflows, and business execution with the host application.
 
 ## 30-second example
 
-The host has already authenticated and resolved `shopping_agent`, and has loaded `user` and `product`:
+The host has already authenticated an external caller, resolved it to the local `shopping_agent`, resolved `user`, and loaded `product`:
 
 ```ruby
 ActingFor.delegate(
