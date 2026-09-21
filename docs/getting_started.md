@@ -224,6 +224,13 @@ ActingFor complements existing Rails authorization and audit tooling rather than
 | Approval result<br>承認要求 | Host-specific workflow<br>ホスト側で独自実装 | `require_approval` is a first-class Decision<br>`require_approval` を正式なDecisionとして扱う | Not an authorization Decision<br>認可Decisionではない |
 | ActingFor AuditEvent equivalent<br>認可判断の記録 | Not provided by ActingFor's host-authorization boundary<br>ActingForの責務境界上、既存認可側には含めない | Records the delegated authorization Decision<br>代理認可で行ったDecisionを記録 | Typically records business or data-change history<br>通常は業務処理やデータ変更の履歴を記録 |
 
+
+A concise way to distinguish the roles is:
+
+> **CanCanCan answers what the Principal may do. ActingFor answers what an Agent may do on that Principal's behalf. Audit tools record what happened; ActingFor records why the delegated authorization decision was made.**
+>
+> **CanCanCanは「このUserが何をできるか」を判断し、ActingForは「このAgentが、そのUserの代理として何をできるか」を判断する。一般的なAuditは「何が起きたか」を記録し、ActingForのAuditは「代理認可でどのDecisionを行ったか」を記録する。**
+
 A useful mental model is:
 
 ```text
