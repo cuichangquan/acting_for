@@ -208,6 +208,69 @@ Audit Context defaults to `{}`. Only fields explicitly selected with `audit_cont
 
 If persistence fails, `ActingFor.authorize(...)` raises `ActingFor::AuditPersistenceError` and returns no Decision. The failure is neither an `allow` nor a normal `deny`; the host must not continue to business logic.
 
+
+## Integrating with an existing Rails application
+
+ActingFor does not require Agent-specific branches to be scattered throughout controllers and services.
+
+A common integration pattern is to resolve the Principal and optional Agent near the request boundary, then keep authorization close to the protected operation.
+
+```text
+Human request
+    ↓
+Principal + no Agent
+    ↓
+Host Authorization
+    ↓
+Business Logic
+
+Agent request
+    ↓
+Principal + Agent
+    ↓
+Host Authorization
+    AND
+ActingFor Authorization
+    ↓
+Business Logic
+```
+
+For example, a host application may centralize the Agent-specific part:
+
+```ruby
+def authorize_agent!(agent:, principal:, action:, resource:, context: {})
+  return unless agent
+
+  decision = ActingFor.authorize(
+    agent: agent,
+    principal: principal,
+    action: action,
+    resource: resource,
+    context: context
+  )
+
+  raise YourApp::Forbidden unless decision.allowed?
+end
+```
+
+The host's existing authorization still applies separately:
+
+```ruby
+authorize_host!(principal, :purchase, product)
+
+authorize_agent!(
+  agent: current_agent,
+  principal: principal,
+  action: :purchase,
+  resource: product,
+  context: { amount: product.price }
+)
+
+PurchaseService.call(user: principal, product: product)
+```
+
+This is an integration pattern, not a required ActingFor architecture. The host may use Devise, Pundit, CanCanCan, Action Policy, JWT, OAuth, or its own authentication and authorization structure.
+
 ## Security and Responsibility Boundary
 
 ### Existing host authorization still applies
