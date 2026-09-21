@@ -56,6 +56,8 @@ Public API / Value Object実装
 
 ## 実装・検証済みの実績
 
+- D236 pre-publication confirmations / RC artifact verification：Demo exact-ref verification未再実行はPASS扱いせず、ユーザー承認によりrelease blockerから外した。既存commit emailはhistory rewriteせずPublic化を許容し、今後のlocal commitはGitHub noreply email方針。RubyGems account / MFA / security-device verification / `gem signin` 成功を確認。固定RC `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` からstrict buildした17-file artifactをfresh Rails 8.0.5.1 / Ruby 3.4.10 / PostgreSQL 16へinstallし、allow / require_approval / deny・AuditEvent 3件までPASS。RC SHA256は `cc2ac2e2716745f306b8ebd0307aad47f88468c815da489a0c395c286ed469d4`。Repository Public化・RubyGems push・tag・GitHub Releaseは未実施。
+
 - D235 pre-publication preparation A-F：Official DemoをRC baselineへpin（exact-refのautomated / smoke / Human Manual Verificationは未再実行）、`release/v0.1.0-rc` を `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` に固定、Public exposure / release docs / RubyGems publication environment / artifact evidenceを再確認。Repository Public化・RubyGems push・tag・GitHub Releaseは未実施。Public化前のcommit author email exposure判断、RubyGems account/auth確認、fresh artifact build/checksum/install verificationを残す。
 
 - D234 Security hardening batch A-H：Sensitive Context / Error Leakage / DB Constraints / Stale Decision / Delegation Management Host Boundary / Replay / Concurrent revoke / Confused-Deputy bindingの8領域を専用Regression Test化。Production code / Public API / schema変更なし。正式CI #31全5 jobs green。Ruby 3.4 / Rails 8.0で351 runs / 889 assertions / 0 failures / 0 errors / 0 skips。
