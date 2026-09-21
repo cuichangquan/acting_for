@@ -216,13 +216,13 @@ ActingFor complements existing Rails authorization and audit tooling rather than
 
 | | CanCanCan / Pundit | ActingFor | General audit / change-history tooling |
 | --- | --- | --- | --- |
-| Main question | May this Principal perform this operation? | May this Agent perform this operation on behalf of this Principal? | What happened or what changed? |
-| Actors considered | Usually the application's current Principal / User | Agent + Principal | Depends on the host application |
-| Delegation | Can be implemented by the host | Core concept | Not an authorization mechanism |
-| Delegated constraints | Host-specific logic | Evaluated as part of Delegation matching | Typically records rather than evaluates authorization constraints |
-| Expiry / revocation | Host-specific logic | Part of the Delegation lifecycle | May record changes, but does not grant authority |
-| Approval result | Host-specific workflow | `require_approval` is a first-class Decision | Not an authorization Decision |
-| ActingFor AuditEvent equivalent | Not provided by ActingFor's host-authorization boundary | Records the delegated authorization Decision | Typically records business or data-change history |
+| Main question<br>主な問い | May this Principal perform this operation?<br>このPrincipal / Userは、この操作を実行できるか？ | May this Agent perform this operation on behalf of this Principal?<br>このAgentは、このPrincipalの代理として、この操作を実行できるか？ | What happened or what changed?<br>何が起きたか、何が変更されたか？ |
+| Actors considered<br>扱う主体 | Usually the application's current Principal / User<br>通常はアプリのPrincipal / User | Agent + Principal<br>AgentとPrincipalの組み合わせ | Depends on the host application<br>ホストアプリの実装による |
+| Delegation<br>委任 | Can be implemented by the host<br>必要ならホスト側で独自実装 | Core concept<br>中心概念 | Not an authorization mechanism<br>認可の仕組みではない |
+| Delegated constraints<br>委任条件 | Host-specific logic<br>ホスト側で独自実装 | Evaluated as part of Delegation matching<br>Delegation判定の一部として評価 | Typically records rather than evaluates authorization constraints<br>通常は条件を評価せず、出来事を記録する |
+| Expiry / revocation<br>期限・取消 | Host-specific logic<br>ホスト側で独自実装 | Part of the Delegation lifecycle<br>Delegationのライフサイクルとして管理 | May record changes, but does not grant authority<br>変更履歴は記録できるが、権限は付与しない |
+| Approval result<br>承認要求 | Host-specific workflow<br>ホスト側で独自実装 | `require_approval` is a first-class Decision<br>`require_approval` を正式なDecisionとして扱う | Not an authorization Decision<br>認可Decisionではない |
+| ActingFor AuditEvent equivalent<br>認可判断の記録 | Not provided by ActingFor's host-authorization boundary<br>ActingForの責務境界上、既存認可側には含めない | Records the delegated authorization Decision<br>代理認可で行ったDecisionを記録 | Typically records business or data-change history<br>通常は業務処理やデータ変更の履歴を記録 |
 
 A useful mental model is:
 
