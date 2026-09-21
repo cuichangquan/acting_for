@@ -461,4 +461,4 @@ D232 / D233に続くRelease前のSecurity hardeningとして、ユーザー承�
 
 A / Bは既存authorization_testの個別coverageをSecurity scenarioとして再構成し、secret値がAudit / ActingFor生成Exceptionへ露出しないことを直接assertする。CはActiveRecord validationを迂回するinsertでPostgreSQL制約を直接検証する。D / FはDecisionやAuthorizationをcapability / exactly-once tokenとして扱わない境界を固定する。Eはtest/dummy Host fixtureでcaller authorizationがCore外であることを示す。GはD232で見送った実Thread concurrencyをQueue barrier + separate connectionsで追加する。Hは既存個別matching testをcross-Agent / cross-Principal / cross-Resource攻撃scenarioとしてまとめる。
 
-Production behavior変更なし。正式CI結果はD234完了記録で確定する。
+Production behavior変更なし。D234は正式GitHub Actions CI #31で全5 jobs green。Ruby 3.4 / Rails 8.0 jobは351 runs / 889 assertions / 0 failures / 0 errors / 0 skips。詳細はDECISIONS D234を参照する。

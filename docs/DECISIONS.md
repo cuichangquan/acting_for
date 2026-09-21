@@ -3428,7 +3428,7 @@ test: use valid audit mutations for readonly checks
 ## D234: Security hardening batch A-H
 
 - 日付：2026-09-21（Asia/Tokyo）。
-- Status：**確定・実装済み / 正式CI確認待ち**。
+- Status：**確定・実装済み / 正式CI確認済み**。
 - 根拠：ユーザーがD233後のSecurity Invariant Test強化候補A〜Hを個別に承認し、まとめて追加することを明示承認。
 - 方針：新しいProduction behavior / Public API / schemaは追加せず、既存Security ModelとResponsibility Boundaryを専用Regression Test / Executable Documentationとして固定する。
 
@@ -3472,4 +3472,22 @@ test/dummy/app/services/host_delegation_manager.rb
 
 Gのみ実並行Testのため `use_transactional_tests = false` とし、専用setup / teardownで作成データを明示cleanupする。sleep依存ではなくQueue barrierで同時開始を制御する。
 
-Production code / Public API / schema / release automationは変更しない。正式4 matrix CI / RuboCop結果を確認するまで次のSecurity hardeningには進まない。
+Production code / Public API / schema / release automationは変更しない。
+
+実装commit：
+
+```text
+9aa44394d385986d73c3c885b6f907a75914dd79
+test: add security hardening batch A-H
+```
+
+初回CI #25では正式Minitest suite自体は **351 runs / 889 assertions / 0 failures / 0 errors / 0 skips** で成功したが、新規TestのRuboCop style offenseでworkflow全体がfailure。Production behaviorは変更せず、style-only follow-upで修正した。
+
+最終style commit：
+
+```text
+5359f71c475d033d3547307f18ab1bfe395a21e7
+style: name rescued exception conventionally
+```
+
+正式GitHub Actions **CI #31 / run 35579188102** は completed / success、全5 jobs green。Ruby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrixとRuboCopが成功。Ruby 3.4 / Rails 8.0 jobは **351 runs / 889 assertions / 0 failures / 0 errors / 0 skips**。
