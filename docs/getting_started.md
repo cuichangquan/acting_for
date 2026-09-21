@@ -209,6 +209,47 @@ Audit Context defaults to `{}`. Only fields explicitly selected with `audit_cont
 If persistence fails, `ActingFor.authorize(...)` raises `ActingFor::AuditPersistenceError` and returns no Decision. The failure is neither an `allow` nor a normal `deny`; the host must not continue to business logic.
 
 
+
+## How ActingFor differs from host authorization and audit tooling
+
+ActingFor complements existing Rails authorization and audit tooling rather than replacing them.
+
+| | CanCanCan / Pundit | ActingFor | General audit / change-history tooling |
+| --- | --- | --- | --- |
+| Main question | May this Principal perform this operation? | May this Agent perform this operation on behalf of this Principal? | What happened or what changed? |
+| Actors considered | Usually the application's current Principal / User | Agent + Principal | Depends on the host application |
+| Delegation | Can be implemented by the host | Core concept | Not an authorization mechanism |
+| Delegated constraints | Host-specific logic | Evaluated as part of Delegation matching | Typically records rather than evaluates authorization constraints |
+| Expiry / revocation | Host-specific logic | Part of the Delegation lifecycle | May record changes, but does not grant authority |
+| Approval result | Host-specific workflow | `require_approval` is a first-class Decision | Not an authorization Decision |
+| ActingFor AuditEvent equivalent | Not provided by ActingFor's host-authorization boundary | Records the delegated authorization Decision | Typically records business or data-change history |
+
+A useful mental model is:
+
+```text
+CanCanCan / Pundit
+"May User A purchase this Product?"
+          │
+          │ AND
+          ▼
+ActingFor
+"May Shopping Agent purchase this Product
+ on behalf of User A under this Delegation?"
+          │
+          ▼
+Business Logic
+          │
+          ▼
+Application audit / change history
+"What actually happened?"
+```
+
+ActingFor's `AuditEvent` records the authorization Decision made by ActingFor. It does not prove that the later business operation succeeded.
+
+For example, ActingFor may return `allow` and persist its AuditEvent, while the subsequent payment or purchase still fails in the host application. Business-operation history remains a host responsibility.
+
+**ActingFor does not replace CanCanCan, Pundit, or general audit tooling. It adds a delegated-authorization layer for a separate Agent acting on behalf of a Principal.**
+
 ## Integrating with an existing Rails application
 
 ActingFor does not require Agent-specific branches to be scattered throughout controllers and services.
