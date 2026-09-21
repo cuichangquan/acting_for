@@ -33,9 +33,10 @@ class AuditEventTamperResistanceTest < ActiveSupport::TestCase
     "action" => -> { { action: "refund" } },
     "resource type" => -> { { resource_type: "OtherResource" } },
     "resource id" => -> { { resource_id: "999" } },
-    "decision" => -> { { decision: "deny" } },
-    "reason code" => -> { { reason_code: "no_matching_delegation" } },
-    "matched delegation ids" => -> { { matched_delegation_ids: [] } },
+    "decision and reason code" => lambda do
+      { decision: "require_approval", reason_code: "delegation_requires_approval" }
+    end,
+    "matched delegation ids" => -> { { matched_delegation_ids: [1_000_000] } },
     "sanitized context" => -> { { sanitized_context: { "amount" => 99_999 } } }
   }.each do |name, changes|
     test "persisted audit event cannot change its #{name}" do
