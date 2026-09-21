@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D235
+D236
 ```
 
 ## Current Status
@@ -53,6 +53,7 @@ Post-readiness Delegation lifecycle security regression tests implemented and fo
 Post-readiness AuditEvent tamper resistance security regression tests implemented and formal CI verified
 Post-readiness Security hardening batch A-H implemented and formal CI verified
 v0.1.0 Release Candidate baseline fixed at `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` via `release/v0.1.0-rc`
+Pre-publication human confirmations completed for email exposure / RubyGems authentication; RC fresh artifact verification PASS (D236)
 
 Not released
 ```
@@ -150,7 +151,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D235 pre-publication preparation A-Fを実施。GitHub Public化にはまだ進まない。公開前に残る確認は、Demo exact-ref automated / smoke / Human Manual Verification、Public化時のcommit author email exposure判断、RubyGems account / authentication human confirmation、RC artifactのfresh build / SHA256 / artifact install verification。これらを完了するまでActual Release transactionを開始しない。
+D236でPublic化前のhuman confirmationとRC fresh artifact verificationを整理した。Demo exact-ref automated / smoke / Human Manual Verificationは未再実行のためPASSとは記録しないが、ユーザー承認によりv0.1.0 Public化のblockerにはしない。既存commit email exposureはhistory rewriteせず許容し、RubyGems account / MFA / `gem signin` は確認済み。
+
+Actual Release transactionはまだ開始しない。次の1項目は、release plan Step 2の **Repository Public化**についてユーザーの明示承認を得ること。RubyGems publication、`v0.1.0` tag、GitHub Releaseはそれぞれ別の不可逆操作として未承認・未実施。
 
 ## Important Rules
 
