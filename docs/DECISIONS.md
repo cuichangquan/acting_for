@@ -3491,3 +3491,58 @@ style: name rescued exception conventionally
 ```
 
 正式GitHub Actions **CI #31 / run 35579188102** は completed / success、全5 jobs green。Ruby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrixとRuboCopが成功。Ruby 3.4 / Rails 8.0 jobは **351 runs / 889 assertions / 0 failures / 0 errors / 0 skips**。
+
+## D235: v0.1.0 pre-publication preparation A-F
+
+- 日付：2026-09-21（Asia/Tokyo）。
+- Status：**確定。公開操作は未実施。**
+- 根拠：ユーザーが提案A〜Fの実施を明示承認。
+- Release Candidate baseline：`2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5`。
+- 固定ref：`release/v0.1.0-rc` → `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5`。
+
+### A. Official DemoをRelease Candidateへ追従
+
+`acting_for_demo` のGemfile / Gemfile.lock / README / Manual Verification対象commitを `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` へ更新し、Demo commit `e140a9ccf4eecbb90f67126cef8e1d674033f992` へ反映した。
+
+旧Demo検証対象 `5293f25a21093fa514df53466df503984e4981d1` からRC baselineまでのActingFor差分はREADME / docs / testのみで、Gemのproduction runtime files / Public API / schema変更はない。
+
+ただし、Demoの automated integration run / smoke verification / Human Manual Verification はこのexact refでは未再実行のため、COMPATIBILITY.mdへPASSとしては記録しない。exact-ref verification完了後にPASS行を追加する。
+
+### B. v0.1.0 Release Candidate baselineを固定
+
+GitHub branch `release/v0.1.0-rc` を `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` に作成した。これは公開前検証の固定baselineであり、`v0.1.0` tagではない。
+
+Actual Release planどおり、公開transaction中にrelease-facing README等のpackaged contentを変更する場合は、その変更後commitを最終artifact source / tag SHAとして再pinする。RC branchを無条件にtagへ転用しない。
+
+### C. Public Repository Exposure Audit
+
+D231のtracked files / package / Git historyに対するsecret・privacy監査結果を基礎とし、D231後からRC baselineまでの差分を再確認した。追加差分はREADME / docs / testsのみで、production runtime / migration / gemspec / LICENSE変更なし。高確度credential patternの新規混入は確認していない。
+
+公開時の確認事項として、Git commit metadataに個人用メールアドレスが含まれるcommitがあることを確認した。これはsecretではないがPublic化後は履歴metadataとして閲覧可能になるため、許容するかhistory rewrite等を行うかはGitHub Public化前の明示判断事項とする。history rewriteは本Decisionでは行わない。
+
+### D. Release documentation preparation
+
+`README.md`、`docs/release_notes_v0_1_0.md`、`docs/release_plan_v0_1_0.md` をRC baselineと照合した。現時点ではNot released / private repository / GitHub-main installationの記述を維持する。RubyGems公開済みと誤認させる文言へは変更しない。
+
+Release-facing README変更は既存release planに従い、Public化後・RubyGems push前にreviewable commitとして作成する。
+
+### E. RubyGems publication environment pre-check
+
+2026-09-21時点のWeb検索ではexact `acting_for` のRubyGems登録結果は確認されなかった。D231の公式API 404 / exact remote search該当なしの記録を維持し、push直前に再確認する。
+
+RubyGems account access / initial owner / authentication methodは外部アカウント本人確認が必要であり、本作業ではcredential生成・設定・secret表示を行わない。Actual Release前のhuman confirmation項目として残す。
+
+### F. Final artifact verification pre-check
+
+RC baselineの正式GitHub Actions CI #32 / run 35579337033はcompleted / success。D231でruntime verification済みのsource `5293f25a21093fa514df53466df503984e4981d1` からRC baselineまで、packaged executable files / migrations / gemspec / LICENSEに変更はなく、packaged差分はREADMEのみ。
+
+そのため既存のruntime artifact evidenceはproduction payloadについて継続して有効。ただしRC baselineからの新しい `.gem` build byte size / SHA256と、exact artifactによる新規Rails Application installはこの作業環境では再実行していない。RubyGems push前にrelease plan Step 4として必ず再build・checksum・artifact install verificationを行う。
+
+### Boundary
+
+- Repository Public化：未実施。
+- RubyGems push：未実施。
+- `v0.1.0` tag：未作成。
+- GitHub Release：未作成。
+- Release automation：未変更。
+

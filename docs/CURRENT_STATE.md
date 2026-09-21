@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D234
+D235
 ```
 
 ## Current Status
@@ -52,6 +52,7 @@ v0.1 Release Readiness Gate: RELEASE READY / D076 all 9 PASS
 Post-readiness Delegation lifecycle security regression tests implemented and formal CI verified
 Post-readiness AuditEvent tamper resistance security regression tests implemented and formal CI verified
 Post-readiness Security hardening batch A-H implemented and formal CI verified
+v0.1.0 Release Candidate baseline fixed at `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` via `release/v0.1.0-rc`
 
 Not released
 ```
@@ -149,7 +150,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D234 Security hardening batch A-Hの正式CI成功確認まで完了。次の重要事項はユーザー承認後に1項目だけ選ぶ。Actual Releaseにはまだ進まない。
+D235 pre-publication preparation A-Fを実施。GitHub Public化にはまだ進まない。公開前に残る確認は、Demo exact-ref automated / smoke / Human Manual Verification、Public化時のcommit author email exposure判断、RubyGems account / authentication human confirmation、RC artifactのfresh build / SHA256 / artifact install verification。これらを完了するまでActual Release transactionを開始しない。
 
 ## Important Rules
 
