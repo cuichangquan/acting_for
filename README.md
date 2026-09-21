@@ -1,14 +1,82 @@
 # ActingFor
 
+**Add delegated authorization behind MCP tools and other agent-driven Rails actions.**
+
 *Rails-native delegated authorization for AI agents.*
 
-ActingFor controls what an AI agent may do on behalf of a Principal inside a Rails application.
+MCP can give AI clients a standard way to discover and call tools exposed by your Rails application.
+
+ActingFor answers the next question:
+
+> **Should this Agent be allowed to perform this Action on behalf of this Principal?**
 
 AI AgentがPrincipalの代理として何をしてよいかを、委任された権限に基づいて制御するRails向け認可Gemです。
 
 ## Status
 
 > **Implemented and CI verified; Not released.** The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16. The runnable setup was verified in a new Rails application in [D230](docs/DECISIONS.md#d230-runnable-quick-start-implementation). ActingFor has not been published to RubyGems.
+
+## Why ActingFor?
+
+Traditional Rails authorization usually answers:
+
+> **May this user perform this action?**
+
+Once an AI Agent can act through MCP, an API, or another integration, the application also needs to answer:
+
+> **May this Agent perform this action on behalf of this user?**
+
+For example, an MCP server might expose tools such as:
+
+```text
+search_products
+purchase_product
+cancel_order
+```
+
+Making those tools callable is only part of the problem. Before Rails executes `purchase_product`, it may still need to know:
+
+```text
+Which Agent is acting?
+For which Principal?
+Was :purchase delegated?
+Is ¥8,900 within the delegated limit?
+Has the Delegation expired or been revoked?
+Is human approval required?
+```
+
+That is the layer ActingFor provides.
+
+## MCP + ActingFor in one picture
+
+```text
+ChatGPT / Claude / AI Agent
+            │
+            │ MCP, API, or another integration
+            ▼
+      Rails Host Application
+            │
+            │ "purchase_product"
+            ▼
+         ActingFor
+            │
+            ├─ Which Agent?
+            ├─ Acting for whom?
+            ├─ Was :purchase delegated?
+            ├─ Do constraints pass?
+            ├─ Is the Delegation active?
+            └─ Is approval required?
+            │
+            ▼
+   allow / require_approval / deny
+            │
+            ▼
+     Rails Business Logic
+```
+
+**MCP gives Agents a way to interact with your Rails application. ActingFor adds delegated authorization behind that interaction.**
+
+ActingFor does not require MCP, and it does not replace MCP. The same authorization layer can sit behind REST APIs, background jobs, internal Agent workflows, or other interfaces.
 
 ## What does ActingFor do?
 
@@ -21,7 +89,39 @@ ActingFor answers a focused question: may this authenticated Agent perform this 
 
 The Principal and Agent are always separate actors. ActingFor evaluates their Delegation; it does not authenticate the Agent or execute the business operation.
 
-## Delegated purchase flow
+## MCP vs ActingFor
+
+| | MCP | ActingFor |
+| --- | --- | --- |
+| Main role | Connect AI clients to application capabilities | Decide what an Agent may do for a Principal |
+| Example | Call `purchase_product` | Decide whether that Agent may purchase |
+| Agent authentication | May participate through the surrounding auth flow | Not provided by ActingFor |
+| Delegation | Not ActingFor-style delegated authority | Core responsibility |
+| Constraints / expiry / revocation | Not ActingFor's role | Core responsibility |
+| Authorization audit | Not ActingFor's role | Automatic AuditEvent persistence |
+
+MCP tool names and ActingFor Actions are different concepts. An adapter or host layer may translate an MCP tool call into `agent`, `principal`, `action`, `resource`, and trusted `context`.
+
+See the [formal responsibility boundary](docs/PROJECT.md#21-actingforとmcpの正式な責務境界).
+
+## Delegated purchase example
+
+A Principal can give an Agent only part of their authority:
+
+```text
+User A
+ │
+ │ delegates
+ ▼
+Shopping Agent
+ │
+ ├─ search_products       allowed by the host as appropriate
+ ├─ purchase <= ¥10,000   delegated
+ ├─ purchase > ¥10,000    not covered by this Delegation
+ └─ delete_account        not delegated
+```
+
+At runtime:
 
 ```text
 Principal (User)
@@ -43,6 +143,104 @@ allow / require_approval / deny
  ▼
 Rails Host Application enforces the Decision
 ```
+
+## 30-second example
+
+The host has already authenticated an external caller, resolved it to the local `shopping_agent`, resolved `user`, and loaded `product`:
+
+```ruby
+ActingFor.delegate(
+  agent: shopping_agent,
+  principal: user,
+  action: :purchase,
+  resource: Product,
+  constraints: [
+    { field: "amount", operator: "lte", value: 10_000 }
+  ],
+  effect: :allow
+)
+
+decision = ActingFor.authorize(
+  agent: shopping_agent,
+  principal: user,
+  action: :purchase,
+  resource: product,
+  context: { amount: product.price }
+)
+
+decision.allowed? # => true when product.price is 8_900
+```
+
+Both calls use the implemented [v0.1 Public API](docs/public_api_v0_1.md). Context values that affect authorization must be established by the host, not trusted directly from an Agent request.
+
+## Quick Start
+
+This pre-release setup installs GitHub `main`; repository access and authenticated Git are currently required.
+
+1. Add the Gem and install dependencies:
+
+   ```ruby
+   gem "acting_for", github: "cuichangquan/acting_for", branch: "main"
+   # Rails 8.0 uses JSON options removed in JSON 3.
+   gem "json", "< 3"
+   ```
+
+   ```sh
+   bundle install
+   ```
+
+2. Install migrations:
+
+   ```sh
+   bin/rails acting_for:install:migrations
+   bin/rails db:migrate
+   ```
+
+3. In `bin/rails console`, create the local Agent:
+
+   ```ruby
+   shopping_agent = ActingFor::Agent.create!(
+     identifier: "shopping-agent",
+     name: "Shopping Agent"
+   )
+   ```
+
+4. Create a Delegation:
+
+   ```ruby
+   ActingFor.delegate(
+     agent: shopping_agent,
+     principal: user,
+     action: :purchase,
+     resource: Product,
+     constraints: [
+       { field: "amount", operator: "lte", value: 10_000 }
+     ],
+     effect: :allow
+   )
+   ```
+
+5. Authorize with host-verified Context:
+
+   ```ruby
+   product = Product.find_by!(price: 8_900)
+   decision = ActingFor.authorize(
+     agent: shopping_agent,
+     principal: user,
+     action: :purchase,
+     resource: product,
+     context: { amount: product.price }
+   )
+   ```
+
+6. Check the Decision before the host performs any operation:
+
+   ```ruby
+   [decision.status, decision.allowed?, decision.denied?, decision.approval_required?]
+   # => [:allow, true, false, false]
+   ```
+
+For the complete D230-verified setup—including a new Rails application, private repository authentication, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
 
 ## How does an external AI Agent reach ActingFor?
 
@@ -163,39 +361,6 @@ decision = ActingFor.authorize(
 
 This mapping is only an integration example. An OAuth client is not necessarily identical to one AI Agent instance. A host application may need an additional identity-mapping layer when one OAuth client represents multiple Agents.
 
-## Why ActingFor?
-
-A Rails application needs to know which Agent is acting, whose authority it uses, and whether the requested Action fits the granted scope. ActingFor provides this delegated-authorization layer while leaving authentication, existing host authorization, approval workflows, and business execution with the host application.
-
-## 30-second example
-
-The host has already authenticated an external caller, resolved it to the local `shopping_agent`, resolved `user`, and loaded `product`:
-
-```ruby
-ActingFor.delegate(
-  agent: shopping_agent,
-  principal: user,
-  action: :purchase,
-  resource: Product,
-  constraints: [
-    { field: "amount", operator: "lte", value: 10_000 }
-  ],
-  effect: :allow
-)
-
-decision = ActingFor.authorize(
-  agent: shopping_agent,
-  principal: user,
-  action: :purchase,
-  resource: product,
-  context: { amount: product.price }
-)
-
-decision.allowed? # => true when product.price is 8_900
-```
-
-Both calls use the implemented [v0.1 Public API](docs/public_api_v0_1.md). Context values that affect authorization must be established by the host, not trusted directly from an Agent request.
-
 ## Security / Responsibility Boundary
 
 ```text
@@ -223,84 +388,9 @@ See the [Getting Started security guidance](docs/getting_started.md#security-and
 
 ActingFor is not an authentication provider, OAuth/OIDC server, Agent framework, MCP server, approval workflow, payment system, or general-purpose policy engine. It does not fetch or validate business data, provision external Agents, or perform the authorized operation.
 
-## MCP and ActingFor
-
-> **MCP defines how Agents interact with applications. ActingFor defines what Agents are authorized to do on behalf of Principals within a Rails application.**
-
-An MCP adapter may translate a request into `agent`, `principal`, `action`, `resource`, and `context`, but MCP tool names and ActingFor Actions are different concepts. ActingFor Core remains independent of MCP gems and protocol objects. The host still authenticates the Agent and enforces the Decision before business logic. See the [formal responsibility boundary](docs/PROJECT.md#21-actingforとmcpの正式な責務境界).
-
 ## Official Demo
 
 [ActingFor Demo](https://github.com/cuichangquan/acting_for_demo) is the official real Rails host application. It demonstrates Public API integration, automated host-integration verification, and a workflow for human manual verification. The gem repository remains the source of truth for gem behavior, the Public API, and the Security Contract; the demo verifies those public boundaries without depending on `ActingFor::Internal::*`.
-
-## Quick Start
-
-This pre-release setup installs GitHub `main`; repository access and authenticated Git are currently required.
-
-1. Add the Gem and install dependencies:
-
-   ```ruby
-   gem "acting_for", github: "cuichangquan/acting_for", branch: "main"
-   # Rails 8.0 uses JSON options removed in JSON 3.
-   gem "json", "< 3"
-   ```
-
-   ```sh
-   bundle install
-   ```
-
-2. Install migrations:
-
-   ```sh
-   bin/rails acting_for:install:migrations
-   bin/rails db:migrate
-   ```
-
-3. In `bin/rails console`, create the local Agent:
-
-   ```ruby
-   shopping_agent = ActingFor::Agent.create!(
-     identifier: "shopping-agent",
-     name: "Shopping Agent"
-   )
-   ```
-
-4. Create a Delegation:
-
-   ```ruby
-   ActingFor.delegate(
-     agent: shopping_agent,
-     principal: user,
-     action: :purchase,
-     resource: Product,
-     constraints: [
-       { field: "amount", operator: "lte", value: 10_000 }
-     ],
-     effect: :allow
-   )
-   ```
-
-5. Authorize with host-verified Context:
-
-   ```ruby
-   product = Product.find_by!(price: 8_900)
-   decision = ActingFor.authorize(
-     agent: shopping_agent,
-     principal: user,
-     action: :purchase,
-     resource: product,
-     context: { amount: product.price }
-   )
-   ```
-
-6. Check the Decision before the host performs any operation:
-
-   ```ruby
-   [decision.status, decision.allowed?, decision.denied?, decision.approval_required?]
-   # => [:allow, true, false, false]
-   ```
-
-For the complete D230-verified setup—including a new Rails application, private repository authentication, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
 
 ## Documentation
 
