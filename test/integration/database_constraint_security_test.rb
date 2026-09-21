@@ -68,9 +68,9 @@ class DatabaseConstraintSecurityTest < ActiveSupport::TestCase
 
   private
 
-  def assert_db_rejects(&block)
+  def assert_db_rejects(&)
     assert_raises(ActiveRecord::StatementInvalid) do
-      ActiveRecord::Base.transaction(requires_new: true, &block)
+      ActiveRecord::Base.transaction(requires_new: true, &)
     end
   end
 
