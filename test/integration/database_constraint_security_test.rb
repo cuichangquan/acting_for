@@ -7,15 +7,13 @@ class DatabaseConstraintSecurityTest < ActiveSupport::TestCase
   end
 
   test "database rejects duplicate agent identifiers" do
-    assert_db_rejects do
-      ActingFor::Agent.insert_all!([
-        {
-          identifier: @agent.identifier,
-          created_at: Time.current,
-          updated_at: Time.current
-        }
-      ])
-    end
+    attributes = {
+      identifier: @agent.identifier,
+      created_at: Time.current,
+      updated_at: Time.current
+    }
+
+    assert_db_rejects { ActingFor::Agent.insert_all!([attributes]) }
   end
 
   test "database rejects delegation with an orphan agent id" do
@@ -27,43 +25,36 @@ class DatabaseConstraintSecurityTest < ActiveSupport::TestCase
   end
 
   test "database rejects delegation with an invalid effect" do
-    assert_db_rejects do
-      ActingFor::Delegation.insert_all!([
-        valid_delegation_attributes.merge(effect: "deny")
-      ])
-    end
+    attributes = valid_delegation_attributes.merge(effect: "deny")
+
+    assert_db_rejects { ActingFor::Delegation.insert_all!([attributes]) }
   end
 
   test "database rejects delegation resource id without resource type" do
-    assert_db_rejects do
-      ActingFor::Delegation.insert_all!([
-        valid_delegation_attributes.merge(resource_type: nil, resource_id: "123")
-      ])
-    end
+    attributes = valid_delegation_attributes.merge(
+      resource_type: nil,
+      resource_id: "123"
+    )
+
+    assert_db_rejects { ActingFor::Delegation.insert_all!([attributes]) }
   end
 
   test "database rejects audit event with an invalid decision" do
-    assert_db_rejects do
-      ActingFor::AuditEvent.insert_all!([
-        valid_audit_attributes.merge(decision: "unknown")
-      ])
-    end
+    attributes = valid_audit_attributes.merge(decision: "unknown")
+
+    assert_db_rejects { ActingFor::AuditEvent.insert_all!([attributes]) }
   end
 
   test "database rejects audit event with an invalid reason code" do
-    assert_db_rejects do
-      ActingFor::AuditEvent.insert_all!([
-        valid_audit_attributes.merge(reason_code: "unknown_reason")
-      ])
-    end
+    attributes = valid_audit_attributes.merge(reason_code: "unknown_reason")
+
+    assert_db_rejects { ActingFor::AuditEvent.insert_all!([attributes]) }
   end
 
   test "database rejects null required audit action" do
-    assert_db_rejects do
-      ActingFor::AuditEvent.insert_all!([
-        valid_audit_attributes.merge(action: nil)
-      ])
-    end
+    attributes = valid_audit_attributes.merge(action: nil)
+
+    assert_db_rejects { ActingFor::AuditEvent.insert_all!([attributes]) }
   end
 
   private
