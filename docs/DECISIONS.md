@@ -3389,7 +3389,7 @@ test: keep lifecycle tests at public model boundary
 ## D233: AuditEvent tamper resistance security regression tests
 
 - 日付：2026-09-21（Asia/Tokyo）。
-- Status：**確定・実装済み / 正式CI確認待ち**。
+- Status：**確定・実装済み / 正式CI確認済み**。
 - 根拠：ユーザーがRelease前の次のSecurity Invariant Test強化としてAuditEvent tamper resistanceを承認。
 - 目的：既存Security Modelの「persist済みAuditEventは通常運用でappend-only」という契約を、Public / model observable behaviorの正式Minitestとして直接固定する。
 - Production code / Public API / schema / semanticsは変更しない。
@@ -3410,4 +3410,16 @@ test/integration/audit_event_tamper_resistance_test.rb
 
 このバッチではWORM storage、DB trigger、cryptographic signing、retention / legal deletion APIは追加しない。既存のModel-level append-only contractだけを回帰Testで固定する。
 
-正式4 matrix CI / RuboCop結果はこのD233を含むmain push後に確認する。
+実装commit：
+
+```text
+f4b960eb7dbcaca55737dfbe31eb94b33a08afb9
+test: harden audit event tamper resistance
+
+a43f0ffc144be0bba15207a7b282990747ef9483
+test: use valid audit mutations for readonly checks
+```
+
+初回CI #22では、decision / reason_code / matched_delegation_idsの変更値がModel validationで先に拒否され、readonly exceptionの期待と不一致になったためTest側を修正した。Production codeは変更していない。
+
+修正後の正式GitHub Actions CI #23 / run 35576797347 は **completed / success、全5 jobs green**。Ruby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrixとRuboCopが成功。Ruby 3.4 / Rails 8.0 jobは **326 runs / 821 assertions / 0 failures / 0 errors / 0 skips**。

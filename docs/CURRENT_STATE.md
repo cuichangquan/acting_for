@@ -50,14 +50,14 @@ Runnable Quick Start implemented and verified in a new Rails application
 Built gem / package / artifact installation / documentation / support verification completed
 v0.1 Release Readiness Gate: RELEASE READY / D076 all 9 PASS
 Post-readiness Delegation lifecycle security regression tests implemented and formal CI verified
-Post-readiness AuditEvent tamper resistance security regression tests implemented; formal CI verification pending
+Post-readiness AuditEvent tamper resistance security regression tests implemented and formal CI verified
 
 Not released
 ```
 
 ## Implemented
 
-D233：Release前の追加Security hardeningとして、AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのAuthorization snapshot更新禁止、destroy禁止、後続Authorizationが既存Auditを書き換えず新規INSERTすること、Agent identifier変更・Delegation revoke後も既存snapshotが保持されることを検証する。Production code / Public API / schema変更なし。正式CI確認待ち。詳細は[DECISIONS D233](DECISIONS.md#d233-auditevent-tamper-resistance-security-regression-tests)。
+D233：Release前の追加Security hardeningとして、AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのAuthorization snapshot更新禁止、destroy禁止、後続Authorizationが既存Auditを書き換えず新規INSERTすること、Agent identifier変更・Delegation revoke後も既存snapshotが保持されることを検証する。Production code / Public API / schema変更なし。正式CI #23は全5 jobs green、Ruby 3.4 / Rails 8.0で326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。詳細は[DECISIONS D233](DECISIONS.md#d233-auditevent-tamper-resistance-security-regression-tests)。
 
 D232：Release前の追加Security hardeningとして、Delegation immutability / revoke! lifecycleの正式Integration Testを追加。正式4 matrix CI / RuboCopは2026-09-21に確認済み。persist済みDelegationの認可内容の通常update禁止、revoked_at直接update禁止、revoke!のtimestamp更新・idempotency・stale instance時のfirst timestamp保持、unsaved revoke拒否、revoke後Authorization、duplicate Delegation非波及を検証する。Production code / Public API / schema変更なし。詳細は[DECISIONS D232](DECISIONS.md#d232-delegation-lifecycle-security-regression-tests)。
 
@@ -146,7 +146,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D233を含むGitHub `main` の正式4 matrix CI / RuboCop結果を確認する。成功確認後、次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
+D233の正式CI成功確認まで完了。次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
 
 ## Important Rules
 

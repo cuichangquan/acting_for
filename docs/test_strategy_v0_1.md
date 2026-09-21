@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Test suite implemented。** D232のDelegation lifecycle Security regression testsは正式CI確認済み。D233でAuditEvent tamper resistance regression testsを追加し、正式CI確認待ち。 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
+**Step 8: Complete / Design finalized / Test suite implemented。** D232のDelegation lifecycle Security regression testsは正式CI確認済み。D233のAuditEvent tamper resistance regression testsも正式CI確認済み。 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
@@ -441,4 +441,4 @@ D232のDelegation lifecycle hardeningに続き、既存Security Model §18のAud
 
 対象はModel-levelの通常操作とPublic Authorization経路のobservable contract。DB trigger / WORM / cryptographic signingはv0.1へ追加せず、raw SQLやDB administratorによる迂回は既存Security Model §23どおりHost責務境界とする。
 
-D233実装後の正式CI結果はCURRENT_STATE / DECISIONSで追跡する。
+D233は正式GitHub Actions CI #23で全5 jobs green。Ruby 3.4 / Rails 8.0 jobは326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。詳細はDECISIONS D233を参照する。

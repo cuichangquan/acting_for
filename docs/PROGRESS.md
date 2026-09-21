@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Testは正式CI確認済み。D233でAuditEvent tamper resistance Security regression Testを追加し、正式CI確認待ち。Releaseは未実施。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。Releaseは未実施。
 
 ## 全体進捗
 
@@ -26,7 +26,7 @@
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
-| 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 Delegation lifecycle security regression Test（CI確認済み）+ D233 AuditEvent tamper resistance Test追加（D233 CI確認待ち） |
+| 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 Delegation lifecycle security regression Test + D233 AuditEvent tamper resistance Test（いずれもCI確認済み） |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
 | 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、RELEASE READY / D076全9項目PASS / CI全5 jobs green |
@@ -56,7 +56,7 @@ Public API / Value Object実装
 
 ## 実装・検証済みの実績
 
-- D233 Security hardening：AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのsnapshot更新禁止、destroy禁止、後続Authorizationの新規INSERT、Agent / Delegation後続変更後のsnapshot保持を対象化。Production code変更なし。正式CI確認待ち。
+- D233 Security hardening：AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのsnapshot更新禁止、destroy禁止、後続Authorizationの新規INSERT、Agent / Delegation後続変更後のsnapshot保持を対象化。Production code変更なし。正式CI #23全5 jobs green。Ruby 3.4 / Rails 8.0で326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。
 
 - D232 Security hardening：Delegation immutability / revoke! lifecycleの正式Integration Testを追加。通常updateによる権限内容改ざん防止、revoke timestamp / idempotency / stale instance、unsaved revoke、revoke後Authorization、duplicate Delegation非波及を対象化。Production code変更なし。正式4 matrix CI / RuboCop確認済み。
 
