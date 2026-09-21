@@ -37,8 +37,8 @@ class ConcurrentRevocationSecurityTest < ActiveSupport::TestCase
           start.pop
           results << ActingFor::Delegation.find(@delegation.id).revoke!.revoked_at
         end
-      rescue StandardError => error
-        errors << error
+      rescue StandardError => e
+        errors << e
       end
     end
 
