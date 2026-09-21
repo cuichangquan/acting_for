@@ -1,7 +1,7 @@
 require "test_helper"
 
 class ErrorInformationLeakageTest < ActiveSupport::TestCase
-  SECRET = "secret-do-not-expose"
+  SECRET = "secret-do-not-expose".freeze
 
   class Resource
     extend ActiveModel::Naming
