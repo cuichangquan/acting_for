@@ -3350,7 +3350,7 @@ Release Notesは[docs/release_notes_v0_1_0.md](release_notes_v0_1_0.md)、Actual
 ## D232: Delegation lifecycle security regression tests
 
 - 日付：2026-09-20（Asia/Tokyo）。
-- Status：**確定・実装済み / 正式CI確認待ち**。
+- Status：**確定・実装済み / 正式CI確認済み**。
 - 根拠：ユーザーがRelease前のSecurity Invariant Test強化を承認。最初の1項目としてDelegation immutability + `revoke!` lifecycleを正式Minitest化する。
 - 目的：Public APIの入力・認可結果だけでなく、「作成済みDelegationの権限内容を書き換えない」「取消はidempotentで最初の取消時刻を保持する」という既存Security Contractを回帰Testで直接固定する。
 - Production code / Public API / schema / semanticsは変更しない。
@@ -3383,4 +3383,31 @@ ca4db84df0a8021e065679515cb4bcc6153071e8
 test: keep lifecycle tests at public model boundary
 ```
 
-正式4 matrix CI / RuboCopの結果は未確認。次のStepはこのD232 current mainのCI確認とし、成功確認前に次のSecurity Test batchへ進まない。
+正式4 matrix CI / RuboCopは後続mainで確認済み。2026-09-21時点のmain `6a70c181b888232f318a9ba65089bf98c3113c0c` のCI #21は全5 jobs green、Ruby 3.4 / Rails 8.0 jobで313 runs / 789 assertions / 0 failures / 0 errors / 0 skips。D232のSecurity regression testsを含む正式suiteが4 matrixで成功した。
+
+
+## D233: AuditEvent tamper resistance security regression tests
+
+- 日付：2026-09-21（Asia/Tokyo）。
+- Status：**確定・実装済み / 正式CI確認待ち**。
+- 根拠：ユーザーがRelease前の次のSecurity Invariant Test強化としてAuditEvent tamper resistanceを承認。
+- 目的：既存Security Modelの「persist済みAuditEventは通常運用でappend-only」という契約を、Public / model observable behaviorの正式Minitestとして直接固定する。
+- Production code / Public API / schema / semanticsは変更しない。
+
+追加：
+
+```text
+test/integration/audit_event_tamper_resistance_test.rb
+```
+
+検証対象：
+
+- persist済みAuditEventはreadonlyであり、agent / principal / action / resource / decision / reason_code / matched_delegation_ids / sanitized_context等のAuthorization snapshotを通常のActiveRecord updateで変更できない。
+- persist済みAuditEventを `destroy!` できず、既存監査記録が残る。
+- 新しいAuthorizationは既存AuditEventを書き換えず、新しいAuditEventをINSERTする。
+- Agent identifier変更やDelegation revoke後も、既存AuditEventのAgent identifier / matched Delegation IDs / decision等のsnapshotは保持される。
+- DB administratorやraw SQL等によるPublic API / ActiveRecord boundaryの迂回まで防ぐ保証は追加しない。既存Security Model §23の責務境界を維持する。
+
+このバッチではWORM storage、DB trigger、cryptographic signing、retention / legal deletion APIは追加しない。既存のModel-level append-only contractだけを回帰Testで固定する。
+
+正式4 matrix CI / RuboCop結果はこのD233を含むmain push後に確認する。

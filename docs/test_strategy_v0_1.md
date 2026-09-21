@@ -2,7 +2,7 @@
 
 更新日：2026-09-18
 
-**Step 8: Complete / Design finalized / Test suite implemented。** 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
+**Step 8: Complete / Design finalized / Test suite implemented。** D232のDelegation lifecycle Security regression testsは正式CI確認済み。D233でAuditEvent tamper resistance regression testsを追加し、正式CI確認待ち。 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
@@ -426,3 +426,19 @@ D231のRelease Readiness Gate完了後、Release前の追加hardeningとして�
 Threadを使う実並行TestはD232の必須範囲に含めない。CIの安定性を損なうflaky Testを先回りで追加せず、まずatomic `WHERE id = ? AND revoked_at IS NULL` behaviorのobservable contractを決定的なTestで固定する。
 
 D232実装後の正式CI結果はCURRENT_STATE / DECISIONSで追跡する。
+
+
+## 20. AuditEvent tamper resistance Security regression hardening（D233）
+
+D232のDelegation lifecycle hardeningに続き、既存Security Model §18のAudit append-only contractを専用Integration Testで固定する。新しい仕様・Public API・production behaviorは追加しない。
+
+`test/integration/audit_event_tamper_resistance_test.rb` で次を確認する。
+
+- persist済みAuditEventのAuthorization snapshot属性を通常updateで変更できない。
+- persist済みAuditEventを `destroy!` できない。
+- 後続Authorizationは既存AuditEventのupdateではなく新しいAuditEventのINSERTになる。
+- Agent / Delegationの後続状態変更によって、既存AuditEventのsnapshotが書き換わらない。
+
+対象はModel-levelの通常操作とPublic Authorization経路のobservable contract。DB trigger / WORM / cryptographic signingはv0.1へ追加せず、raw SQLやDB administratorによる迂回は既存Security Model §23どおりHost責務境界とする。
+
+D233実装後の正式CI結果はCURRENT_STATE / DECISIONSで追跡する。

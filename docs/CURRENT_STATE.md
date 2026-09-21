@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-20
+更新日：2026-09-21
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D232
+D233
 ```
 
 ## Current Status
@@ -49,14 +49,17 @@ GitHub Actions formal four-matrix CI / PostgreSQL 16 / core RuboCop implemented 
 Runnable Quick Start implemented and verified in a new Rails application
 Built gem / package / artifact installation / documentation / support verification completed
 v0.1 Release Readiness Gate: RELEASE READY / D076 all 9 PASS
-Post-readiness Delegation lifecycle security regression tests implemented; formal CI verification pending
+Post-readiness Delegation lifecycle security regression tests implemented and formal CI verified
+Post-readiness AuditEvent tamper resistance security regression tests implemented; formal CI verification pending
 
 Not released
 ```
 
 ## Implemented
 
-D232：Release前の追加Security hardeningとして、Delegation immutability / revoke! lifecycleの正式Integration Testを追加。persist済みDelegationの認可内容の通常update禁止、revoked_at直接update禁止、revoke!のtimestamp更新・idempotency・stale instance時のfirst timestamp保持、unsaved revoke拒否、revoke後Authorization、duplicate Delegation非波及を検証する。Production code / Public API / schema変更なし。正式CI確認待ち。詳細は[DECISIONS D232](DECISIONS.md#d232-delegation-lifecycle-security-regression-tests)。
+D233：Release前の追加Security hardeningとして、AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのAuthorization snapshot更新禁止、destroy禁止、後続Authorizationが既存Auditを書き換えず新規INSERTすること、Agent identifier変更・Delegation revoke後も既存snapshotが保持されることを検証する。Production code / Public API / schema変更なし。正式CI確認待ち。詳細は[DECISIONS D233](DECISIONS.md#d233-auditevent-tamper-resistance-security-regression-tests)。
+
+D232：Release前の追加Security hardeningとして、Delegation immutability / revoke! lifecycleの正式Integration Testを追加。正式4 matrix CI / RuboCopは2026-09-21に確認済み。persist済みDelegationの認可内容の通常update禁止、revoked_at直接update禁止、revoke!のtimestamp更新・idempotency・stale instance時のfirst timestamp保持、unsaved revoke拒否、revoke後Authorization、duplicate Delegation非波及を検証する。Production code / Public API / schema変更なし。詳細は[DECISIONS D232](DECISIONS.md#d232-delegation-lifecycle-security-regression-tests)。
 
 D231：built `acting_for-0.1.0.gem` strict build / package audit / secret・privacy簡易監査 / 新規Rails Appへのlocal artifact installとMigration・全Decision・Audit確認が成功。Release Notes draftとActual Release planを準備。Security / Responsibility / README照合済み。正式Test 298 / 755、RuboCop違反なし。support確認日2026-09-19。repo private、RubyGems未登録、tag / GitHub Releaseなし。D231 CI #5全5 jobs green、D076全9項目PASS、RELEASE READY。詳細は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。Not released。
 
@@ -143,7 +146,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D232を含むGitHub `main` の正式4 matrix CI / RuboCop結果を確認する。成功確認後、次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
+D233を含むGitHub `main` の正式4 matrix CI / RuboCop結果を確認する。成功確認後、次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
 
 ## Important Rules
 
