@@ -3546,3 +3546,52 @@ RC baselineの正式GitHub Actions CI #32 / run 35579337033はcompleted / succes
 - GitHub Release：未作成。
 - Release automation：未変更。
 
+
+
+## D236: pre-publication human confirmations and RC artifact verification
+
+- 日付：2026-09-21（Asia/Tokyo）。
+- 状態：**確定。Actual Release transactionは未開始。**
+- 根拠：ユーザーがD235後の公開前確認事項について結果を提示し、commit author email方針を明示承認した。
+
+### Demo exact-ref verification
+
+Official DemoはD235でRC baselineへpin済み。exact-ref automated / smoke / Human Manual Verificationは未再実行のままとし、PASSとは記録しない。ユーザーは、Demoは後から修正可能であるため、この未再実行をv0.1.0 Public化のblockerにしない方針を承認した。
+
+### Commit author email exposure
+
+既存Git historyに含まれるcommit author / committer emailはhistory rewriteせず、そのままPublic化を許容する。過去SHAを維持する。今後のlocal commitはGitHubのnoreply emailを利用する方針とする。
+
+### RubyGems account / authentication
+
+RubyGems.org account作成済み。Multi-factor authenticationを有効化し、security deviceによるWebAuthn verificationを確認した。local環境で `gem signin` に成功し、API keyはRubyGems CLIのdefault scope（`index_rubygems` / `push_rubygem`）で作成された。credential / password / OTP / API key本文はrepositoryへ保存せず、Decisionにも記録しない。
+
+これは認証準備の完了であり、`acting_for` のRubyGems publicationを承認・実行した意味ではない。
+
+### RC artifact fresh verification
+
+固定RC `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` からworktreeを作成し、以下を確認した。
+
+- `gem build --strict acting_for.gemspec`：成功。
+- Artifact：`acting_for-0.1.0.gem`。
+- Package file count：17。
+- Package内容：LICENSE / README / ActingFor runtime models / services / migrations / lib filesのみ。test / docs / credential類などの不要ファイルなし。
+- SHA256：`cc2ac2e2716745f306b8ebd0307aad47f88468c815da489a0c395c286ed469d4`。
+- Docker上のRuby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16によるfresh Rails Applicationで、exact built artifactをlocal Gem repository経由でBundler install。
+- ActingFor migrationsとHost User / Product migrationsを適用。
+- Runtime result：`[:allow, :require_approval, :deny]`。
+- AuditEvent count：3。
+- Final marker：`ARTIFACT VERIFICATION: PASS`。
+
+このSHA256はRC artifactの記録であり、Actual Release transaction中にrelease-facing READMEを変更した場合の最終RubyGems artifact checksumではない。既存release planどおり、RubyGems push前に最終artifact source commitから再build / package audit / SHA256 / artifact install verificationを実施する。
+
+### Release boundary
+
+以下は未実施であり、本Decisionでは承認しない。
+
+- Repository Public化。
+- RubyGems `acting_for 0.1.0` publication。
+- `v0.1.0` tag作成 / push。
+- GitHub Release publication。
+
+Actual Releaseは `docs/release_plan_v0_1_0.md` のHuman confirmationとExecution orderに従い、不可逆操作ごとに明示承認を得て進める。
