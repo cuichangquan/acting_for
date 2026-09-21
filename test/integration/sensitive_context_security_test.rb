@@ -1,7 +1,7 @@
 require "test_helper"
 
 class SensitiveContextSecurityTest < ActiveSupport::TestCase
-  SECRET = "super-secret-value"
+  SECRET = "super-secret-value".freeze
 
   class Resource
     extend ActiveModel::Naming
