@@ -320,27 +320,62 @@ However, if an external AI Agent will call the Rails application directly, the h
 
 If the application already knows the Agent through an internal trusted workflow, ActingFor can be used without adding an external Agent authentication system first.
 
-### Example integration: OAuth with Doorkeeper
+### Example Rails stack: Devise + Doorkeeper + MCP + ActingFor
 
-ActingFor does **not** require Doorkeeper. Doorkeeper is one possible Rails OAuth integration that can sit in front of ActingFor.
+A Rails application can combine familiar components without making ActingFor responsible for authentication or MCP transport.
+
+> **This is one possible Rails integration, not a required ActingFor stack.**
 
 ```text
-User authentication
-        │
-        ▼
-Doorkeeper / OAuth
-        │
-        │ authenticated OAuth client + resource owner
-        ▼
+Human User
+    │
+    │ Devise
+    │ authenticate the human
+    ▼
 Rails Host Application
-        │
-        ├─ resolve Principal
-        └─ resolve ActingFor::Agent
-        ▼
+    │
+    │ Doorkeeper / OAuth
+    │ issue and validate access tokens
+    ▼
+MCP Client / AI Agent
+    │
+    │ MCP tool call
+    │ purchase_product(product_id)
+    ▼
+Rails MCP endpoint
+    │
+    ├─ validate the surrounding authentication / OAuth context
+    ├─ resolve the external identity to an ActingFor::Agent
+    ├─ resolve the Principal
+    ├─ load the Resource
+    └─ establish trusted Context
+    ▼
 ActingFor.authorize(...)
+    │
+    ├─ Was :purchase delegated?
+    ├─ Do constraints pass?
+    ├─ Is the Delegation active?
+    └─ Is approval required?
+    ▼
+allow / require_approval / deny
+    │
+    ▼
+Rails Business Logic
 ```
 
-An illustrative mapping might look like:
+The responsibilities remain separate:
+
+| Component | Example responsibility |
+| --- | --- |
+| Devise | Authenticate the human User / Principal |
+| Doorkeeper | Provide OAuth authorization and access-token handling for the Rails application |
+| MCP | Expose Rails capabilities such as `purchase_product` to AI clients |
+| Rails host application | Validate the caller context, resolve Agent + Principal, load trusted business data, and enforce the Decision |
+| ActingFor | Decide what the resolved Agent may do on behalf of the resolved Principal |
+
+The important boundary is that **MCP makes a capability callable, while ActingFor decides whether the resolved Agent may use that capability for this Principal**.
+
+An illustrative host-side mapping might look like:
 
 ```ruby
 oauth_application = doorkeeper_token.application
@@ -359,7 +394,21 @@ decision = ActingFor.authorize(
 )
 ```
 
-This mapping is only an integration example. An OAuth client is not necessarily identical to one AI Agent instance. A host application may need an additional identity-mapping layer when one OAuth client represents multiple Agents.
+This example is intentionally simplified. A Doorkeeper application or OAuth client is **not necessarily identical to one AI Agent instance**. For example, one MCP client may front multiple logical Agents. Production applications may therefore need an explicit identity-mapping layer:
+
+```text
+Authenticated OAuth / MCP identity
+            ↓
+Rails identity mapping
+            ↓
+ActingFor::Agent
+            ↓
+Principal + Delegation
+            ↓
+ActingFor.authorize(...)
+```
+
+ActingFor does not require Devise, Doorkeeper, or MCP. Existing applications may use another authentication provider, OAuth/OIDC service, API credential, transport, or trusted internal workflow as long as the host can reliably establish the Agent and Principal before calling ActingFor.
 
 ## Security / Responsibility Boundary
 
