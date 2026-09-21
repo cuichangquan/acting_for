@@ -3423,3 +3423,53 @@ test: use valid audit mutations for readonly checks
 初回CI #22では、decision / reason_code / matched_delegation_idsの変更値がModel validationで先に拒否され、readonly exceptionの期待と不一致になったためTest側を修正した。Production codeは変更していない。
 
 修正後の正式GitHub Actions CI #23 / run 35576797347 は **completed / success、全5 jobs green**。Ruby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrixとRuboCopが成功。Ruby 3.4 / Rails 8.0 jobは **326 runs / 821 assertions / 0 failures / 0 errors / 0 skips**。
+
+
+## D234: Security hardening batch A-H
+
+- 日付：2026-09-21（Asia/Tokyo）。
+- Status：**確定・実装済み / 正式CI確認待ち**。
+- 根拠：ユーザーがD233後のSecurity Invariant Test強化候補A〜Hを個別に承認し、まとめて追加することを明示承認。
+- 方針：新しいProduction behavior / Public API / schemaは追加せず、既存Security ModelとResponsibility Boundaryを専用Regression Test / Executable Documentationとして固定する。
+
+対象：
+
+| ID | Security hardening |
+| --- | --- |
+| A | Sensitive Context / Audit Data Leakage |
+| B | Exception / Error Information Leakage |
+| C | Database Constraint Security |
+| D | TOCTOU / Stale Decision |
+| E | Delegation Management Host Authorization Boundary |
+| F | Replay / Duplicate Request Boundary |
+| G | Concurrent `revoke!` Race Condition |
+| H | Cross-Principal / Cross-Agent Confused-Deputy |
+
+追加Test / Dummy boundary fixture：
+
+```text
+test/integration/sensitive_context_security_test.rb
+test/integration/error_information_leakage_test.rb
+test/integration/database_constraint_security_test.rb
+test/integration/stale_decision_security_test.rb
+test/integration/delegation_management_boundary_test.rb
+test/integration/replay_boundary_test.rb
+test/integration/concurrent_revocation_security_test.rb
+test/integration/confused_deputy_security_test.rb
+test/dummy/app/services/host_delegation_manager.rb
+```
+
+主要Contract：
+
+- A：raw ContextをAuditへfallbackせず、明示allowlistだけを保存し、forbidden keyのsecret値をAudit / ActingFor生成Exceptionへ露出しない。
+- B：ActingFor生成Exceptionにsensitive value / object inspection / DB詳細を不用意に含めず、AuditPersistenceErrorはsafe messageを返しつつ内部causeを保持する。
+- C：Model validationを迂回するdirect insertでも、PostgreSQLのunique / FK / CHECK / NOT NULLが主要不正状態を拒否する。
+- D：Decisionはauthorize時点のhistorical resultでありauthorization tokenではない。revoke / expiration / Context変更後は再authorize結果を使う。
+- E：Delegation作成・取消callerの認証・認可はHost責務。Dummy Host boundaryで許可された場合だけCore delegate / revokeを呼ぶ。
+- F：同一requestのreplay / duplicate prevention / exactly-onceはCore責務外。同一authorize callは独立評価され、それぞれAuditを追加する。
+- G：実Thread + 複数DB connectionで同一Delegationを同時revokeし、両callerが同一の最終revoked_atへ収束し、後続authorizeがdenyとなることを確認する。
+- H：Agent / Principal / Resourceのbindingを攻撃scenarioとしてまとめ、別Agent・別Principal・別Resource ID・別Resource typeへのDelegation流用を拒否する。
+
+Gのみ実並行Testのため `use_transactional_tests = false` とし、専用setup / teardownで作成データを明示cleanupする。sleep依存ではなくQueue barrierで同時開始を制御する。
+
+Production code / Public API / schema / release automationは変更しない。正式4 matrix CI / RuboCop結果を確認するまで次のSecurity hardeningには進まない。

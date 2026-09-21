@@ -26,7 +26,7 @@
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
-| 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 Delegation lifecycle security regression Test + D233 AuditEvent tamper resistance Test（いずれもCI確認済み） |
+| 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 / D233 CI確認済み + D234 Security hardening batch A-H追加（D234 CI確認待ち） |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
 | 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、RELEASE READY / D076全9項目PASS / CI全5 jobs green |
@@ -55,6 +55,8 @@ Public API / Value Object実装
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D234 Security hardening batch A-H：Sensitive Context / Error Leakage / DB Constraints / Stale Decision / Delegation Management Host Boundary / Replay / Concurrent revoke / Confused-Deputy bindingの8領域を専用Regression Test化。Production code / Public API / schema変更なし。正式CI確認待ち。
 
 - D233 Security hardening：AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのsnapshot更新禁止、destroy禁止、後続Authorizationの新規INSERT、Agent / Delegation後続変更後のsnapshot保持を対象化。Production code変更なし。正式CI #23全5 jobs green。Ruby 3.4 / Rails 8.0で326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。
 

@@ -442,3 +442,23 @@ D232のDelegation lifecycle hardeningに続き、既存Security Model §18のAud
 対象はModel-levelの通常操作とPublic Authorization経路のobservable contract。DB trigger / WORM / cryptographic signingはv0.1へ追加せず、raw SQLやDB administratorによる迂回は既存Security Model §23どおりHost責務境界とする。
 
 D233は正式GitHub Actions CI #23で全5 jobs green。Ruby 3.4 / Rails 8.0 jobは326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。詳細はDECISIONS D233を参照する。
+
+
+## 21. Security hardening batch A-H（D234）
+
+D232 / D233に続くRelease前のSecurity hardeningとして、ユーザー承認済みのA〜Hをまとめて正式Regression Test化する。既存Security Model / Responsibility BoundaryのExecutable Documentationであり、新しいCore仕様・Public API・schemaを追加しない。
+
+| ID | Test focus | Main boundary |
+| --- | --- | --- |
+| A | Sensitive Context / Audit Data Leakage | Security Model §20 / Audit Context |
+| B | Exception / Error Information Leakage | Security Model §21 |
+| C | Database Constraint Security | Security Model §23 / Domain schema |
+| D | TOCTOU / Stale Decision | Security Model §13 |
+| E | Delegation Management Host Authorization | Security Model §10 |
+| F | Replay / Duplicate Request | Security Model §9 |
+| G | Concurrent `revoke!` | Security Model §24 |
+| H | Confused-Deputy binding | Security Model §11 / §14 |
+
+A / Bは既存authorization_testの個別coverageをSecurity scenarioとして再構成し、secret値がAudit / ActingFor生成Exceptionへ露出しないことを直接assertする。CはActiveRecord validationを迂回するinsertでPostgreSQL制約を直接検証する。D / FはDecisionやAuthorizationをcapability / exactly-once tokenとして扱わない境界を固定する。Eはtest/dummy Host fixtureでcaller authorizationがCore外であることを示す。GはD232で見送った実Thread concurrencyをQueue barrier + separate connectionsで追加する。Hは既存個別matching testをcross-Agent / cross-Principal / cross-Resource攻撃scenarioとしてまとめる。
+
+Production behavior変更なし。正式CI結果はD234完了記録で確定する。

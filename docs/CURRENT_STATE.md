@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D233
+D234
 ```
 
 ## Current Status
@@ -51,11 +51,14 @@ Built gem / package / artifact installation / documentation / support verificati
 v0.1 Release Readiness Gate: RELEASE READY / D076 all 9 PASS
 Post-readiness Delegation lifecycle security regression tests implemented and formal CI verified
 Post-readiness AuditEvent tamper resistance security regression tests implemented and formal CI verified
+Post-readiness Security hardening batch A-H implemented; formal CI verification pending
 
 Not released
 ```
 
 ## Implemented
+
+D234：Release前Security hardening候補A〜Hをまとめて正式Regression Test化。Sensitive Context、Error Leakage、DB Constraints、Stale Decision、Delegation Management Host Boundary、Replay Boundary、Concurrent revoke、Confused-Deputy bindingを対象とする。Production code / Public API / schema変更なし。正式CI確認待ち。詳細は[DECISIONS D234](DECISIONS.md#d234-security-hardening-batch-a-h)。
 
 D233：Release前の追加Security hardeningとして、AuditEvent tamper resistanceの正式Integration Testを追加。persist済みAuditEventのAuthorization snapshot更新禁止、destroy禁止、後続Authorizationが既存Auditを書き換えず新規INSERTすること、Agent identifier変更・Delegation revoke後も既存snapshotが保持されることを検証する。Production code / Public API / schema変更なし。正式CI #23は全5 jobs green、Ruby 3.4 / Rails 8.0で326 runs / 821 assertions / 0 failures / 0 errors / 0 skips。詳細は[DECISIONS D233](DECISIONS.md#d233-auditevent-tamper-resistance-security-regression-tests)。
 
@@ -146,7 +149,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D233の正式CI成功確認まで完了。次のSecurity Invariant Test強化項目を1つだけ選ぶ。Actual Releaseにはまだ進まない。
+D234 Security hardening batch A-Hを含むGitHub `main` の正式4 matrix CI / RuboCop結果を確認する。成功確認前に次のSecurity hardeningやActual Releaseへ進まない。
 
 ## Important Rules
 
