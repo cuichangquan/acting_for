@@ -1,7 +1,9 @@
 # ActingFor 0.1.0
 
-Draft for GitHub Release v0.1.0. Formal publication target: GitHub Releases.
-This file prepares the release body; ActingFor is not released yet. The installation below is for use after RubyGems publication is confirmed.
+Published on 2026-09-22 as GitHub Release `v0.1.0` and RubyGems `acting_for` 0.1.0.
+
+Source SHA: `6722623a9f24a38c41091e867209bc8f3d913c36`  
+Gem SHA256: `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`
 
 *Rails-native delegated authorization for AI agents.*
 
@@ -34,7 +36,7 @@ Support checked on 2026-09-19: Ruby 3.4 and 4.0 are in normal maintenance. Rails
 
 ## Installation
 
-After RubyGems `acting_for` 0.1.0 is published, add:
+Add:
 
 ```ruby
 gem "acting_for", "~> 0.1.0"

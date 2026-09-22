@@ -14,7 +14,7 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 ## Status
 
-> **Implemented and CI verified; Not released.** The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16. The runnable setup was verified in a new Rails application in [D230](docs/DECISIONS.md#d230-runnable-quick-start-implementation). ActingFor has not been published to RubyGems.
+> **Released: v0.1.0.** ActingFor 0.1.0 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.0](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0). The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 
 ## Why ActingFor?
 
@@ -175,12 +175,12 @@ Both calls use the implemented [v0.1 Public API](docs/public_api_v0_1.md). Conte
 
 ## Quick Start
 
-ActingFor is not yet published to RubyGems. This pre-release setup installs the public GitHub `main` branch.
+Install the released `0.1.0` gem from RubyGems.
 
 1. Add the Gem and install dependencies:
 
    ```ruby
-   gem "acting_for", github: "cuichangquan/acting_for", branch: "main"
+   gem "acting_for", "~> 0.1.0"
    # Rails 8.0 uses JSON options removed in JSON 3.
    gem "json", "< 3"
    ```
@@ -240,7 +240,7 @@ ActingFor is not yet published to RubyGems. This pre-release setup installs the 
    # => [:allow, true, false, false]
    ```
 
-For the complete runnable setup—including a new Rails application, public GitHub pre-release installation, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
+For the complete runnable setup—including a new Rails application, RubyGems installation, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
 
 ## How does an external AI Agent reach ActingFor?
 

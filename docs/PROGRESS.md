@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、public source向けrelease-facing documentation / Demo build cleanupを実施。Releaseは未実施。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、public source向けrelease-facing documentation / Demo build cleanupを実施。D238でActingFor 0.1.0をRubyGems / `v0.1.0` tag / GitHub Releaseへ正式公開し、配布artifactのchecksum / install verificationまで完了。
 
 ## 全体進捗
 
@@ -29,7 +29,7 @@
 | 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 / D233 + D234 Security hardening batch A-H（すべてCI確認済み） |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
-| 20 | Gem Release | ⬜ 未実施。Repository Public化・release-facing docs整理済み（D237）。RubyGems / tag / GitHub Releaseは未実施 |
+| 20 | Gem Release | ✅ `acting_for` 0.1.0 / `v0.1.0` / GitHub Release公開・配布artifact検証完了（D238） |
 
 ## 現在の位置
 
@@ -49,12 +49,14 @@ Public API / Value Object実装
   Audit integration ✅
       ↓
 品質・公開：正式TestのCI前coverage実装・Docker検証済み
-  正式Tests ✅ → CI ✅ → Runnable Quick Start ✅ → Release（未実施 ← 現在ここ）
+  正式Tests ✅ → CI ✅ → Runnable Quick Start ✅ → Release 0.1.0 ✅
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D238 v0.1.0 Public Release：最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36`、17-file gem 15,872 bytes、SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`。RubyGems `acting_for 0.1.0` 公開後に再取得artifactのSHA256一致、fresh Ruby 3.4.10 containerで通常installとversion `0.1.0`を確認。`v0.1.0` tagはexact source SHA、GitHub Release `ActingFor 0.1.0` 公開済み。
 
 - D237 Public repository / release-facing cleanup：ActingForとOfficial DemoのvisibilityをPublicへ変更済み。ActingFor README / Getting Startedからprivate repository認証前提を除去し、Demo README / Dockerfile / compose / Architecture / Manual VerificationからSSH forwarding・private access前提を除去。Demo commit `693447b9dc903c55831cff016a1958ba67121772`。RubyGems未公開のためNot releasedは維持。
 
@@ -91,7 +93,7 @@ Public API / Value Object実装
 - v0.1正式CI（D229）：PR / main push、正式4 matrix、PostgreSQL 16、`db:prepare` / Minitest、core RuboCop独立jobを実装。GitHub Actions全5 jobs green。Productionはbehavior非変更のStyle修正のみ。
 - Runnable Quick Start（D230）：GitHub main Gem・Rails標準Migration取り込み・User / Product・Agent・delegate / authorize・全Decision predicate・Audit保存を新規Rails Appで検証。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15。READMEの古いstatus / support表記整理。Production code変更なし。
 
-今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式CI matrix全体とRuboCopはD229で検証成功。Quick StartはD230で実装・新規Rails Applicationで検証成功。GemはNot released。
+今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式CI matrix全体とRuboCopはD229で検証成功。Quick StartはD230で実装・新規Rails Applicationで検証成功。ActingFor 0.1.0はRubyGems / GitHub Releaseで公開済み。
 
 ## 設計の正本
 

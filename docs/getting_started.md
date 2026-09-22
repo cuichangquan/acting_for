@@ -2,7 +2,7 @@
 
 This is the detailed runnable introduction to ActingFor. It preserves the code, values, and expected results verified in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation).
 
-ActingFor is not yet released to RubyGems. This guide installs the public GitHub `main` branch, which can change; Bundler records the resolved Git revision in `Gemfile.lock`.
+ActingFor 0.1.0 is released on RubyGems. This guide installs the released `~> 0.1.0` version requirement.
 
 ## Verified environment
 
@@ -22,12 +22,12 @@ rails _8.0.5.1_ new shopping_demo --database=postgresql --minimal --skip-bundle 
 cd shopping_demo
 ```
 
-## 2. Configure the pre-release dependency
+## 2. Configure the released dependency
 
-The repository is public, so no GitHub repository credential, SSH agent, or HTTPS-to-SSH rewrite is required. Add to the generated `Gemfile`:
+Add to the generated `Gemfile`:
 
 ```ruby
-gem "acting_for", github: "cuichangquan/acting_for", branch: "main"
+gem "acting_for", "~> 0.1.0"
 # Rails 8.0 uses JSON options removed in JSON 3.
 gem "json", "< 3"
 ```
@@ -35,8 +35,6 @@ gem "json", "< 3"
 ```sh
 bundle install
 ```
-
-After a RubyGems release, replace the Git source with the released version requirement.
 
 ## 3. Install migrations and create host models
 

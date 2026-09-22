@@ -3648,3 +3648,65 @@ docs: update demo for public repositories
 
 次はrelease plan Step 3として、このrelease-facing documentation commitの正式GitHub Actions全5 jobs Greenを確認する。Green後に同commitを最終Artifact Sourceとして固定し、fresh artifact verificationへ進む。
 
+## D238: v0.1.0 public release completed
+
+- 日付：2026-09-22（Asia/Tokyo）。
+- 状態：**確定。ActingFor 0.1.0 release完了。**
+- 根拠：ユーザーがRubyGems publication、`v0.1.0` tag作成 / push、GitHub Release publicationをそれぞれ明示承認し、実行結果を提示した。GitHub側でもtag / Releaseを確認した。
+
+### Final artifact
+
+Release用Source SHA：
+
+```text
+6722623a9f24a38c41091e867209bc8f3d913c36
+```
+
+最終artifact：
+
+- Gem：`acting_for-0.1.0.gem`
+- Package file count：17
+- Size：15,872 bytes
+- SHA256：`a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`
+- strict build / package audit：PASS
+- fresh Rails 8.0.5.1 / Ruby 3.4.10 / PostgreSQL 16 artifact verification：PASS
+- Decisions：`[:allow, :require_approval, :deny]`
+- AuditEvents：3
+
+### RubyGems publication
+
+RubyGemsへ `acting_for 0.1.0` を公開した。MFA / security device verification後、RubyGems CLIは `Successfully registered gem: acting_for (0.1.0)` を返した。
+
+公開後にRubyGemsから `gem fetch acting_for -v 0.1.0` で再取得し、SHA256が最終artifactと完全一致することを確認した。
+
+fresh `ruby:3.4.10-slim` containerで `gem install acting_for -v 0.1.0 --no-document` に成功し、`require "acting_for"` 後の `ActingFor::VERSION` は `0.1.0`。
+
+### Git tag
+
+`v0.1.0` をRelease用Source SHAへ作成・pushし、remote refを確認した。
+
+```text
+v0.1.0
+→ 6722623a9f24a38c41091e867209bc8f3d913c36
+```
+
+tagは既存Release Sourceを固定し、後続のpost-release documentation commitには移動しない。
+
+### GitHub Release
+
+GitHub Release：
+
+- Name：`ActingFor 0.1.0`
+- Tag：`v0.1.0`
+- Draft：false
+- Prerelease：false
+- URL：https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0
+
+Release bodyにRubyGems version、exact Source SHA、Gem size、SHA256、installation、Features、Public API、Host boundary、supported environment、known limitationsを記載した。
+
+### Post-release boundary
+
+v0.1.0の不可逆な公開transactionは完了。以後のmain更新はpost-release documentation / 次version開発として扱い、`v0.1.0` tagと公開済みartifactを変更しない。
+
+Official Demoは現時点では固定RC Git commit依存のため、次の独立作業としてRubyGems `~> 0.1.0` へ切り替え、automated integration verificationを実行する。Smoke / Human Manual Verificationは完了までPASSとは記録しない。
+

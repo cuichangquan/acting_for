@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D237
+D238
 ```
 
 ## Current Status
@@ -55,11 +55,14 @@ Post-readiness Security hardening batch A-H implemented and formal CI verified
 v0.1.0 Release Candidate baseline fixed at `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` via `release/v0.1.0-rc`
 Pre-publication human confirmations completed for email exposure / RubyGems authentication; RC fresh artifact verification PASS (D236)
 Repository and official Demo are public; public-source documentation and Demo build instructions adjusted (D237)
+ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` tag and GitHub Release published (D238)
 
-Not released
+Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D238：ActingFor 0.1.0 release完了。最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36` からstrict buildした17-file gem（15,872 bytes / SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`）をRubyGemsへ公開。RubyGemsから再取得したartifactのSHA256一致とRuby 3.4.10 fresh containerでの通常install / `ActingFor::VERSION == "0.1.0"`を確認。`v0.1.0` tagは同Source SHAを指し、GitHub Release `ActingFor 0.1.0` はdraft=false / prerelease=falseで公開済み。
 
 D237：ActingFor / ActingFor DemoのGitHub Repository Public化を確認し、RubyGems公開前のtruthful `Not released` 状態を維持したまま、private repository前提のREADME / Getting Started / Demo Docker build・manual verification記述をpublic source向けへ整理。Demo側commit `693447b9dc903c55831cff016a1958ba67121772`。RubyGems push / `v0.1.0` tag / GitHub Releaseは未実施。
 
@@ -154,9 +157,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D237でActingFor / ActingFor DemoのRepository Public化を確認し、private repository前提のrelease-facing documentation / Demo build instructionsをpublic source向けへ整理した。RubyGemsはまだ未公開のため、`Not released` とGitHub source installationを維持する。Demo exact-ref automated / smoke / Human Manual Verificationは未再実行であり、PASSとは記録しない。
+D238でActingFor 0.1.0のRubyGems publication、配布artifactのchecksum / install verification、`v0.1.0` tag、GitHub Release公開まで完了した。Release用Source SHAは `6722623a9f24a38c41091e867209bc8f3d913c36`、配布gem SHA256は `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`。
 
-次の1項目は、release plan Step 3として **このrelease-facing documentation commitのGitHub Actions全5 jobs Greenを確認すること**。Green確認後、そのcommitを最終Artifact Sourceとして固定し、fresh `.gem` build / package audit / SHA256 / artifact install verificationへ進む。RubyGems publication、`v0.1.0` tag、GitHub Releaseはそれぞれ別の不可逆操作として未承認・未実施。
+次の1項目は、Official DemoのActingFor依存を固定RC Git commitから **RubyGems `~> 0.1.0` へ切り替え、automated integration verificationを実行すること**。Smoke / Human Manual Verificationは完了するまでPASSとは記録しない。
 
 ## Important Rules
 
