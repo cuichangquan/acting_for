@@ -446,6 +446,9 @@ ActingFor is not an authentication provider, OAuth/OIDC server, Agent framework,
 Project documents are maintained primarily in Japanese:
 
 - [Getting Started](docs/getting_started.md)
+- [Release Runbook](docs/release_runbook.md)
+- [v0.1.0 Release Process and Verification Record](docs/release_process_v0_1_0.md)
+- [v0.1.0 Release Notes](docs/release_notes_v0_1_0.md)
 - [Current State](docs/CURRENT_STATE.md)
 - [Progress](docs/PROGRESS.md)
 - [Project scope, roadmap, and terminology](docs/PROJECT.md)
