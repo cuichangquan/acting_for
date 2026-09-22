@@ -3595,3 +3595,56 @@ RubyGems.org account作成済み。Multi-factor authenticationを有効化し、
 - GitHub Release publication。
 
 Actual Releaseは `docs/release_plan_v0_1_0.md` のHuman confirmationとExecution orderに従い、不可逆操作ごとに明示承認を得て進める。
+
+## D237: public repositories and pre-RubyGems release-facing cleanup
+
+- 日付：2026-09-22（Asia/Tokyo）。
+- 状態：**確定。Repository Public化済み。Gem releaseは未実施。**
+- 根拠：ユーザーがActingFor / Official DemoのPublic化を実施し、public source向けdocumentation / Demo build cleanupのcommit・pushを明示承認した。
+
+### Repository visibility
+
+以下のGitHub repository metadataで `visibility: public` / `private: false` を確認した。
+
+- `cuichangquan/acting_for`
+- `cuichangquan/acting_for_demo`
+
+ActingForのREADME / docs / LICENSEとOfficial DemoのREADME / docs / LICENSEがmainに存在することも確認した。既存Git historyはD236方針どおりrewriteしない。
+
+### ActingFor release-facing documentation
+
+RubyGems未公開という事実は維持し、`Not released` を変更しない。そのうえでPublic化後に不正確となったprivate repository access前提だけを整理する。
+
+- README Quick Startをpublic GitHub `main` installationとして案内。
+- Getting StartedからGitHub SSH key / HTTPS-to-SSH rewriteの必須手順を除去。
+- RubyGems公開後にreleased version requirementへ切り替える説明は維持。
+- Public API / Security Contract / supported matrixは変更しない。
+
+### Official Demo public-source cleanup
+
+Official Demo commit：
+
+```text
+693447b9dc903c55831cff016a1958ba67121772
+docs: update demo for public repositories
+```
+
+以下をpublic source前提へ変更した。
+
+- READMEのprivate repository / SSH requirementを除去。
+- DockerfileのBuildKit SSH mount / ssh-keyscan / Git URL rewriteを除去し、public Git dependencyを通常のBundler installで取得。
+- compose.ymlのbuild SSH forwarding設定を除去。
+- Architecture / Manual VerificationのGitHub SSH / `--ssh default` 前提を除去。
+- ActingFor dependencyは引き続き固定RC `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` を使用。
+- exact-ref automated / smoke / Human Manual Verificationは未再実行のためPASSとは記録しない。
+
+### Release boundary
+
+このDecisionで承認・実施した不可逆操作はRepository Public化のみ。以下は未承認・未実施。
+
+- RubyGems `acting_for 0.1.0` publication。
+- `v0.1.0` tag作成 / push。
+- GitHub Release publication。
+
+次はrelease plan Step 3として、このrelease-facing documentation commitの正式GitHub Actions全5 jobs Greenを確認する。Green後に同commitを最終Artifact Sourceとして固定し、fresh artifact verificationへ進む。
+

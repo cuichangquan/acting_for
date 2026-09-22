@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-21
+更新日：2026-09-22
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D236
+D237
 ```
 
 ## Current Status
@@ -54,11 +54,14 @@ Post-readiness AuditEvent tamper resistance security regression tests implemente
 Post-readiness Security hardening batch A-H implemented and formal CI verified
 v0.1.0 Release Candidate baseline fixed at `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` via `release/v0.1.0-rc`
 Pre-publication human confirmations completed for email exposure / RubyGems authentication; RC fresh artifact verification PASS (D236)
+Repository and official Demo are public; public-source documentation and Demo build instructions adjusted (D237)
 
 Not released
 ```
 
 ## Implemented
+
+D237：ActingFor / ActingFor DemoのGitHub Repository Public化を確認し、RubyGems公開前のtruthful `Not released` 状態を維持したまま、private repository前提のREADME / Getting Started / Demo Docker build・manual verification記述をpublic source向けへ整理。Demo側commit `693447b9dc903c55831cff016a1958ba67121772`。RubyGems push / `v0.1.0` tag / GitHub Releaseは未実施。
 
 D234：Release前Security hardening候補A〜Hをまとめて正式Regression Test化。Sensitive Context、Error Leakage、DB Constraints、Stale Decision、Delegation Management Host Boundary、Replay Boundary、Concurrent revoke、Confused-Deputy bindingを対象とする。Production code / Public API / schema変更なし。正式CI #31は全5 jobs green、Ruby 3.4 / Rails 8.0で351 runs / 889 assertions / 0 failures / 0 errors / 0 skips。詳細は[DECISIONS D234](DECISIONS.md#d234-security-hardening-batch-a-h)。
 
@@ -151,9 +154,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D236でPublic化前のhuman confirmationとRC fresh artifact verificationを整理した。Demo exact-ref automated / smoke / Human Manual Verificationは未再実行のためPASSとは記録しないが、ユーザー承認によりv0.1.0 Public化のblockerにはしない。既存commit email exposureはhistory rewriteせず許容し、RubyGems account / MFA / `gem signin` は確認済み。
+D237でActingFor / ActingFor DemoのRepository Public化を確認し、private repository前提のrelease-facing documentation / Demo build instructionsをpublic source向けへ整理した。RubyGemsはまだ未公開のため、`Not released` とGitHub source installationを維持する。Demo exact-ref automated / smoke / Human Manual Verificationは未再実行であり、PASSとは記録しない。
 
-Actual Release transactionはまだ開始しない。次の1項目は、release plan Step 2の **Repository Public化**についてユーザーの明示承認を得ること。RubyGems publication、`v0.1.0` tag、GitHub Releaseはそれぞれ別の不可逆操作として未承認・未実施。
+次の1項目は、release plan Step 3として **このrelease-facing documentation commitのGitHub Actions全5 jobs Greenを確認すること**。Green確認後、そのcommitを最終Artifact Sourceとして固定し、fresh `.gem` build / package audit / SHA256 / artifact install verificationへ進む。RubyGems publication、`v0.1.0` tag、GitHub Releaseはそれぞれ別の不可逆操作として未承認・未実施。
 
 ## Important Rules
 

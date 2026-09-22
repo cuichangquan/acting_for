@@ -2,7 +2,7 @@
 
 This is the detailed runnable introduction to ActingFor. It preserves the code, values, and expected results verified in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation).
 
-ActingFor is not yet released to RubyGems. This guide installs GitHub `main`, which can change; Bundler records the resolved Git revision in `Gemfile.lock`.
+ActingFor is not yet released to RubyGems. This guide installs the public GitHub `main` branch, which can change; Bundler records the resolved Git revision in `Gemfile.lock`.
 
 ## Verified environment
 
@@ -24,19 +24,7 @@ cd shopping_demo
 
 ## 2. Configure the pre-release dependency
 
-The repository is currently private, so Bundler needs repository access and authenticated Git. D230 used an existing GitHub SSH key and agent with this HTTPS-to-SSH rewrite because GitHub's `github:` Gemfile shorthand uses HTTPS:
-
-```sh
-git config --global url."git@github.com:".insteadOf "https://github.com/"
-```
-
-Use this only in an appropriate development environment, or use an existing authenticated HTTPS setup. Remove the rewrite when no longer needed:
-
-```sh
-git config --global --unset url."git@github.com:".insteadOf
-```
-
-Add to the generated `Gemfile`:
+The repository is public, so no GitHub repository credential, SSH agent, or HTTPS-to-SSH rewrite is required. Add to the generated `Gemfile`:
 
 ```ruby
 gem "acting_for", github: "cuichangquan/acting_for", branch: "main"

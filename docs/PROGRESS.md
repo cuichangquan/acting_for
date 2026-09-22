@@ -1,10 +1,10 @@
 # ActingFor Progress
 
-更新日：2026-09-21
+更新日：2026-09-22
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。Releaseは未実施。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、public source向けrelease-facing documentation / Demo build cleanupを実施。Releaseは未実施。
 
 ## 全体進捗
 
@@ -29,7 +29,7 @@
 | 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 / D233 + D234 Security hardening batch A-H（すべてCI確認済み） |
 | 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
-| 20 | Gem Release | ⬜ 未実施。D231 artifact / docs検証済み、RELEASE READY / D076全9項目PASS / CI全5 jobs green |
+| 20 | Gem Release | ⬜ 未実施。Repository Public化・release-facing docs整理済み（D237）。RubyGems / tag / GitHub Releaseは未実施 |
 
 ## 現在の位置
 
@@ -55,6 +55,8 @@ Public API / Value Object実装
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D237 Public repository / release-facing cleanup：ActingForとOfficial DemoのvisibilityをPublicへ変更済み。ActingFor README / Getting Startedからprivate repository認証前提を除去し、Demo README / Dockerfile / compose / Architecture / Manual VerificationからSSH forwarding・private access前提を除去。Demo commit `693447b9dc903c55831cff016a1958ba67121772`。RubyGems未公開のためNot releasedは維持。
 
 - D236 pre-publication confirmations / RC artifact verification：Demo exact-ref verification未再実行はPASS扱いせず、ユーザー承認によりrelease blockerから外した。既存commit emailはhistory rewriteせずPublic化を許容し、今後のlocal commitはGitHub noreply email方針。RubyGems account / MFA / security-device verification / `gem signin` 成功を確認。固定RC `2c2e1a6638f12b7fb961f04362f807e2cb6ff9a5` からstrict buildした17-file artifactをfresh Rails 8.0.5.1 / Ruby 3.4.10 / PostgreSQL 16へinstallし、allow / require_approval / deny・AuditEvent 3件までPASS。RC SHA256は `cc2ac2e2716745f306b8ebd0307aad47f88468c815da489a0c395c286ed469d4`。Repository Public化・RubyGems push・tag・GitHub Releaseは未実施。
 

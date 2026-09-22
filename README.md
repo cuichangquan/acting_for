@@ -175,7 +175,7 @@ Both calls use the implemented [v0.1 Public API](docs/public_api_v0_1.md). Conte
 
 ## Quick Start
 
-This pre-release setup installs GitHub `main`; repository access and authenticated Git are currently required.
+ActingFor is not yet published to RubyGems. This pre-release setup installs the public GitHub `main` branch.
 
 1. Add the Gem and install dependencies:
 
@@ -240,7 +240,7 @@ This pre-release setup installs GitHub `main`; repository access and authenticat
    # => [:allow, true, false, false]
    ```
 
-For the complete D230-verified setup—including a new Rails application, private repository authentication, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
+For the complete runnable setup—including a new Rails application, public GitHub pre-release installation, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
 
 ## How does an external AI Agent reach ActingFor?
 
