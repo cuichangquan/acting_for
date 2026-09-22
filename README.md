@@ -16,6 +16,12 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 > **Released: v0.1.0.** ActingFor 0.1.0 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.0](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0). The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 
+## ActingFor at a glance
+
+![ActingFor overview: Principal, Delegation, Agent, authorization decisions, AuditEvent, and Rails Host Application](docs/images/acting_for_overview.svg)
+
+The diagram summarizes the v0.1 responsibility boundary: the Host authenticates/resolves the Agent and Principal and establishes trusted business data; ActingFor evaluates the Delegation and returns `allow`, `deny`, or `require_approval`. Approval workflow and business execution remain Host responsibilities.
+
 ## Why ActingFor?
 
 Traditional Rails authorization usually answers:
