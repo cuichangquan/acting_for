@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">ActingFor overview</title>
+  <desc id="desc">Rails向けAI Agent代理権限・認可Gem ActingForの全体像。PrincipalからAgentへのDelegation、Authorization、constraints、Decision、Audit、Rails Host Applicationとの責務境界を示す。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,5 L0,10 Z" fill="#1d2733"/></marker>
+    <style>
+      .bg{fill:#fffdf8}.ink{fill:#17212b}.line{stroke:#17212b;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none}.thin{stroke-width:2.5}.dash{stroke-dasharray:9 8}.blue{fill:#e6f4ff}.pink{fill:#fdebec}.green{fill:#eaf7e8}.yellow{fill:#fff6d7}.gray{fill:#f6f4ef}.white{fill:#fff}.blueStroke{stroke:#5b9bd5}.pinkStroke{stroke:#d88b92}.greenStroke{stroke:#78a96e}.yellowStroke{stroke:#d4aa3d}.panel{stroke:#243446;stroke-width:3;rx:22;ry:22}.h1{font:700 68px 'Comic Sans MS','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif}.h2{font:700 29px 'Noto Sans CJK JP','Yu Gothic',sans-serif}.h3{font:700 23px 'Noto Sans CJK JP','Yu Gothic',sans-serif}.body{font:500 22px 'Noto Sans CJK JP','Yu Gothic',sans-serif}.small{font:500 18px 'Noto Sans CJK JP','Yu Gothic',sans-serif}.tiny{font:500 16px 'Noto Sans CJK JP','Yu Gothic',sans-serif}.mono{font:600 18px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.section{font:700 29px 'Noto Sans CJK JP','Yu Gothic',sans-serif;fill:#17355a}.center{text-anchor:middle}.right{text-anchor:end}.muted{fill:#4a5562}.accent{stroke:#71b5e8;stroke-width:8;stroke-linecap:round}.accentY{stroke:#e5c54f;stroke-width:8;stroke-linecap:round}
+    </style>
+  </defs>
+  <rect class="bg" width="1600" height="1120"/>
+  <text x="55" y="78" class="h1 ink">ActingFor</text>
+  <path d="M45 95 C150 88, 265 102, 385 92" class="accent" fill="none"/>
+  <text x="430" y="50" class="h2 ink">Rails向け AI Agent 代理権限・認可 Gem</text>
+  <text x="430" y="82" class="body muted">Rails-native delegated authorization for AI agents.</text>
+  <rect x="1035" y="18" width="510" height="88" rx="24" class="pink pinkStroke" stroke-width="2"/>
+  <text x="1060" y="52" class="body ink">「AI Agentが、誰の代理として、何をしてよいか」</text>
+  <text x="1060" y="84" class="body ink">をRailsで安全に判断する。</text>
+  <rect x="45" y="125" width="260" height="46" rx="16" class="blue"/>
+  <text x="60" y="158" class="section">1. 全体の流れ</text>
+  <circle cx="112" cy="225" r="29" class="blue blueStroke" stroke-width="3"/>
+  <path d="M68 313 Q72 265 112 265 Q152 265 156 313" class="line"/>
+  <text x="112" y="350" class="h3 center ink">User / Principal</text>
+  <text x="55" y="382" class="small ink">本人（人間・組織など）</text>
+  <text x="55" y="410" class="small ink">Agentへ限定権限を委任</text>
+  <path d="M325 211 h76 l24 24 v95 h-100 z" class="white panel"/>
+  <path d="M401 211 v25 h24" class="line thin"/>
+  <path d="M342 251 h58 M342 276 h58 M342 301 h45" class="line thin"/>
+  <text x="375" y="352" class="h3 center ink">Delegation</text>
+  <text x="315" y="382" class="small ink">• 誰の代理か</text>
+  <text x="315" y="408" class="small ink">• action / resource</text>
+  <text x="315" y="434" class="small ink">• constraints / effect / expiry</text>
+  <path d="M170 255 C215 255 252 255 307 255" class="line" marker-end="url(#arrow)"/>
+  <text x="235" y="230" class="small center ink">Delegation</text>
+  <text x="235" y="251" class="tiny center muted">権限の委任</text>
+  <rect x="510" y="230" width="92" height="75" rx="18" class="blue blueStroke" stroke-width="3"/>
+  <circle cx="535" cy="263" r="7" class="ink"/><circle cx="577" cy="263" r="7" class="ink"/>
+  <path d="M535 286 Q556 300 577 286" class="line thin"/>
+  <path d="M556 230 v-22" class="line thin"/><circle cx="556" cy="199" r="8" class="white panel"/>
+  <path d="M490 260 h20 M602 260 h20 M526 305 v30 M586 305 v30" class="line thin"/>
+  <text x="556" y="355" class="h3 center ink">AI Agent</text>
+  <text x="476" y="384" class="small ink">• Userとは別の主体</text>
+  <text x="476" y="410" class="small ink">• Hostが認証・resolve</text>
+  <text x="476" y="436" class="small ink">• Userの代理としてaction要求</text>
+  <path d="M435 270 H490" class="line" marker-end="url(#arrow)"/>
+  <path d="M635 270 H745" class="line" marker-end="url(#arrow)"/>
+  <text x="690" y="232" class="small center ink">request</text>
+  <text x="690" y="254" class="tiny center muted">action</text>
+  <rect x="765" y="140" width="360" height="320" rx="26" class="pink pinkStroke" stroke-width="3"/>
+  <text x="945" y="182" class="h2 center ink">ActingFor</text>
+  <text x="945" y="210" class="small center muted">Rails Gem</text>
+  <rect x="800" y="228" width="290" height="55" rx="13" class="white blueStroke" stroke-width="2.5"/>
+  <text x="945" y="262" class="h3 center ink">Authorization</text>
+  <rect x="800" y="295" width="290" height="55" rx="13" class="white blueStroke" stroke-width="2.5"/>
+  <text x="945" y="329" class="h3 center ink">Constraint Check</text>
+  <rect x="800" y="362" width="290" height="72" rx="13" class="white blueStroke" stroke-width="2.5"/>
+  <text x="945" y="391" class="h3 center ink">Decision</text>
+  <text x="945" y="418" class="small center ink">allow / deny / require_approval</text>
+  <text x="945" y="452" style="font:500 14px 'Noto Sans CJK JP',sans-serif" class="center muted">AuditEventを自動保存してからDecisionを返す</text>
+  <path d="M1135 270 H1220" class="line" marker-end="url(#arrow)"/>
+  <text x="1176" y="235" class="small center ink">Decisionを</text>
+  <text x="1176" y="258" class="small center ink">Hostがenforce</text>
+  <rect x="1245" y="155" width="300" height="285" rx="26" class="green greenStroke" stroke-width="3"/>
+  <text x="1395" y="192" class="h3 center ink">Rails Host Application</text>
+  <text x="1395" y="221" class="small center muted">Your App</text>
+  <text x="1280" y="273" class="body ink">• Agentを認証 / resolve</text>
+  <text x="1280" y="306" class="body ink">• Principalをresolve</text>
+  <text x="1280" y="339" class="body ink">• Resource / Contextを確定</text>
+  <text x="1280" y="372" class="body ink">• Decisionをenforce</text>
+  <text x="1280" y="405" class="body ink">• Business Logicを実行</text>
+  <rect x="45" y="480" width="505" height="300" rx="24" class="yellow yellowStroke" stroke-width="2"/>
+  <text x="65" y="518" class="section">2. ActingForが判断すること</text>
+  <text x="78" y="560" class="mono ink">WHO</text><text x="250" y="560" class="small ink">どのAgentか</text>
+  <text x="78" y="596" class="mono ink">FOR WHOM</text><text x="250" y="596" class="small ink">誰の代理か（Principal）</text>
+  <text x="78" y="632" class="mono ink">WHAT</text><text x="250" y="632" class="small ink">どのaction / resourceか</text>
+  <text x="78" y="668" class="mono ink">AUTHORITY</text><text x="250" y="668" class="small ink">一致するDelegationがあるか</text>
+  <text x="78" y="704" class="mono ink">CONSTRAINT</text><text x="250" y="704" class="small ink">条件・期限・revocationを満たすか</text>
+  <text x="78" y="740" class="mono ink">RESULT</text><text x="250" y="740" class="small ink">allow / deny / require_approval</text>
+  <rect x="575" y="480" width="395" height="300" rx="24" class="gray" stroke="#b9b6ae" stroke-width="2"/>
+  <text x="595" y="518" class="section">3. 判定結果（Decision）</text>
+  <circle cx="625" cy="572" r="25" fill="#c8f1c0" stroke="#3d7a35" stroke-width="3"/><path d="M612 571 l10 10 20 -25" class="line thin"/>
+  <text x="670" y="578" class="h3 ink">allow（許可）</text>
+  <text x="670" y="605" class="tiny muted">Hostは保護対象の処理へ進める</text>
+  <circle cx="625" cy="648" r="25" fill="#ffc7bf" stroke="#a64c42" stroke-width="3"/><path d="M613 636 l24 24 M637 636 l-24 24" class="line thin"/>
+  <text x="670" y="654" class="h3 ink">deny（拒否）</text>
+  <text x="670" y="681" class="tiny muted">一致する有効なDelegationなし等</text>
+  <circle cx="625" cy="724" r="25" fill="#ffeaa0" stroke="#a18118" stroke-width="3"/><circle cx="625" cy="716" r="8" class="line thin"/><path d="M610 739 Q625 722 640 739" class="line thin"/>
+  <text x="670" y="724" class="h3 ink">require_approval</text>
+  <text x="670" y="748" class="tiny muted">本人承認フローはHost側</text>
+  <text x="670" y="770" style="font:500 14px 'Noto Sans CJK JP',sans-serif" class="muted">ActingForはDecisionを返すのみ</text>
+  <rect x="995" y="480" width="550" height="300" rx="24" class="blue" stroke="#86bce2" stroke-width="2"/>
+  <text x="1015" y="518" class="section">4. 主要なデータモデル（v0.1）</text>
+  <rect x="1020" y="540" width="235" height="95" rx="15" class="white blueStroke" stroke-width="2"/>
+  <text x="1038" y="569" class="h3 ink">Agent</text>
+  <text x="1038" y="595" class="tiny ink">identifier / name</text>
+  <text x="1038" y="619" class="tiny muted">Principalを直接持たない</text>
+  <rect x="1270" y="540" width="250" height="178" rx="15" class="white blueStroke" stroke-width="2"/>
+  <text x="1288" y="569" class="h3 ink">Delegation</text>
+  <text x="1288" y="595" class="tiny ink">principal / agent / action</text>
+  <text x="1288" y="619" class="tiny ink">resource scope / constraints</text>
+  <text x="1288" y="643" class="tiny ink">effect: allow | require_approval</text>
+  <text x="1288" y="667" class="tiny ink">expires_at / revoked_at</text>
+  <rect x="1020" y="650" width="235" height="105" rx="15" class="white blueStroke" stroke-width="2"/>
+  <text x="1038" y="679" class="h3 ink">AuditEvent</text>
+  <text x="1038" y="705" class="tiny ink">decision / reason_code</text>
+  <text x="1038" y="729" class="tiny ink">identity + resource snapshots</text>
+  <text x="1038" y="753" class="tiny muted">append-only</text>
+  <rect x="45" y="810" width="570" height="250" rx="24" class="green" stroke="#9fc99a" stroke-width="2"/>
+  <text x="65" y="848" class="section">5. v0.1 のスコープ</text>
+  <text x="78" y="885" class="h3 ink">作るもの</text>
+  <text x="78" y="916" class="tiny ink">✓ Agent / Delegation</text>
+  <text x="78" y="944" class="tiny ink">✓ Authorization / constraints</text>
+  <text x="78" y="972" class="tiny ink">✓ expiry / revocation</text>
+  <text x="78" y="1000" class="tiny ink">✓ Decision / AuditEvent</text>
+  <text x="338" y="885" class="h3 ink">作らないもの</text>
+  <text x="338" y="916" class="tiny ink">• OAuth / Agent認証基盤</text>
+  <text x="338" y="944" class="tiny ink">• MCP Server</text>
+  <text x="338" y="972" class="tiny ink">• Approval workflow / 決済</text>
+  <text x="338" y="1000" class="tiny ink">• UI / Agent間通信</text>
+  <rect x="640" y="810" width="465" height="250" rx="24" class="gray" stroke="#b9b6ae" stroke-width="2"/>
+  <text x="660" y="848" class="section">6. 外部との関係</text>
+  <text x="670" y="886" class="small ink">• LLMに依存しない</text>
+  <text x="670" y="916" class="small ink">• OpenAI / Claude / Gemini / 自作Agent</text>
+  <text x="670" y="946" class="small ink">• MCP / REST API / background job 等の背後で利用</text>
+  <text x="670" y="976" class="small ink">• OAuth / OIDC / MCPとは競合せずHostで接続</text>
+  <text x="670" y="1006" class="small ink">• 「認証」ではなく「代理権限の認可」に集中</text>
+  <rect x="1130" y="810" width="415" height="250" rx="24" class="yellow" stroke="#dfca72" stroke-width="2"/>
+  <text x="1150" y="848" class="section">7. 目指す未来</text>
+  <text x="1337" y="898" class="h3 center ink">「Railsにおける</text>
+  <text x="1337" y="930" class="h3 center ink">AI Agent 代理権限の</text>
+  <text x="1337" y="962" class="h3 center ink">標準的なGem」</text>
+  <path d="M1210 982 C1290 990 1370 976 1458 984" class="accentY" fill="none"/>
+  <text x="1337" y="1024" class="small center muted">More Agents, A Safer World.</text>
+</svg>
