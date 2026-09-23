@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-22
+更新日：2026-09-23
 
 ## Source of Truth
 
@@ -56,11 +56,15 @@ v0.1.0 Release Candidate baseline fixed at `2c2e1a6638f12b7fb961f04362f807e2cb6f
 Pre-publication human confirmations completed for email exposure / RubyGems authentication; RC fresh artifact verification PASS (D236)
 Repository and official Demo are public; public-source documentation and Demo build instructions adjusted (D237)
 ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` tag and GitHub Release published (D238)
+Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
+Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+Post-release Official Demo verification closure（2026-09-23）：Official DemoはRubyGems `acting_for ~> 0.1.0` を使用し、automated integration verification **18 runs / 108 assertions / 0 failures / 0 errors / 0 skips**、Smoke Verification PASS、Full Human Manual Verification（Scenarios 1–11）PASSまで完了。Scenarios 7–8はRails console、Scenarios 9–11はbrowser workflowで人間が再確認した。詳細な証跡はDemo側 `docs/MANUAL_VERIFICATION.md` / `docs/COMPATIBILITY.md` を正本とする。Demo behavior baseline `32058147b6527ce46486c523e9a8d036760ca372` からcompletion record直前の `073a97f3c350c7c2ac81e2fb2aa6ff1762b1a005` までの差分は上記2 docsのみで、application behavior変更なし。
 
 D238：ActingFor 0.1.0 release完了。最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36` からstrict buildした17-file gem（15,872 bytes / SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`）をRubyGemsへ公開。RubyGemsから再取得したartifactのSHA256一致とRuby 3.4.10 fresh containerでの通常install / `ActingFor::VERSION == "0.1.0"`を確認。`v0.1.0` tagは同Source SHAを指し、GitHub Release `ActingFor 0.1.0` はdraft=false / prerelease=falseで公開済み。
 
@@ -157,9 +161,9 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ## Next Step
 
-D238でActingFor 0.1.0のRubyGems publication、配布artifactのchecksum / install verification、`v0.1.0` tag、GitHub Release公開まで完了した。Release用Source SHAは `6722623a9f24a38c41091e867209bc8f3d913c36`、配布gem SHA256は `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`。
+ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、Official DemoのActingFor依存を固定RC Git commitから **RubyGems `~> 0.1.0` へ切り替え、automated integration verificationを実行すること**。Smoke / Human Manual Verificationは完了するまでPASSとは記録しない。
+次の1項目は、**v0.1.1 / 次期開発候補をGitHub `main` の設計書・Issues・残課題から再確認し、重要事項を1項目だけ提案すること**。いきなり実装を開始せず、ユーザー承認後に次の正式作業へ進む。
 
 ## Important Rules
 
