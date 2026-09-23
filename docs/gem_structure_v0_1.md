@@ -1,14 +1,14 @@
 # ActingFor v0.1 Gem Structure Design
 
-更新日：2026-09-18
+更新日：2026-09-23
 
-**Step 7は完了（Complete / Design finalized）。** 本書をGem Structure Designの正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gem skeleton / Migration / Models / 最小Dummyは実装済み。D190〜D212によりDelegation Public APIの実装設計を詳細化したが、delegate / authorize / Decision / Audit integrationは実装・正式Test / CI検証済み。Gemは未リリース。以下は設計上の構成を示す。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
+**Step 7は完了（Complete / Design finalized / Implemented）。** 本書をGem Structure Designの正本とする（[D028](DECISIONS.md#d028-step-7-gem-structure-design)）。Gem skeleton / Migration / Models / 最小Dummy / delegate / authorize / Decision / ConstraintEvaluator / Audit integrationは実装・正式Test / CI検証済み。ActingFor 0.1.0として公開済み。以下は設計上の構成を示す。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 
 [Step 4 Domain Model Design](domain_model_v0_1.md)、[Step 5 Public API Design](public_api_v0_1.md)、[Step 6 README Quick Start](../README.md#quick-start)の決定を維持する。進捗は[PROJECT](PROJECT.md#5-進行順)、決定理由は[DECISIONS](DECISIONS.md)を参照。後続のStep 8「Test Strategy」は[正本](test_strategy_v0_1.md)（D029）で設計完了した。
 
 ## 1. v0.1 Minimal Gem Structure
 
-**Design finalized / Partially implemented。** 以下はD028をD195・D199で詳細化した最小構成。errors.rb / delegation_creator.rbは次の実装対象、decision.rb / authorization.rb / constraint_evaluator.rbは後続実装対象であり、今回作成しない。
+**Design finalized / Implemented。** 以下はD028をD195・D199で詳細化した最小構成で、v0.1.0の実装・正式Test / CI・releaseまで完了している。個別の実装経緯はDECISIONSの後続Decisionを参照する。
 
 ```text
 acting_for/
@@ -301,4 +301,4 @@ Public分類はDecision constructorや任意Model更新の保証ではない。D
 | Step 7 Gem Structure Design | Complete / Design finalized / 基盤実装済み |
 | Step 8 Test Strategy | Complete / Design finalized / Test suite implemented（D221〜D228） |
 
-D190〜D230の実装・検証は完了。次工程はD231結果を確認したうえで、別途明示承認後のActual Release。Gemは **Not released**。
+D190〜D230の実装・検証、D231のRelease Readiness Gate、D238のActingFor 0.1.0 public releaseまで完了。`v0.1.0` tagと公開済みartifactは固定し、以後のmain更新はpost-release documentation / 次version開発として扱う。

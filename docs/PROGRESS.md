@@ -1,10 +1,10 @@
 # ActingFor Progress
 
-更新日：2026-09-22
+更新日：2026-09-23
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、public source向けrelease-facing documentation / Demo build cleanupを実施。D238でActingFor 0.1.0をRubyGems / `v0.1.0` tag / GitHub Releaseへ正式公開し、配布artifactのchecksum / install verificationまで完了。
+> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、D238でActingFor 0.1.0をRubyGems / `v0.1.0` tag / GitHub Releaseへ正式公開して配布artifact verificationまで完了。Official Demo verification closure後、D239でpost-release documentationの現在状態表記をreleased状態へ整合した。
 
 ## 全体進捗
 
@@ -55,6 +55,8 @@ Public API / Value Object実装
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D239 Post-release Documentation Consistency Cleanup：PROJECT / Domain Model / Public API / Gem Structure / Test Strategy / Security Modelの現在状態表記をActingFor 0.1.0 released状態へ整合。D231等の過去時点の履歴は維持し、Production code / Public API / schema / `v0.1.0` tag / 公開artifactは変更していない。
 
 - D238 v0.1.0 Public Release：最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36`、17-file gem 15,872 bytes、SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`。RubyGems `acting_for 0.1.0` 公開後に再取得artifactのSHA256一致、fresh Ruby 3.4.10 containerで通常installとversion `0.1.0`を確認。`v0.1.0` tagはexact source SHA、GitHub Release `ActingFor 0.1.0` 公開済み。
 

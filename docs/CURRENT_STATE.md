@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D238
+D239
 ```
 
 ## Current Status
@@ -58,11 +58,14 @@ Repository and official Demo are public; public-source documentation and Demo bu
 ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` tag and GitHub Release published (D238)
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
+Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D239：Post-release Documentation Consistency Cleanup。v0.1.0公開後も設計書の現在状態部分に残っていた `Not released` / `未リリース` / `Releaseは未実施` / `Partially implemented` 等の古い表記を、D238およびDemo verification完了後の事実へ整合した。対象はPROJECT / Domain Model / Public API / Gem Structure / Test Strategy / Security Model。D231等の過去時点を記録する履歴表現は変更せず、Production code / Public API / schema / `v0.1.0` tag / 公開artifactには変更なし。
 
 Post-release Official Demo verification closure（2026-09-23）：Official DemoはRubyGems `acting_for ~> 0.1.0` を使用し、automated integration verification **18 runs / 108 assertions / 0 failures / 0 errors / 0 skips**、Smoke Verification PASS、Full Human Manual Verification（Scenarios 1–11）PASSまで完了。Scenarios 7–8はRails console、Scenarios 9–11はbrowser workflowで人間が再確認した。詳細な証跡はDemo側 `docs/MANUAL_VERIFICATION.md` / `docs/COMPATIBILITY.md` を正本とする。Demo behavior baseline `32058147b6527ce46486c523e9a8d036760ca372` からcompletion record直前の `073a97f3c350c7c2ac81e2fb2aa6ff1762b1a005` までの差分は上記2 docsのみで、application behavior変更なし。
 

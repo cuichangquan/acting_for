@@ -1,8 +1,8 @@
 # ActingFor v0.1 Security Model Design
 
-更新日：2026-09-19
+更新日：2026-09-23
 
-**Security Model Design: Complete / Design finalized / Implementation verified（D231）。** 本書をActingFor v0.1 Security Model Designの正本とする（[D030](DECISIONS.md#d030-v01-security-model-design)）。v0.1実装・正式Test / CI・Runnable Quick Startは検証済み。Gemは **Not released**。
+**Security Model Design: Complete / Design finalized / Implementation verified / Released。** 本書をActingFor v0.1 Security Model Designの正本とする（[D030](DECISIONS.md#d030-v01-security-model-design)）。v0.1実装・正式Test / CI・Runnable Quick Startは検証済み。D238でActingFor 0.1.0を公開し、配布artifact verificationまで完了した。
 
 Step 8 Test Strategy完了後の設計としてSecurity requirementを確定する。Step 1〜8の既存決定を変更せず、工程番号は追加しない。D030時点では具体的実装や新しいPublic APIは決めなかった。後続決定D031〜D056で確定した詳細を本書にも反映し、未決定の実装方式は引き続き固定しない。進捗は[PROJECT](PROJECT.md#5-進行順)を参照。
 

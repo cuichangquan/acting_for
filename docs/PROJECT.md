@@ -1,11 +1,11 @@
 # ActingFor 開発方針
 
-更新日：2026-09-19
+更新日：2026-09-23
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：v0.1実装・正式Test・4 matrix CI / RuboCop・Runnable Quick Startは完了（D221〜D230）。D231で配布artifact・documentation・security・support・Release Notesを最終照合し、RELEASE READY（D076全9項目PASS）。Gemは **Not released**。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、検証証跡は[DECISIONS D231](DECISIONS.md#d231-v01-release-readiness-gate)。
+- 現在の段階：**ActingFor 0.1.0 / `v0.1.0` released**。D238でRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Releaseまで完了。Official DemoもRubyGems `~> 0.1.0`へ移行し、automated / smoke / Full Human Manual Verification（Scenarios 1–11）まで完了した。D239でpost-release documentationの現在状態表記を公開済み状態へ整合した。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、release証跡は[DECISIONS D238](DECISIONS.md#d238-v010-public-release-completed)を参照。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 

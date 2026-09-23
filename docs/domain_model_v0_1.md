@@ -1,8 +1,8 @@
 # ActingFor v0.1 Domain Model Design
 
-更新日：2026-09-17
+更新日：2026-09-23
 
-Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** 実装済み仕様ではない。Public APIの後続決定は[Step 5の正本](public_api_v0_1.md)を参照。残る未確定事項は第22節に記録する。
+Step 4の基本方針（[D013](DECISIONS.md#d013-v01のドメインモデル基本方針)）と詳細ルール（[D014](DECISIONS.md#d014-v01-delegation判定constraintlifecycleaudit詳細)）を記録する。**Step 4は完了。** v0.1のModel / Service / Migration / Public APIは実装・正式Test / CI検証済みで、ActingFor 0.1.0として公開済み。Public APIの後続決定は[Step 5の正本](public_api_v0_1.md)を参照。過去の更新履歴に残る「設計のみ・未実装」等は当時の状態を示す履歴として維持する。
 
 ### 更新履歴
 
@@ -662,7 +662,7 @@ Step 4は完了。Step 5「Public API Design」も完了し、進捗は10 / 10�
 
 D035〜D048で時刻・実行境界・cache / replica・保持方針・上限・timeout・DB schemaの一部・BigDecimal・対応環境・ライセンスを確定した。後続D049〜D056でcaller authorizationのHost境界、Decision Public APIの4項目への限定・constructor非保証、3 Modelの主要DB型・NULL・CHECK・主要index・bigint主キー、DelegationのModel-level immutability、revoke!の並行実行契約、Constraint complexity非提供、AuditEventのModel-level append-onlyを確定した。詳細schemaの正本は[Domain Model第17節](domain_model_v0_1.md#17-v01-テーブル構成)。v0.1のModel / Service / Migration / Public APIは実装・正式Test検証済み。
 
-Model validation / callback、atomic revoke!、Authorization query、Migration実コード / Rails標準taskは後続実装Decisionで解消済み。未確定・対象外の事項は[Security Model §27](security_model_v0_1.md#27-今回決めないこと)を参照。Domain Modelの仕様は変更せず、GemはNot released。
+Model validation / callback、atomic revoke!、Authorization query、Migration実コード / Rails標準taskは後続実装Decisionで解消済み。未確定・対象外の事項は[Security Model §27](security_model_v0_1.md#27-今回決めないこと)を参照。Domain Modelの仕様は変更せず、ActingFor 0.1.0として公開済み。最新の運用状態は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
 ### 既存認可とContextの後続決定（D024・D025）
 

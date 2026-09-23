@@ -3710,3 +3710,54 @@ v0.1.0の不可逆な公開transactionは完了。以後のmain更新はpost-rel
 
 Official Demoは現時点では固定RC Git commit依存のため、次の独立作業としてRubyGems `~> 0.1.0` へ切り替え、automated integration verificationを実行する。Smoke / Human Manual Verificationは完了までPASSとは記録しない。
 
+## D239: post-release documentation consistency cleanup
+
+- 日付：2026-09-23（Asia/Tokyo）。
+- 状態：**確定。Documentation-only cleanup完了。**
+- 根拠：v0.1.0 release verification完了後、ユーザーがpost-release documentation consistency cleanupを明示承認した。
+
+### Context
+
+D238でActingFor 0.1.0はRubyGems / `v0.1.0` tag / GitHub Releaseへ公開済みで、Official DemoもRubyGems `~> 0.1.0`へ移行し、automated / smoke / Full Human Manual Verification（Scenarios 1–11）まで完了している。
+
+一方、設計書の「現在状態」を示す箇所に、release前の `Not released` / `未リリース` / `Releaseは未実施` / `Partially implemented` / 「例はまだ実行不可」等の表記が残っていた。
+
+### Decision
+
+現在状態を示す箇所だけをpost-releaseの事実へ整合する。
+
+対象：
+
+- `docs/PROJECT.md`
+- `docs/domain_model_v0_1.md`
+- `docs/public_api_v0_1.md`
+- `docs/gem_structure_v0_1.md`
+- `docs/test_strategy_v0_1.md`
+- `docs/security_model_v0_1.md`
+- `docs/CURRENT_STATE.md`
+- `docs/PROGRESS.md`
+
+主な整合内容：
+
+- ActingFor 0.1.0 / `v0.1.0` releasedを現在状態として明記する。
+- delegate / authorize / Decision / Audit等を実装・正式Test / CI・Runnable Quick Start検証済みとして整合する。
+- Test Strategyのrelease前support確認表現を、v0.1.0で確認済みかつ今後のreleaseでも再確認する表現へ更新する。
+- Gem Structureの `Partially implemented` / 次の実装対象という現在状態表現を、v0.1.0実装完了へ更新する。
+
+### Historical record boundary
+
+D231、D237など「その時点では未公開だった」という履歴上の `Not released` / 未実施記録は変更しない。過去Decision・release過程の事実を書き換えず、後続Decision D239として現在状態だけを整合する。
+
+### Non-goals / behavior boundary
+
+このDecisionはDocumentation-only。
+
+- Production code変更なし。
+- Public API変更なし。
+- schema / Migration変更なし。
+- Security Contract変更なし。
+- Test behavior変更なし。
+- `v0.1.0` tagを移動しない。
+- RubyGemsで公開済みの0.1.0 artifactを変更しない。
+
+次はCURRENT_STATEのNext Stepどおり、v0.1.1 / 次期開発候補を設計書・Issue候補・残課題から再確認し、重要事項を1項目だけ提案する。

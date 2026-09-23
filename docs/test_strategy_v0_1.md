@@ -1,8 +1,8 @@
 # ActingFor v0.1 Test Strategy Design
 
-更新日：2026-09-18
+更新日：2026-09-23
 
-**Step 8: Complete / Design finalized / Test suite implemented。** D232のDelegation lifecycle Security regression testsは正式CI確認済み。D233のAuditEvent tamper resistance regression testsも正式CI確認済み。 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。Releaseは未実施。Gemは **Not released**。
+**Step 8: Complete / Design finalized / Test suite implemented / Released。** D232のDelegation lifecycle Security regression testsは正式CI確認済み。D233のAuditEvent tamper resistance regression testsも正式CI確認済み。 本書をActingFor v0.1 Test Strategy Designの正本とする（[D029](DECISIONS.md#d029-step-8-test-strategy-design)）。D221〜D228に基づくUnit / Delegation / Authorization / Audit / Engine / Migration / Host Authorization Boundaryと残存の既存仕様Testは実装・Docker検証済み。CI matrix・core RuboCopはD229でGitHub Actions実装・検証済み。Runnable Quick StartはD230で実装・検証済み。D238でActingFor 0.1.0を公開し、配布artifact検証まで完了した。
 
 [Domain Model](domain_model_v0_1.md)、[Public API](public_api_v0_1.md)、[Gem Structure](gem_structure_v0_1.md)の既存決定をTest上のAcceptance Criteriaへ対応付ける。実装詳細や未決定APIを追加確定するものではない。進捗は[PROGRESS](PROGRESS.md)、現在地点は[CURRENT_STATE](CURRENT_STATE.md)を参照。
 
@@ -258,7 +258,7 @@ v0.1の正式対応DB adapterは **PostgreSQLのみ**。他adapterを意図的�
 | 4.0 | 8.0 | PostgreSQL |
 | 4.0 | 8.1 | PostgreSQL |
 
-Rails 8.0のSecurity Support終了時期が近いため、v0.1リリース直前にRails公式support statusを再確認する。Ruby公式support statusもリリース直前に再確認する。正式4組はD229でGitHub Actions検証済み。Gemは未リリース。
+Rails 8.0のSecurity Support終了時期が近いため、v0.1.0 release前にRails / Ruby公式support statusを再確認済み（D231）。正式4組はD229でGitHub Actions検証済み。今後のreleaseでも公開前にsupport statusを再確認する。
 
 時刻取得は内部の共通境界 `ActingFor.current_time` に集約し、通常は `Time.current` を返す。Expiration / Revocation / Authorization等は直接 `Time.current` を呼ばない。v0.1ではClock差し替えPublic API（`ActingFor.clock =` / `ActingFor.reset_clock!`）を提供しない。TestではRails time helper（`travel_to` 等）を使う（D035）。
 
