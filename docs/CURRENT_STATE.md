@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D244
+D245
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release version and Core-first release order approved (D244); release preparation in progress
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); 0.1.1 Core-first release order approved (D244); Core PR #2 merged and final 0.1.1 artifact verified (D245); RubyGems publication pending
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D245：RubyGems WebAuthn / 2FA利用可能状態を確認後、Core PR #2をsquash merge。main Release Sourceを `3fdccde58c79e1b0943e22d60016993ab6743835` に固定。main push CI run `36526668458` はmatrix 4 jobs + RuboCop + required status `test` が全てPASS。Release Sourceをexact checkoutしたfinal artifact verification run `36526786968` で `acting_for-0.1.1.gem` をstrict buildし、17 files / 16,384 bytes / SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、secret scan PASS、artifact install PASS、VERSION 0.1.1、Engine load PASS。RubyGems publish / v0.1.1 tag / GitHub Releaseは未実施。
 
 D244：`Decision#reason_code` をActingFor 0.1.1として公開する方針を確定。Core PR #2を先にRelease Gate→main merge→exact Release Source固定→gem build / artifact verification→RubyGems 0.1.1 publish→distributed artifact verification→v0.1.1 tag / GitHub Releaseの順で進め、その後Official DemoをRubyGems `~> 0.1.1`へ切替・検証・mergeする。Demoのexact Git依存はpre-release verification専用。`lib/acting_for/version.rb` は0.1.1へbump済み。RubyGems publish / tag / GitHub Release / main mergeはまだ未実施。Pre-merge candidate package verificationはActions run `36526009671` でPASS：strict build、17 files、16,384 bytes、candidate SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、package secret scan、local artifact install、`ActingFor::VERSION == "0.1.1"`、Engine loadを確認。これはfinal Release Source固定前のcandidate evidenceであり、最終artifact checksumではない。Temporary package workflow削除後のtechnical Release Gate CI run `36526103853` はRuby 3.4 / 4.0 × Rails 8.0 / 8.1 + RuboCopの全5 jobs green。その後の変更はrelease evidence / documentationのみ。PR #2はmergeableで、最終diff review上も想定した12 filesのみ。technical merge readinessはPASS。
 
@@ -177,7 +179,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**RubyGems authenticationを確認し、Core PR #2をmainへmergeするか最終承認を取ること**。technical Release GateはPASSしているが、PRは意図的にDraft / 未mergeのまま維持する。merge後にexact main SHAをRelease Sourceとして固定し、final artifactを再buildする。
+次の1項目は、**RubyGems `acting_for 0.1.1` publishの明示承認を取ること**。Release Source / final artifact / checksum / authentication確認は完了している。publish承認後にRubyGems公開→distributed artifact再取得・checksum / fresh install→v0.1.1 tag / GitHub Releaseの順で進める。
 
 ## Important Rules
 
