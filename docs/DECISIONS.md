@@ -4262,3 +4262,75 @@ Post-release Official Demo: PENDING
 
 次の1項目は、Official Demoをtemporary exact Git dependencyからreleased RubyGems `~> 0.1.1` へ切り替え、automated integration / smoke verificationを実施すること。
 
+## D247: ActingFor 0.1.1 post-release verification completed
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。POST-RELEASE VERIFIED。**
+- 根拠：D246のrelease完了後、Official Demoをreleased RubyGems `acting_for 0.1.1` へ切り替え、integration / smoke / main merge / main CIまで完了した。
+
+### Official Demo released dependency
+
+Official Demoはtemporary exact Git dependencyを終了し、次へ切り替えた。
+
+```ruby
+gem "acting_for", "~> 0.1.1"
+```
+
+`Gemfile.lock` はRubyGems `acting_for (0.1.1)` を解決し、checksumはrelease artifactと同じ。
+
+```text
+57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+```
+
+### Demo verification
+
+Published-gem integration verification：
+
+```text
+Actions run: 36528758797
+ActingFor version: 0.1.1
+18 runs
+118 assertions
+0 failures
+0 errors
+0 skips
+Smoke HTTP: PASS
+```
+
+branch protectionのrequired status `test` を満たすため、Official Demoにpermanent Demo CIを追加した。PR #1 final headのrequired `test` もPASS。
+
+### Demo merge / main verification
+
+Official Demo PR #1をsquash mergeした。
+
+```text
+Demo main SHA: 98ec1f1e4a83c2f036069c51549dbdcb88b3e9b8
+Demo main Actions run: 36529324085
+ActingFor version: 0.1.1
+18 runs / 118 assertions
+0 failures / 0 errors / 0 skips
+Smoke HTTP: PASS
+```
+
+### Human evidence provenance
+
+`Decision#reason_code` のfocused Human Browser Verificationはpre-release candidateで2026-09-29にPASS済み。published gemに対するhuman browser rerunは行っていないため、post-release human evidenceへ読み替えない。published artifactについてはautomated integration + HTTP smokeで別途検証した。
+
+### Final status
+
+```text
+RubyGems 0.1.1: PASS
+Distributed artifact verification: PASS
+v0.1.1 tag: PASS
+GitHub Release: PASS
+Core post-release CI: PASS
+Official Demo RubyGems 0.1.1: PASS
+Demo integration: PASS
+Demo smoke: PASS
+Demo main merge / CI: PASS
+
+Final status: POST-RELEASE VERIFIED
+```
+
+ActingFor 0.1.1 release verificationをここで閉じる。
+
