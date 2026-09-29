@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D246
+D247
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed (D241); documentation and Official Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 Core-first release order approved (D244); Core merge / final artifact verification completed (D245); ActingFor 0.1.1 published and distributed artifact / tag / GitHub Release verified (D246); post-release Official Demo verification pending
+Decision reason_code Public API design approved (D240); implementation / CI completed (D241); documentation / Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release order approved (D244); Core merge / final artifact verification completed (D245); 0.1.1 released (D246); Official Demo switched to RubyGems 0.1.1 and post-release verification completed (D247)
 
 Released: `acting_for` 0.1.1 / `v0.1.1`
 ```
 
 ## Implemented
+
+D247：Official DemoをRubyGems `acting_for ~> 0.1.1`へ切替。published-gem verification run `36528758797` で18 runs / 118 assertions / 0 failures / 0 errors / 0 skips、Smoke HTTP PASS。Demo PR #1をmergeし、Demo main `98ec1f1e4a83c2f036069c51549dbdcb88b3e9b8` のActions run `36529324085` でもVERSION 0.1.1、18/118、Smoke PASS。Final statusはPOST-RELEASE VERIFIED。focused human browser evidenceはpre-release candidate由来であることを明示し、published-gem human rerunとしては扱わない。
 
 D246：ActingFor 0.1.1 public release完了。RubyGems push成功後、Actions run `36527924057` でRubyGems配布artifactを再取得し、16,384 bytes / SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29` がfinal artifactと一致。fresh installでVERSION 0.1.1 / Engine load PASS。Actions run `36528135746` で `v0.1.1` tagをRelease Source `3fdccde58c79e1b0943e22d60016993ab6743835` へ付与し、GitHub Release `ActingFor 0.1.1` をdraft=false / prerelease=falseで公開。Release statusはRELEASED。Official Demoのpublished-gem post-release verificationは次工程。
 
@@ -181,7 +183,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**Official Demoをreleased RubyGems `~> 0.1.1` へ切り替えてpost-release verificationを完了すること**。Gemfile / lockfileをreleased dependencyへ更新し、automated integration / smoke verification後にDemo PR #1をmainへmergeする。
+ActingFor 0.1.1 release verificationは **POST-RELEASE VERIFIED** として完了。次の重要事項は新規機能・改善候補から1項目を選び、別Decisionとして開始する。
 
 ## Important Rules
 
