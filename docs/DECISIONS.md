@@ -3761,3 +3761,62 @@ D231、D237など「その時点では未公開だった」という履歴上の
 - RubyGemsで公開済みの0.1.0 artifactを変更しない。
 
 次はCURRENT_STATEのNext Stepどおり、v0.1.1 / 次期開発候補を設計書・Issue候補・残課題から再確認し、重要事項を1項目だけ提案する。
+
+## D240: expose Decision reason_code as Public API
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。設計承認済み / 未実装 / 未リリース。**
+- 根拠：ユーザーが、既存のAuthorization Auditで保持している最終Decision理由を `ActingFor::Decision` のPublic APIとして公開する方針を明示承認した。
+
+### Decision
+
+`ActingFor::Decision` に `reason_code` を追加し、`ActingFor.authorize(...)` の呼び出し元がAuditEventを直接参照しなくても、最終Decisionの理由を確認できるようにする。
+
+Public APIの戻り値はSymbolとし、正式な組み合わせは次の3組だけとする。
+
+| `decision.status` | `decision.reason_code` |
+| --- | --- |
+| `:allow` | `:delegation_allowed` |
+| `:require_approval` | `:delegation_requires_approval` |
+| `:deny` | `:no_matching_delegation` |
+
+既存の `status` / `allowed?` / `denied?` / `approval_required?` はそのまま維持する。
+
+### Audit consistency
+
+AuditEventのDB表現は既存どおりStringを維持する。
+
+```text
+Decision.reason_code
+:delegation_allowed
+        ↓
+AuditEvent.reason_code
+"delegation_allowed"
+```
+
+DecisionとAuditで理由を別々に意味付けしない。実装ではDecisionが表す最終理由とAuditEventへ保存する理由が同一の定義から導かれるようにし、両者の不整合を避ける。
+
+### Scope boundary
+
+今回公開するのは**最終Decisionの理由だけ**とする。
+
+以下のような個別Delegationの不一致理由はPublic APIへ追加しない。
+
+- expired
+- constraint mismatch / amount exceeded
+- resource mismatch
+- revoked
+- principal / agent mismatch
+
+`matched_delegation_ids` もDecision Public APIには追加しない。これらの詳細説明を必要とする場合は別Decisionとして設計する。
+
+### Compatibility / release boundary
+
+- schema / Migration変更なし。
+- Delegation matching semantics変更なし。
+- Decisionの3 status変更なし。
+- AuditEventの既存String reason_code値変更なし。
+- 既存Public APIを削除・変更しない。
+- 実装・Test・Documentation・Demo更新・version bump・RubyGems publicationは本Decisionではまだ行わない。
+- 次の作業は、D240のAcceptance Criteria / Test仕様を確定してから実装へ進む。
+
