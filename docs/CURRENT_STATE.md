@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D243
+D244
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); main merge / release pending
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release version and Core-first release order approved (D244); release preparation in progress
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D244：`Decision#reason_code` をActingFor 0.1.1として公開する方針を確定。Core PR #2を先にRelease Gate→main merge→exact Release Source固定→gem build / artifact verification→RubyGems 0.1.1 publish→distributed artifact verification→v0.1.1 tag / GitHub Releaseの順で進め、その後Official DemoをRubyGems `~> 0.1.1`へ切替・検証・mergeする。Demoのexact Git依存はpre-release verification専用。`lib/acting_for/version.rb` は0.1.1へbump済み。RubyGems publish / tag / GitHub Release / main mergeはまだ未実施。
 
 D243：Official Demoのfocused Human Browser Verificationを完了。¥800はALLOW / `delegation_allowed` / EXECUTED、¥2,000はREQUIRE APPROVAL / `delegation_requires_approval` / NOT EXECUTED、¥5,000はDENY / `no_matching_delegation` / NOT EXECUTED。Audit EventsのReasonは3件ともDecision Reasonと一致し、Executed Purchasesには¥800のShopping Agent購入だけが存在。Human Browser Verification PASS。両Draft PRは未merge、version / release未変更。
 
@@ -78,7 +80,7 @@ D239：Post-release Documentation Consistency Cleanup。v0.1.0公開後も設計
 
 Post-release Official Demo verification closure（2026-09-23）：Official DemoはRubyGems `acting_for ~> 0.1.0` を使用し、automated integration verification **18 runs / 108 assertions / 0 failures / 0 errors / 0 skips**、Smoke Verification PASS、Full Human Manual Verification（Scenarios 1–11）PASSまで完了。Scenarios 7–8はRails console、Scenarios 9–11はbrowser workflowで人間が再確認した。詳細な証跡はDemo側 `docs/MANUAL_VERIFICATION.md` / `docs/COMPATIBILITY.md` を正本とする。Demo behavior baseline `32058147b6527ce46486c523e9a8d036760ca372` からcompletion record直前の `073a97f3c350c7c2ac81e2fb2aa6ff1762b1a005` までの差分は上記2 docsのみで、application behavior変更なし。
 
-D238：ActingFor 0.1.0 release完了。最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36` からstrict buildした17-file gem（15,872 bytes / SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`）をRubyGemsへ公開。RubyGemsから再取得したartifactのSHA256一致とRuby 3.4.10 fresh containerでの通常install / `ActingFor::VERSION == "0.1.0"`を確認。`v0.1.0` tagは同Source SHAを指し、GitHub Release `ActingFor 0.1.0` はdraft=false / prerelease=falseで公開済み。
+D238：ActingFor 0.1.0 release完了。最終Artifact Source `6722623a9f24a38c41091e867209bc8f3d913c36` からstrict buildした17-file gem（15,872 bytes / SHA256 `a7c3cfc97bf04445c04b8fc9cbe6be8a9aa433cfb8ba20b0da90f853b1336abd`）をRubyGemsへ公開。RubyGemsから再取得したartifactのSHA256一致とRuby 3.4.10 fresh containerでの通常install / `ActingFor::VERSION == "0.1.1"`を確認。`v0.1.0` tagは同Source SHAを指し、GitHub Release `ActingFor 0.1.0` はdraft=false / prerelease=falseで公開済み。
 
 D237：ActingFor / ActingFor DemoのGitHub Repository Public化を確認し、RubyGems公開前のtruthful `Not released` 状態を維持したまま、private repository前提のREADME / Getting Started / Demo Docker build・manual verification記述をpublic source向けへ整理。Demo側commit `693447b9dc903c55831cff016a1958ba67121772`。RubyGems push / `v0.1.0` tag / GitHub Releaseは未実施。
 
@@ -175,7 +177,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**ActingFor Draft PR #2とOfficial Demo Draft PR #1のmerge readinessを確認し、merge順序と次回release versionを正式決定すること**。まだmergeやversion bumpは行わず、差分・CI・Demo dependency・公開手順を確認してからユーザー承認を取る。
+次の1項目は、**0.1.1 Release Gateを完成させること**。Release Notes / Release Plan / pre-release documentationを整え、version 0.1.1で最新Core CIをgreenにし、package / artifact verificationへ進める状態を確認する。main merge / RubyGems publish / tag / GitHub Releaseはまだ行わない。
 
 ## Important Rules
 
