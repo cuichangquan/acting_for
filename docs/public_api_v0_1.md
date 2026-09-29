@@ -1,8 +1,8 @@
 # ActingFor v0.1 Public API Design
 
-更新日：2026-09-29
+更新日：2026-09-23
 
-**状態：Design finalized / Implemented。** 本書をStep 5「Public API Design」の正本とする。ActingFor 0.1.0は公開済み。D240/D241で次回release向けに `Decision#reason_code` を追加し、feature branch上で実装・正式CI検証済み。`reason_code` は公開済み0.1.0には含まれず、次回releaseで公開予定。
+**状態：Design finalized / Implemented / Released。** 本書をStep 5「Public API Design」の正本とする。進捗は **10 / 10**。全項目が設計決定済み（D015〜D025）で、**Step 5は完了（Design finalized）**。Gem skeleton / Migration / ActiveRecord Models / delegate / Decision / ConstraintEvaluator / Authorization / `audit_context_keys` sanitization / AuditEvent persistenceまで実装済み。正式Minitest suite / CI / Runnable Quick StartはD221〜D230で実装・検証済み。ActingFor 0.1.0として公開済み。
 
 Step 5完了後のv0.1仕様詳細化としてD031〜D048を反映する。過去の完了履歴は維持し、現在のAPI・入力要件・Audit仕様は以下の後続決定に従う。D190〜D212によりDelegation Public APIの実装設計を詳細化した。現在地点は[CURRENT_STATE](CURRENT_STATE.md)、全体進捗は[PROGRESS](PROGRESS.md)を参照。
 
@@ -169,9 +169,6 @@ decision = ActingFor.authorize(...)
 
 decision.status
 # => :allow
-
-decision.reason_code
-# => :delegation_allowed
 ```
 
 `decision.status` を正式なPublic APIとして持つ（D018）。statusは次の3種類だけとする。
@@ -190,39 +187,32 @@ DecisionはActiveRecord ModelでもDBへ直接永続化するModelでもない�
 
 ## 6. Decision Public API
 
-**確定：D018 / D050、後続D240 / D241。** D050では公開済み0.1.0のDecision Public APIを4項目に限定した。D240で次回release向けに `reason_code` を追加することを正式決定し、D241で実装・正式CI検証を完了した。
+**確定：D018 / Step 5項目4、後続D050。** 次の4つだけを正式Public APIとする。
 
-次回releaseのDecision Public APIは次の5項目とする。Decisionは `ActingFor.authorize(...)` の戻り値として取得し、`ActingFor::Decision.new(...)` のconstructorはPublic APIとして保証しない。
+v0.1のDecision Public APIは `status` / `allowed?` / `denied?` / `approval_required?` の4つだけとする。`reason_code` / `matched_delegation_ids` / `context` 等の追加属性はPublic APIとして提供せず、`ActingFor::Decision.new(...)` のconstructorもPublic APIとして保証しない。Decisionは `ActingFor.authorize(...)` の戻り値として取得する（D050）。
 
 ```ruby
 decision.status
-decision.reason_code
 decision.allowed?
 decision.denied?
 decision.approval_required?
 ```
 
-| status | reason_code | allowed? | denied? | approval_required? |
-| --- | --- | --- | --- | --- |
-| `:allow` | `:delegation_allowed` | `true` | `false` | `false` |
-| `:deny` | `:no_matching_delegation` | `false` | `true` | `false` |
-| `:require_approval` | `:delegation_requires_approval` | `false` | `false` | `true` |
+| status | allowed? | denied? | approval_required? |
+| --- | --- | --- | --- |
+| `:allow` | `true` | `false` | `false` |
+| `:deny` | `false` | `true` | `false` |
+| `:require_approval` | `false` | `false` | `true` |
 
-`reason_code` は最終Decisionの理由だけを公開する。個別Delegationがmatchしなかった詳細理由や `matched_delegation_ids` / `context` はDecision Public APIに追加しない。
+**require_approvalの場合、`allowed?` は必ずfalse。** v0.1では類似APIを増やさず、`success?`、`permitted?`、`executable?` は提供しない。
 
-Decision側の `reason_code` はSymbol、AuditEventへ保存する `reason_code` は既存どおりStringとし、同じ最終理由を表す。
+### Decision実装方針（D213）
 
-```ruby
-decision.reason_code
-# => :no_matching_delegation
+`ActingFor::Decision` は最小のimmutable Value Objectとする。ActiveRecord ModelにはせずDBへ永続化しない。statusは `:allow` / `:deny` / `:require_approval` の3種類だけとし、初期化後は `freeze` して状態変更不可とする。
 
-audit_event.reason_code
-# => "no_matching_delegation"
-```
+`initialize(status)` は内部実装で利用してよいがPublic APIとして保証しない。不正なstatusはPublic入力不正ではなく内部プログラミングエラーとして `ArgumentError` とし、`ActingFor::InvalidRequestError` にはしない。constructorのprivate化やFactoryは導入しない。
 
-**require_approvalの場合、`allowed?` は必ずfalse。** 類似APIの `success?`、`permitted?`、`executable?` は提供しない。
-
-> Release note: `Decision#reason_code` は次回release向けの追加であり、RubyGemsで公開済みの `acting_for 0.1.0` には含まれない。
+既存D018 / D050のPublic APIを維持し、v0.1では `reason_code` / `matched_delegation_ids` / `context` / `success?` / `permitted?` / `executable?` / `to_h` / 独自 `==` / 独自 `hash` 等を追加しない。
 
 ## 7. deny vs Exception
 
