@@ -4039,3 +4039,68 @@ D242のautomated integration verificationと合わせ、Core implementation / Co
 - RubyGems / tag / GitHub Release：変更なし。
 - 次の1項目は、両Draft PRのmerge readinessを確認し、merge順序とrelease versionを正式決定すること。
 
+## D244: Decision reason_code release version and merge / release order
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。0.1.1 release preparation開始 / merge・publish未実施。**
+- 根拠：D243完了後、Core PR #2 / Demo PR #1のmerge readiness、release順序、versionを確認し、ユーザーが明示承認した。
+
+### Version
+
+`Decision#reason_code` を **ActingFor 0.1.1** として公開する。
+
+理由：
+
+- Public APIへの後方互換な追加であり、既存API削除・renameなし。
+- schema / Migration変更なし。
+- Delegation matching / status semantics変更なし。
+- AuditEventの既存String reason value変更なし。
+- 0.1.0からのpatch releaseとして扱う。
+
+### Release order
+
+正式な順序は次とする。
+
+```text
+ActingFor Core PR #2 release preparation
+  ↓
+Core final CI / Release Gate
+  ↓
+Core PR #2 → main merge
+  ↓
+exact main SHAを0.1.1 Release Sourceとして固定
+  ↓
+Final gem build / artifact verification
+  ↓
+RubyGems acting_for 0.1.1 publish
+  ↓
+published artifact再取得 / checksum / fresh install
+  ↓
+v0.1.1 tag + GitHub Release
+  ↓
+Official DemoをGit exact-refからRubyGems ~> 0.1.1へ切替
+  ↓
+Demo automated integration / smoke
+  ↓
+Demo PR #1 → main merge
+  ↓
+Post-release verification record
+```
+
+### Demo merge boundary
+
+Official Demo PR #1は、RubyGems 0.1.1公開前にはmainへmergeしない。
+
+検証中のexact Git commit dependencyはrelease candidate verification専用とし、Demo mainは最終的にreleased RubyGems dependencyを参照する。
+
+### Release safety boundary
+
+- 本DecisionでRubyGems publishは行わない。
+- tag / GitHub Releaseはまだ作成しない。
+- Core PR #2のmain mergeもRelease Gate完了後に別途確認する。
+- RubyGems publishの直前には、Release Source・artifact・checksum・authenticationを再確認し、明示承認後に公開操作へ進む。
+
+### Next Step
+
+0.1.1 release-facing filesを準備し、version bump、Release Notes、Release Plan、README / Getting Startedのpre-release表記を整えたうえでCore CIを再実行する。
+
