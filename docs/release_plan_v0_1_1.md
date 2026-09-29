@@ -81,9 +81,29 @@ post-release evidence
 - [x] Getting Started pre-release wording prepared
 - [x] 0.1.1 Release Notes drafted
 - [x] release order recorded in D244
+- [x] pre-merge candidate strict gem build PASS
+- [x] pre-merge package contents / secret scan PASS
+- [x] pre-merge local artifact install PASS
 - [ ] final Core CI after all release-preparation commits
 - [ ] final PR diff review / merge readiness
 - [ ] RubyGems authentication confirmation
+
+## Pre-merge candidate package evidence
+
+GitHub Actions run `36526009671` verified the 0.1.1 candidate before merge:
+
+```text
+ActingFor version: 0.1.1
+Gem filename: acting_for-0.1.1.gem
+Gem file count: 17
+Gem size: 16384 bytes
+Candidate SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+Package secret scan: PASS
+Installed ActingFor version: 0.1.1
+Engine: true
+```
+
+This is **candidate evidence only**. The final release artifact must be rebuilt after Core PR #2 is merged and the exact main Release Source SHA is fixed. Do not reuse the candidate checksum as the final published-artifact checksum.
 
 ## After Core merge
 
