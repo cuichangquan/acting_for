@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D241
+D242
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); main merge / release pending
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification / main merge / release pending
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D242：`Decision#reason_code` の公開向けdocumentationとOfficial Demo integrationを実施。README / Getting Startedでは公開済み0.1.0と次回release機能を分離し、`docs/public_api_v0_1.md` は0.1.0契約記録として維持、`docs/decision_reason_code.md` を追加。Official Demo Draft PR #1はActingFor exact candidate `7578bb541cea5a49e79c1590abcac740e9f65d4b` をpinし、結果画面へDecision Reasonを表示、3 reason codeとAudit一致をtest。corrected lockfileを含むDemo revision `f1b2d87a635bee8b3b43556079ae6f4decf8774e` / Actions run `36521481895` で18 runs / 118 assertions / 0 failures / 0 errors / 0 skips。新UIのHuman browser verificationはPENDING、両PRは未merge、release未変更。
 
 D241：`Decision#reason_code` のAcceptance Criteriaを確定し、feature branch `feature/decision-reason-code` / Draft PR #2でtests-first実装。Production code未変更のCI run #50で4 test matrixが期待どおりRed、実装後CI run #51でRuby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrix + RuboCopが全5 jobs Green。Ruby 3.4 / Rails 8.0は351 runs / 898 assertions / 0 failures / 0 errors / 0 skips。AuthorizationはAudit reasonを `decision.reason_code.to_s` から保存し、DecisionとAuditの最終理由を一致させる。main未merge、version / release未変更。
 
@@ -171,7 +173,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**D240/D241 `Decision#reason_code` の公開向けdocumentationとOfficial Demo反映方針を確定すること**。README / Public API / Getting Startedの最小更新範囲と、Demoでreason_codeをどう見せて検証するかを整理し、ユーザー承認後に反映する。main merge / version bump / releaseはその後に判断する。
+次の1項目は、**Official Demoで `Decision#reason_code` のfocused human browser verificationを実施すること**。¥800 / ¥2,000 / ¥5,000 の3ケースでDecision ReasonとPurchase結果を確認し、Audit EventsのReason一致まで人間が確認する。完了まではmain merge / version bump / releaseへ進まない。
 
 ## Important Rules
 
