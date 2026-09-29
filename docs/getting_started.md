@@ -2,7 +2,7 @@
 
 This is the detailed runnable introduction to ActingFor. It preserves the code, values, and expected results verified in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation).
 
-ActingFor 0.1.0 is released on RubyGems. This guide installs the released `~> 0.1.0` version requirement.
+ActingFor 0.1.0 is released on RubyGems. This guide installs the released `~> 0.1.0` version requirement. The current development branch also includes `Decision#reason_code` for the next release; examples below label that addition explicitly because it is not available in the published 0.1.0 gem.
 
 ## Verified environment
 
@@ -126,15 +126,22 @@ decision = ActingFor.authorize(
 # => [:allow, true, false, false]
 ```
 
+Next release, the same Decision also exposes its final authorization reason:
+
+```ruby
+decision.reason_code
+# => :delegation_allowed
+```
+
 ## 7. Verify all three Decisions
 
 The D230-verified results are:
 
-| Purchase amount | Decision | Meaning |
-| --- | --- | --- |
-| ¥8,900 | `allow` | Meets the Delegation conditions |
-| ¥20,000 | `require_approval` | No automatic execution; approval is required |
-| ¥50,000 | `deny` | Do not execute |
+| Purchase amount | Decision | Next-release `reason_code` | Meaning |
+| --- | --- | --- | --- |
+| ¥8,900 | `allow` | `:delegation_allowed` | Meets the Delegation conditions |
+| ¥20,000 | `require_approval` | `:delegation_requires_approval` | No automatic execution; approval is required |
+| ¥50,000 | `deny` | `:no_matching_delegation` | Do not execute |
 
 `require_approval != allow`: an approval-required Decision returns `false` from `allowed?`.
 
@@ -147,6 +154,8 @@ approval_decision = ActingFor.authorize(
 [approval_decision.status, approval_decision.allowed?,
  approval_decision.denied?, approval_decision.approval_required?]
 # => [:require_approval, false, false, true]
+# Next release: approval_decision.reason_code
+# => :delegation_requires_approval
 
 product = Product.find_by!(price: 50_000)
 deny_decision = ActingFor.authorize(
@@ -156,6 +165,8 @@ deny_decision = ActingFor.authorize(
 [deny_decision.status, deny_decision.allowed?,
  deny_decision.denied?, deny_decision.approval_required?]
 # => [:deny, false, true, false]
+# Next release: deny_decision.reason_code
+# => :no_matching_delegation
 ```
 
 The host must enforce the result:
