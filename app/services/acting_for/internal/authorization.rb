@@ -158,7 +158,7 @@ module ActingFor
             resource_type: resource_type,
             resource_id: resource_id,
             decision: decision_value,
-            reason_code: ActingFor::AuditEvent::DECISION_REASONS.fetch(decision_value),
+            reason_code: decision.reason_code.to_s,
             matched_delegation_ids: matches.map(&:id).sort,
             sanitized_context: sanitized_context
           }
