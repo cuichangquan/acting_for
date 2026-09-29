@@ -1,0 +1,88 @@
+name: ActingFor 0.1.1 Final Artifact Verification
+
+on:
+  push:
+    branches:
+      - verification/v0.1.1-final-artifact
+
+permissions:
+  contents: read
+
+jobs:
+  verify-final-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact release source
+        uses: actions/checkout@v6
+        with:
+          ref: 3fdccde58c79e1b0943e22d60016993ab6743835
+
+      - name: Set up Ruby 3.4
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - name: Verify release source and version
+        run: |
+          set -euo pipefail
+          actual=$(git rev-parse HEAD)
+          test "$actual" = "3fdccde58c79e1b0943e22d60016993ab6743835"
+          ruby -Ilib -racting_for/version -e 'abort "unexpected version" unless ActingFor::VERSION == "0.1.1"; puts "ActingFor version: #{ActingFor::VERSION}"'
+          echo "Release source: $actual"
+
+      - name: Build strict final gem
+        run: |
+          set -euo pipefail
+          gem build --strict acting_for.gemspec
+
+      - name: Audit final package
+        run: |
+          set -euo pipefail
+          ruby -rrubygems/package -e '
+            file = "acting_for-0.1.1.gem"
+            spec = Gem::Package.new(file).spec
+            files = spec.files.sort
+            required = %w[
+              README.md
+              LICENSE
+              lib/acting_for.rb
+              lib/acting_for/version.rb
+              lib/acting_for/decision.rb
+              app/services/acting_for/internal/authorization.rb
+            ]
+            missing = required - files
+            abort "missing packaged files: #{missing.inspect}" unless missing.empty?
+            forbidden = files.grep(%r{(^|/)(\.env(?:\..*)?|master\.key|credentials.*\.yml\.enc|id_rsa|id_ed25519)$})
+            abort "forbidden packaged files: #{forbidden.inspect}" unless forbidden.empty?
+            puts "Gem file count: #{files.length}"
+          '
+          rm -rf /tmp/acting_for-0.1.1
+          gem unpack acting_for-0.1.1.gem --target /tmp >/dev/null
+          if grep -R -E -n 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|rubygems_api_key|ghp_[A-Za-z0-9]{20,}' /tmp/acting_for-0.1.1; then
+            echo "Potential secret found in final package"
+            exit 1
+          fi
+          echo "Package secret scan: PASS"
+
+      - name: Record final artifact facts
+        run: |
+          set -euo pipefail
+          bytes=$(stat -c%s acting_for-0.1.1.gem)
+          sha=$(sha256sum acting_for-0.1.1.gem | awk '{print $1}')
+          echo "Gem filename: acting_for-0.1.1.gem"
+          echo "Gem size: $bytes bytes"
+          echo "Gem SHA256: $sha"
+
+      - name: Install final artifact
+        run: |
+          set -euo pipefail
+          gem install ./acting_for-0.1.1.gem --no-document
+          cd /tmp
+          ruby -e 'require "acting_for"; abort "unexpected installed version" unless ActingFor::VERSION == "0.1.1"; puts "Installed ActingFor version: #{ActingFor::VERSION}"; puts "Engine: #{ActingFor::Engine < Rails::Engine}"'
+
+      - name: Upload final gem
+        uses: actions/upload-artifact@v4
+        with:
+          name: acting_for-0.1.1-final
+          path: acting_for-0.1.1.gem
+          if-no-files-found: error
