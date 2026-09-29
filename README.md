@@ -14,7 +14,9 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 ## Status
 
-> **Released: v0.1.0.** ActingFor 0.1.0 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.0](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0). The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.\n>\n> **Next release:** `Decision#reason_code` is implemented and under release preparation. It is not part of the published `0.1.0` gem.
+> **Released: v0.1.0.** ActingFor 0.1.0 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.0](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0). The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
+>
+> **Next release:** `Decision#reason_code` is implemented and under release preparation. It is not part of the published `0.1.0` gem.
 
 ## ActingFor at a glance
 
@@ -174,9 +176,11 @@ decision = ActingFor.authorize(
   context: { amount: product.price }
 )
 
-decision.status      # => :allow
+decision.status   # => :allow
+decision.allowed? # => true when product.price is 8_900
+
+# Next release:
 decision.reason_code # => :delegation_allowed
-decision.allowed?    # => true when product.price is 8_900
 ```
 
 Both calls use the current [v0.1 Public API](docs/public_api_v0_1.md). `reason_code` exposes the final authorization reason without requiring the host to query the AuditEvent. Context values that affect authorization must be established by the host, not trusted directly from an Agent request. The `reason_code` addition is planned for the next release and is not available in the published `0.1.0` gem.
@@ -244,9 +248,8 @@ Install the released `0.1.0` gem from RubyGems.
 6. Check the Decision before the host performs any operation:
 
    ```ruby
-   [decision.status, decision.reason_code,
-    decision.allowed?, decision.denied?, decision.approval_required?]
-   # => [:allow, :delegation_allowed, true, false, false]
+   [decision.status, decision.allowed?, decision.denied?, decision.approval_required?]
+   # => [:allow, true, false, false]
    ```
 
 For the complete runnable setup—including a new Rails application, RubyGems installation, host models, all three `¥8,900 / ¥20,000 / ¥50,000` outcomes, Audit behavior, and production security guidance—see [Getting Started](docs/getting_started.md).
