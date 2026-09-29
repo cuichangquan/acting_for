@@ -16,7 +16,7 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 > **Released: v0.1.0.** ActingFor 0.1.0 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.0](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.0). The Public API, migrations, models, constraints, automatic Audit persistence, and formal test suite are implemented. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 >
-> **Next release:** `Decision#reason_code` is implemented and under release preparation. It is not part of the published `0.1.0` gem.
+> **0.1.1 release candidate:** `Decision#reason_code` is implemented, verified, and under release preparation. The latest published RubyGems version is still `0.1.0`; `0.1.1` has not been published yet.
 
 ## ActingFor at a glance
 
@@ -179,11 +179,11 @@ decision = ActingFor.authorize(
 decision.status   # => :allow
 decision.allowed? # => true when product.price is 8_900
 
-# Next release:
+# ActingFor 0.1.1 release candidate:
 decision.reason_code # => :delegation_allowed
 ```
 
-The released behavior is documented in the [v0.1 Public API](docs/public_api_v0_1.md). The next-release [`Decision#reason_code` API note](docs/decision_reason_code.md) documents the new final-reason accessor. Context values that affect authorization must be established by the host, not trusted directly from an Agent request. `reason_code` is not available in the published `0.1.0` gem.
+The released 0.1.0 behavior is documented in the [v0.1 Public API](docs/public_api_v0_1.md). The [0.1.1 `Decision#reason_code` API note](docs/decision_reason_code.md) documents the new final-reason accessor. Context values that affect authorization must be established by the host, not trusted directly from an Agent request. `reason_code` is not available in the published `0.1.0` gem.
 
 ## Quick Start
 
