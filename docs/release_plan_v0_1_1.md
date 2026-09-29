@@ -84,8 +84,8 @@ post-release evidence
 - [x] pre-merge candidate strict gem build PASS
 - [x] pre-merge package contents / secret scan PASS
 - [x] pre-merge local artifact install PASS
-- [ ] final Core CI after all release-preparation commits
-- [ ] final PR diff review / merge readiness
+- [x] final Core CI after all release-preparation commits — Actions run `36526103853`, all 5 jobs green
+- [x] final PR diff review / technical merge readiness — PR #2 mergeable, expected 12-file release diff only
 - [ ] RubyGems authentication confirmation
 
 ## Pre-merge candidate package evidence
