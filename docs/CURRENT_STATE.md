@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D239
+D240
 ```
 
 ## Current Status
@@ -59,11 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
+Decision reason_code Public API design approved (D240); implementation / tests / release pending
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D240：`ActingFor::Decision#reason_code` を次期Public APIとして追加する設計を確定。戻り値はSymbolで、`:allow -> :delegation_allowed`、`:require_approval -> :delegation_requires_approval`、`:deny -> :no_matching_delegation` の3組のみ。AuditEventの既存String `reason_code` と意味を一致させ、個別Delegationの不一致理由や `matched_delegation_ids` は今回のPublic APIに含めない。設計承認のみで、Production code / Test / version / releaseは未変更。
 
 D239：Post-release Documentation Consistency Cleanup。v0.1.0公開後も設計書の現在状態部分に残っていた `Not released` / `未リリース` / `Releaseは未実施` / `Partially implemented` 等の古い表記を、D238およびDemo verification完了後の事実へ整合した。対象はPROJECT / Domain Model / Public API / Gem Structure / Test Strategy / Security Model。D231等の過去時点を記録する履歴表現は変更せず、Production code / Public API / schema / `v0.1.0` tag / 公開artifactには変更なし。
 
@@ -166,7 +169,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**v0.1.1 / 次期開発候補をGitHub `main` の設計書・Issues・残課題から再確認し、重要事項を1項目だけ提案すること**。いきなり実装を開始せず、ユーザー承認後に次の正式作業へ進む。
+次の1項目は、**D240 `Decision#reason_code` のAcceptance Criteria / Test仕様を確定すること**。まだProduction codeを変更せず、3 statusのreason_code、AuditEventとの整合、immutability / invalid construction、既存Public API regressionをテスト観点として整理し、ユーザー承認後に実装へ進む。
 
 ## Important Rules
 
