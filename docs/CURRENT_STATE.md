@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D245
+D246
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); 0.1.1 Core-first release order approved (D244); Core PR #2 merged and final 0.1.1 artifact verified (D245); RubyGems publication pending
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed (D241); documentation and Official Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 Core-first release order approved (D244); Core merge / final artifact verification completed (D245); ActingFor 0.1.1 published and distributed artifact / tag / GitHub Release verified (D246); post-release Official Demo verification pending
 
-Released: `acting_for` 0.1.0 / `v0.1.0`
+Released: `acting_for` 0.1.1 / `v0.1.1`
 ```
 
 ## Implemented
+
+D246：ActingFor 0.1.1 public release完了。RubyGems push成功後、Actions run `36527924057` でRubyGems配布artifactを再取得し、16,384 bytes / SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29` がfinal artifactと一致。fresh installでVERSION 0.1.1 / Engine load PASS。Actions run `36528135746` で `v0.1.1` tagをRelease Source `3fdccde58c79e1b0943e22d60016993ab6743835` へ付与し、GitHub Release `ActingFor 0.1.1` をdraft=false / prerelease=falseで公開。Release statusはRELEASED。Official Demoのpublished-gem post-release verificationは次工程。
 
 D245：RubyGems WebAuthn / 2FA利用可能状態を確認後、Core PR #2をsquash merge。main Release Sourceを `3fdccde58c79e1b0943e22d60016993ab6743835` に固定。main push CI run `36526668458` はmatrix 4 jobs + RuboCop + required status `test` が全てPASS。Release Sourceをexact checkoutしたfinal artifact verification run `36526786968` で `acting_for-0.1.1.gem` をstrict buildし、17 files / 16,384 bytes / SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、secret scan PASS、artifact install PASS、VERSION 0.1.1、Engine load PASS。RubyGems publish / v0.1.1 tag / GitHub Releaseは未実施。
 
@@ -179,7 +181,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**RubyGems `acting_for 0.1.1` publishの明示承認を取ること**。Release Source / final artifact / checksum / authentication確認は完了している。publish承認後にRubyGems公開→distributed artifact再取得・checksum / fresh install→v0.1.1 tag / GitHub Releaseの順で進める。
+次の1項目は、**Official Demoをreleased RubyGems `~> 0.1.1` へ切り替えてpost-release verificationを完了すること**。Gemfile / lockfileをreleased dependencyへ更新し、automated integration / smoke verification後にDemo PR #1をmainへmergeする。
 
 ## Important Rules
 

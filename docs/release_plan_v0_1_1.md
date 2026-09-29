@@ -1,6 +1,6 @@
 # ActingFor 0.1.1 Release Plan
 
-Status: **Release source fixed / final artifact verified / publication approval pending**
+Status: **Released / published artifact verified / post-release Demo pending**
 
 Decision: D244
 
@@ -118,7 +118,7 @@ Before publication:
 - [x] secret / credential review PASS
 - [x] local artifact installation PASS
 - [x] record gem filename / file count / size / SHA256
-- [ ] explicit approval to publish
+- [x] explicit approval to publish
 
 ## Final release artifact
 
@@ -140,17 +140,40 @@ The downloaded workflow artifact was independently checked again: the contained 
 
 ## Publication
 
-Publication is not authorized merely by this plan.
+Publication was performed after explicit user approval:
 
-After explicit approval:
+- [x] publish `acting_for 0.1.1` to RubyGems
+- [x] fetch distributed artifact — Actions run `36527924057`
+- [x] distributed SHA256 equals final local artifact SHA256
+- [x] fresh RubyGems install PASS
+- [x] `ActingFor::VERSION == "0.1.1"`
+- [x] create `v0.1.1` tag on exact Release Source
+- [x] publish GitHub Release — Actions run `36528135746`
 
-- [ ] publish `acting_for 0.1.1` to RubyGems
-- [ ] fetch distributed artifact
-- [ ] distributed SHA256 equals final local artifact SHA256
-- [ ] fresh RubyGems install PASS
-- [ ] `ActingFor::VERSION == "0.1.1"`
-- [ ] create `v0.1.1` tag on exact Release Source
-- [ ] publish GitHub Release
+## Published artifact verification
+
+```text
+RubyGems publication: PASS
+Verification run: 36527924057
+Published gem size: 16384 bytes
+Published gem SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+Final artifact SHA256 match: PASS
+Fresh install version: 0.1.1
+Rails Engine load: PASS
+```
+
+## Tag and GitHub Release
+
+```text
+Tag: v0.1.1
+Tag target: 3fdccde58c79e1b0943e22d60016993ab6743835
+GitHub Release: ActingFor 0.1.1
+draft: false
+prerelease: false
+Release workflow: 36528135746
+```
+
+The tag points to the fixed Release Source, not to later evidence/documentation commits.
 
 ## Post-release Demo
 

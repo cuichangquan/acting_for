@@ -1,6 +1,6 @@
 # ActingFor 0.1.1 Release Notes
 
-Status: **Draft / not yet published**
+Status: **Released 2026-09-29**
 
 ActingFor 0.1.1 is a backward-compatible patch release that adds a public explanation hook to authorization Decisions.
 
@@ -72,7 +72,7 @@ Core verification completed before release preparation:
 - RuboCop: PASS
 - representative formal suite: 351 runs / 898 assertions / 0 failures / 0 errors / 0 skips
 
-Official Demo verification against the unreleased candidate:
+Official Demo candidate verification before publication:
 
 - automated integration: 18 runs / 118 assertions / 0 failures / 0 errors / 0 skips
 - focused human browser verification: PASS
@@ -81,13 +81,11 @@ Official Demo verification against the unreleased candidate:
 
 ## Installation
 
-After 0.1.1 is published:
+Install 0.1.1 with:
 
 ```ruby
 gem "acting_for", "~> 0.1.1"
 ```
-
-Until RubyGems publication completes, 0.1.0 remains the latest released version.
 
 ## Documentation
 
@@ -95,3 +93,17 @@ Until RubyGems publication completes, 0.1.0 remains the latest released version.
 - [Getting Started](getting_started.md)
 - [Decision reason_code API](decision_reason_code.md)
 - [Release Runbook](release_runbook.md)
+
+
+## Release artifact
+
+```text
+Release Source: 3fdccde58c79e1b0943e22d60016993ab6743835
+Tag: v0.1.1
+Gem size: 16,384 bytes
+SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+```
+
+The RubyGems-distributed artifact was fetched independently after publication and matched the final release SHA256. Fresh installation from the downloaded RubyGems artifact passed with `ActingFor::VERSION == "0.1.1"` and Rails Engine load success.
+
+GitHub Release: [ActingFor 0.1.1](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.1)
