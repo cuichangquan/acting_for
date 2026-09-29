@@ -3887,3 +3887,91 @@ AuthorizationのAuditEvent生成では、reasonを別途算出せず `decision.r
 - RubyGems / tag / GitHub Releaseは未実施。
 - 次はPublic API / Getting Started / README等のdocumentationとOfficial Demoの表示・検証方針を整えたうえで、merge readinessを確認する。
 
+## D242: reason_code documentation and Official Demo integration verification
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Documentation / Official Demo automated verification完了。Human browser verification / main merge / releaseは未実施。**
+- 根拠：ユーザーがD241後の公開向けdocumentationとOfficial Demo反映を明示承認した。
+
+### ActingFor documentation
+
+次回release向け `Decision#reason_code` を、公開済み0.1.0の事実と混同しない形で案内する。
+
+- README：0.1.0が現在のreleased versionであることを維持し、`reason_code` はNext releaseとして明示する。
+- Getting Started：0.1.0 installation手順を維持し、3 Decisionの `reason_code` 例だけをNext releaseとして明示する。
+- `docs/public_api_v0_1.md`：公開済み0.1.0の契約記録として変更しない。
+- `docs/decision_reason_code.md`：次回release向けPublic API追加の独立documentを追加する。
+
+### Official Demo candidate integration
+
+Official Demo branch：
+
+```text
+feature/decision-reason-code
+```
+
+Draft PR #1で、ActingForのexact candidate commitを一時的に利用する。
+
+```text
+ActingFor candidate:
+7578bb541cea5a49e79c1590abcac740e9f65d4b
+```
+
+Demo result画面は `@result.decision.reason_code` を直接表示する。
+
+```text
+ActingFor Decision  DENY
+Decision Reason     no_matching_delegation
+Purchase            NOT EXECUTED
+```
+
+Demo integration testsは3 DecisionすべてについてDecision reasonを確認し、DecisionのSymbol reasonとAuditEventのString reasonの一致も確認する。
+
+### Automated verification
+
+corrected `Gemfile.lock` を含むDemo revision：
+
+```text
+f1b2d87a635bee8b3b43556079ae6f4decf8774e
+```
+
+GitHub Actions run：
+
+```text
+36521481895
+```
+
+Result：
+
+```text
+Decision reason_code: no_matching_delegation
+18 runs
+118 assertions
+0 failures
+0 errors
+0 skips
+```
+
+Temporary verification workflowは証跡取得後にfeature branchから削除し、通常Demo構成へ恒久的なCI workflowを追加しない。
+
+### Human verification boundary
+
+v0.1.0の既存Human Manual Verification（Scenarios 1–11 PASS）は履歴として維持するが、新しい `Decision#reason_code` UIのHuman evidenceとして流用しない。
+
+次回release向けのfocused browser verificationは未実施であり、Demo documentationでは **PENDING** とする。
+
+確認対象：
+
+- ¥800 → ALLOW / `delegation_allowed` / EXECUTED
+- ¥2,000 → REQUIRE APPROVAL / `delegation_requires_approval` / NOT EXECUTED
+- ¥5,000 → DENY / `no_matching_delegation` / NOT EXECUTED
+- Audit EventsのReasonが各Decision Reasonと一致すること
+
+### Release boundary / Next Step
+
+- ActingFor Draft PR #2：未merge。
+- Demo Draft PR #1：未merge。
+- ActingFor version：まだ `0.1.0`。
+- RubyGems / tag / GitHub Release：変更なし。
+- 次の1項目は、Official Demoのfocused human browser verificationを実施し、結果を記録すること。
+
