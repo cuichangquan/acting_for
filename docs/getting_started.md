@@ -2,7 +2,7 @@
 
 This is the detailed runnable introduction to ActingFor. It preserves the code, values, and expected results verified in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation).
 
-ActingFor 0.1.0 is released on RubyGems. This guide installs the released `~> 0.1.0` version requirement. The current development branch also includes `Decision#reason_code` for the next release; examples below label that addition explicitly because it is not available in the published 0.1.0 gem.
+ActingFor 0.1.0 is the latest published RubyGems release. This guide still installs the released `~> 0.1.0` version requirement during 0.1.1 pre-release preparation. The 0.1.1 release candidate includes `Decision#reason_code`; examples below label that addition explicitly because 0.1.1 has not been published yet.
 
 ## Verified environment
 
@@ -126,7 +126,7 @@ decision = ActingFor.authorize(
 # => [:allow, true, false, false]
 ```
 
-Next release, the same Decision also exposes its final authorization reason:
+In the 0.1.1 release candidate, the same Decision also exposes its final authorization reason:
 
 ```ruby
 decision.reason_code
@@ -137,7 +137,7 @@ decision.reason_code
 
 The D230-verified results are:
 
-| Purchase amount | Decision | Next-release `reason_code` | Meaning |
+| Purchase amount | Decision | 0.1.1 `reason_code` | Meaning |
 | --- | --- | --- | --- |
 | ¥8,900 | `allow` | `:delegation_allowed` | Meets the Delegation conditions |
 | ¥20,000 | `require_approval` | `:delegation_requires_approval` | No automatic execution; approval is required |
@@ -154,7 +154,7 @@ approval_decision = ActingFor.authorize(
 [approval_decision.status, approval_decision.allowed?,
  approval_decision.denied?, approval_decision.approval_required?]
 # => [:require_approval, false, false, true]
-# Next release: approval_decision.reason_code
+# 0.1.1: approval_decision.reason_code
 # => :delegation_requires_approval
 
 product = Product.find_by!(price: 50_000)
@@ -165,7 +165,7 @@ deny_decision = ActingFor.authorize(
 [deny_decision.status, deny_decision.allowed?,
  deny_decision.denied?, deny_decision.approval_required?]
 # => [:deny, false, true, false]
-# Next release: deny_decision.reason_code
+# 0.1.1: deny_decision.reason_code
 # => :no_matching_delegation
 ```
 
