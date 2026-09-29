@@ -3820,3 +3820,287 @@ DecisionとAuditで理由を別々に意味付けしない。実装ではDecisio
 - 実装・Test・Documentation・Demo更新・version bump・RubyGems publicationは本Decisionではまだ行わない。
 - 次の作業は、D240のAcceptance Criteria / Test仕様を確定してから実装へ進む。
 
+## D241: Decision reason_code acceptance criteria and implementation verification
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Feature branch実装・正式CI検証済み / main未merge / 未リリース。**
+- 根拠：ユーザーがD240のAcceptance Criteriaを明示承認し、tests-firstで実装・検証を進めることを承認した。
+
+### Acceptance Criteria
+
+`ActingFor::Decision#reason_code` は次を満たす。
+
+1. `:allow` のreason_codeは `:delegation_allowed`。
+2. `:require_approval` のreason_codeは `:delegation_requires_approval`。
+3. `:deny` のreason_codeは `:no_matching_delegation`。
+4. 既存Public API `status` / `allowed?` / `denied?` / `approval_required?` の意味を変更しない。
+5. Decisionは引き続きimmutableで、不正statusは `ArgumentError`。
+6. `ActingFor.authorize(...)` が返すDecisionのreason_codeと、自動保存されるAuditEventのreason_codeは同じ意味・値を持つ。DecisionはSymbol、AuditEventは既存どおりString。
+7. schema / Migration、Delegation matching、AuditEventの既存DB値は変更しない。
+
+### Tests-first evidence
+
+Feature branch：
+
+```text
+feature/decision-reason-code
+```
+
+Public APIの期待値を先にUnit / Integration Testへ追加し、Production code未変更の状態でPR #2のCI run #50を実行した。
+
+結果：
+
+- RuboCop：PASS。
+- Ruby 3.4 / 4.0 × Rails 8.0 / 8.1 の4 test jobs：期待どおりFAIL。
+- failure pointは未実装の `Decision#reason_code` を要求する新規Test。
+
+このRedを確認後に実装へ進んだ。
+
+### Implementation
+
+`ActingFor::Decision` に `reason_code` を追加し、statusから固定mappingで生成する。
+
+```text
+allow            -> delegation_allowed
+require_approval -> delegation_requires_approval
+deny             -> no_matching_delegation
+```
+
+AuthorizationのAuditEvent生成では、reasonを別途算出せず `decision.reason_code.to_s` を保存する。これにより、返却DecisionとAuditEventが同じ最終Decision理由を利用する。
+
+### Verification
+
+実装後のPR #2 CI run #51：
+
+- Ruby 3.4 / Rails 8.0：351 runs / 898 assertions / 0 failures / 0 errors / 0 skips。
+- Ruby 3.4 / Rails 8.1：PASS。
+- Ruby 4.0 / Rails 8.0：PASS。
+- Ruby 4.0 / Rails 8.1：PASS。
+- RuboCop：PASS。
+- 全5 jobs green。
+
+### Boundary / Next Step
+
+- Feature branchとDraft PR #2に実装済み。
+- `main` にはまだmergeしない。
+- versionはまだ `0.1.0`。
+- RubyGems / tag / GitHub Releaseは未実施。
+- 次はPublic API / Getting Started / README等のdocumentationとOfficial Demoの表示・検証方針を整えたうえで、merge readinessを確認する。
+
+## D242: reason_code documentation and Official Demo integration verification
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Documentation / Official Demo automated verification完了。Human browser verification / main merge / releaseは未実施。**
+- 根拠：ユーザーがD241後の公開向けdocumentationとOfficial Demo反映を明示承認した。
+
+### ActingFor documentation
+
+次回release向け `Decision#reason_code` を、公開済み0.1.0の事実と混同しない形で案内する。
+
+- README：0.1.0が現在のreleased versionであることを維持し、`reason_code` はNext releaseとして明示する。
+- Getting Started：0.1.0 installation手順を維持し、3 Decisionの `reason_code` 例だけをNext releaseとして明示する。
+- `docs/public_api_v0_1.md`：公開済み0.1.0の契約記録として変更しない。
+- `docs/decision_reason_code.md`：次回release向けPublic API追加の独立documentを追加する。
+
+### Official Demo candidate integration
+
+Official Demo branch：
+
+```text
+feature/decision-reason-code
+```
+
+Draft PR #1で、ActingForのexact candidate commitを一時的に利用する。
+
+```text
+ActingFor candidate:
+7578bb541cea5a49e79c1590abcac740e9f65d4b
+```
+
+Demo result画面は `@result.decision.reason_code` を直接表示する。
+
+```text
+ActingFor Decision  DENY
+Decision Reason     no_matching_delegation
+Purchase            NOT EXECUTED
+```
+
+Demo integration testsは3 DecisionすべてについてDecision reasonを確認し、DecisionのSymbol reasonとAuditEventのString reasonの一致も確認する。
+
+### Automated verification
+
+corrected `Gemfile.lock` を含むDemo revision：
+
+```text
+f1b2d87a635bee8b3b43556079ae6f4decf8774e
+```
+
+GitHub Actions run：
+
+```text
+36521481895
+```
+
+Result：
+
+```text
+Decision reason_code: no_matching_delegation
+18 runs
+118 assertions
+0 failures
+0 errors
+0 skips
+```
+
+Temporary verification workflowは証跡取得後にfeature branchから削除し、通常Demo構成へ恒久的なCI workflowを追加しない。
+
+### Human verification boundary
+
+v0.1.0の既存Human Manual Verification（Scenarios 1–11 PASS）は履歴として維持するが、新しい `Decision#reason_code` UIのHuman evidenceとして流用しない。
+
+次回release向けのfocused browser verificationは未実施であり、Demo documentationでは **PENDING** とする。
+
+確認対象：
+
+- ¥800 → ALLOW / `delegation_allowed` / EXECUTED
+- ¥2,000 → REQUIRE APPROVAL / `delegation_requires_approval` / NOT EXECUTED
+- ¥5,000 → DENY / `no_matching_delegation` / NOT EXECUTED
+- Audit EventsのReasonが各Decision Reasonと一致すること
+
+### Release boundary / Next Step
+
+- ActingFor Draft PR #2：未merge。
+- Demo Draft PR #1：未merge。
+- ActingFor version：まだ `0.1.0`。
+- RubyGems / tag / GitHub Release：変更なし。
+- 次の1項目は、Official Demoのfocused human browser verificationを実施し、結果を記録すること。
+
+## D243: Decision reason_code focused human browser verification PASS
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Human Browser Verification PASS / main未merge / 未リリース。**
+- 根拠：ユーザーがOfficial Demoの3つのShopping Agent結果画面、Audit Events、Executed Purchasesをブラウザで確認し、D242で定義したfocused verification evidenceを提示した。
+
+### Human Browser Verification
+
+Official Demo feature branchで、3つのDecisionを人間がブラウザ確認した。
+
+```text
+¥800 / Everyday Item
+ActingFor Decision: ALLOW
+Decision Reason: delegation_allowed
+Purchase: EXECUTED
+
+¥2,000 / Approval Item
+ActingFor Decision: REQUIRE APPROVAL
+Decision Reason: delegation_requires_approval
+Purchase: NOT EXECUTED
+
+¥5,000 / Expensive Item
+ActingFor Decision: DENY
+Decision Reason: no_matching_delegation
+Purchase: NOT EXECUTED
+```
+
+### Audit consistency
+
+Audit Eventsでは3件すべてでDecision Reasonとpersist済みReasonが一致した。
+
+```text
+Product#1 / ALLOW            / delegation_allowed           / matched [1]
+Product#2 / REQUIRE APPROVAL / delegation_requires_approval / matched [2]
+Product#3 / DENY             / no_matching_delegation       / matched []
+```
+
+sanitized contextはそれぞれ `{"amount":800}`、`{"amount":2000}`、`{"amount":5000}`。
+
+### Business execution boundary
+
+Executed PurchasesにはShopping Agentによる¥800のALLOW購入だけが存在した。
+
+したがって、Demo host applicationが次を満たすことをHuman Browser Verificationでも確認した。
+
+- `allow` のみbusiness actionを実行する。
+- `require_approval` は実行せず停止する。
+- `deny` は実行しない。
+- Decision画面の `reason_code` とAuditEventの `reason_code` は同じ最終認可理由を表す。
+
+### Verification conclusion
+
+`Decision#reason_code` focused Human Browser Verification：**PASS**。
+
+D242のautomated integration verificationと合わせ、Core implementation / Core CI / Documentation / Official Demo automated integration / Official Demo focused human browser verificationまで完了した。
+
+### Release boundary / Next Step
+
+- ActingFor Draft PR #2：未merge。
+- Official Demo Draft PR #1：未merge。
+- ActingFor version：まだ `0.1.0`。
+- RubyGems / tag / GitHub Release：変更なし。
+- 次の1項目は、両Draft PRのmerge readinessを確認し、merge順序とrelease versionを正式決定すること。
+
+## D244: Decision reason_code release version and merge / release order
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。0.1.1 release preparation開始 / merge・publish未実施。**
+- 根拠：D243完了後、Core PR #2 / Demo PR #1のmerge readiness、release順序、versionを確認し、ユーザーが明示承認した。
+
+### Version
+
+`Decision#reason_code` を **ActingFor 0.1.1** として公開する。
+
+理由：
+
+- Public APIへの後方互換な追加であり、既存API削除・renameなし。
+- schema / Migration変更なし。
+- Delegation matching / status semantics変更なし。
+- AuditEventの既存String reason value変更なし。
+- 0.1.0からのpatch releaseとして扱う。
+
+### Release order
+
+正式な順序は次とする。
+
+```text
+ActingFor Core PR #2 release preparation
+  ↓
+Core final CI / Release Gate
+  ↓
+Core PR #2 → main merge
+  ↓
+exact main SHAを0.1.1 Release Sourceとして固定
+  ↓
+Final gem build / artifact verification
+  ↓
+RubyGems acting_for 0.1.1 publish
+  ↓
+published artifact再取得 / checksum / fresh install
+  ↓
+v0.1.1 tag + GitHub Release
+  ↓
+Official DemoをGit exact-refからRubyGems ~> 0.1.1へ切替
+  ↓
+Demo automated integration / smoke
+  ↓
+Demo PR #1 → main merge
+  ↓
+Post-release verification record
+```
+
+### Demo merge boundary
+
+Official Demo PR #1は、RubyGems 0.1.1公開前にはmainへmergeしない。
+
+検証中のexact Git commit dependencyはrelease candidate verification専用とし、Demo mainは最終的にreleased RubyGems dependencyを参照する。
+
+### Release safety boundary
+
+- 本DecisionでRubyGems publishは行わない。
+- tag / GitHub Releaseはまだ作成しない。
+- Core PR #2のmain mergeもRelease Gate完了後に別途確認する。
+- RubyGems publishの直前には、Release Source・artifact・checksum・authenticationを再確認し、明示承認後に公開操作へ進む。
+
+### Next Step
+
+0.1.1 release-facing filesを準備し、version bump、Release Notes、Release Plan、README / Getting Startedのpre-release表記を整えたうえでCore CIを再実行する。
+

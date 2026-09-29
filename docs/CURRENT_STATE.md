@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-23
+更新日：2026-09-29
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D240
+D244
 ```
 
 ## Current Status
@@ -59,12 +59,20 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); implementation / tests / release pending
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); documentation and Official Demo automated integration verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release version and Core-first release order approved (D244); release preparation in progress
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D244：`Decision#reason_code` をActingFor 0.1.1として公開する方針を確定。Core PR #2を先にRelease Gate→main merge→exact Release Source固定→gem build / artifact verification→RubyGems 0.1.1 publish→distributed artifact verification→v0.1.1 tag / GitHub Releaseの順で進め、その後Official DemoをRubyGems `~> 0.1.1`へ切替・検証・mergeする。Demoのexact Git依存はpre-release verification専用。`lib/acting_for/version.rb` は0.1.1へbump済み。RubyGems publish / tag / GitHub Release / main mergeはまだ未実施。Pre-merge candidate package verificationはActions run `36526009671` でPASS：strict build、17 files、16,384 bytes、candidate SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、package secret scan、local artifact install、`ActingFor::VERSION == "0.1.1"`、Engine loadを確認。これはfinal Release Source固定前のcandidate evidenceであり、最終artifact checksumではない。Temporary package workflow削除後のtechnical Release Gate CI run `36526103853` はRuby 3.4 / 4.0 × Rails 8.0 / 8.1 + RuboCopの全5 jobs green。その後の変更はrelease evidence / documentationのみ。PR #2はmergeableで、最終diff review上も想定した12 filesのみ。technical merge readinessはPASS。
+
+D243：Official Demoのfocused Human Browser Verificationを完了。¥800はALLOW / `delegation_allowed` / EXECUTED、¥2,000はREQUIRE APPROVAL / `delegation_requires_approval` / NOT EXECUTED、¥5,000はDENY / `no_matching_delegation` / NOT EXECUTED。Audit EventsのReasonは3件ともDecision Reasonと一致し、Executed Purchasesには¥800のShopping Agent購入だけが存在。Human Browser Verification PASS。両Draft PRは未merge、version / release未変更。
+
+D242：`Decision#reason_code` の公開向けdocumentationとOfficial Demo integrationを実施。README / Getting Startedでは公開済み0.1.0と次回release機能を分離し、`docs/public_api_v0_1.md` は0.1.0契約記録として維持、`docs/decision_reason_code.md` を追加。Official Demo Draft PR #1はActingFor exact candidate `7578bb541cea5a49e79c1590abcac740e9f65d4b` をpinし、結果画面へDecision Reasonを表示、3 reason codeとAudit一致をtest。corrected lockfileを含むDemo revision `f1b2d87a635bee8b3b43556079ae6f4decf8774e` / Actions run `36521481895` で18 runs / 118 assertions / 0 failures / 0 errors / 0 skips。新UIのHuman browser verificationはPENDING、両PRは未merge、release未変更。
+
+D241：`Decision#reason_code` のAcceptance Criteriaを確定し、feature branch `feature/decision-reason-code` / Draft PR #2でtests-first実装。Production code未変更のCI run #50で4 test matrixが期待どおりRed、実装後CI run #51でRuby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrix + RuboCopが全5 jobs Green。Ruby 3.4 / Rails 8.0は351 runs / 898 assertions / 0 failures / 0 errors / 0 skips。AuthorizationはAudit reasonを `decision.reason_code.to_s` から保存し、DecisionとAuditの最終理由を一致させる。main未merge、version / release未変更。
 
 D240：`ActingFor::Decision#reason_code` を次期Public APIとして追加する設計を確定。戻り値はSymbolで、`:allow -> :delegation_allowed`、`:require_approval -> :delegation_requires_approval`、`:deny -> :no_matching_delegation` の3組のみ。AuditEventの既存String `reason_code` と意味を一致させ、個別Delegationの不一致理由や `matched_delegation_ids` は今回のPublic APIに含めない。設計承認のみで、Production code / Test / version / releaseは未変更。
 
@@ -169,7 +177,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**D240 `Decision#reason_code` のAcceptance Criteria / Test仕様を確定すること**。まだProduction codeを変更せず、3 statusのreason_code、AuditEventとの整合、immutability / invalid construction、既存Public API regressionをテスト観点として整理し、ユーザー承認後に実装へ進む。
+次の1項目は、**RubyGems authenticationを確認し、Core PR #2をmainへmergeするか最終承認を取ること**。technical Release GateはPASSしているが、PRは意図的にDraft / 未mergeのまま維持する。merge後にexact main SHAをRelease Sourceとして固定し、final artifactを再buildする。
 
 ## Important Rules
 
