@@ -286,13 +286,17 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   { allow: "delegation_allowed", deny: "no_matching_delegation",
     require_approval: "delegation_requires_approval" }.each do |status, reason|
-    test "authorize automatically persists one audit for #{status}" do
+    test "authorize returns a reason code consistent with the persisted audit for #{status}" do
       delegate(effect: status) unless status == :deny
+      decision = nil
       assert_difference "ActingFor::AuditEvent.count", 1 do
-        assert_equal status, authorize.status
+        decision = authorize
+        assert_equal status, decision.status
       end
+      assert_equal reason.to_sym, decision.reason_code
       assert_equal status.to_s, audit.decision
       assert_equal reason, audit.reason_code
+      assert_equal decision.reason_code.to_s, audit.reason_code
     end
   end
 
