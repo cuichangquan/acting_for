@@ -1,0 +1,46 @@
+name: Verify Published acting_for 0.1.1
+
+on:
+  push:
+    branches:
+      - verification/v0.1.1-published-artifact
+
+permissions:
+  contents: read
+
+jobs:
+  verify-published-gem:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Ruby 3.4
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - name: Fetch published gem from RubyGems
+        run: |
+          set -euo pipefail
+          rm -f acting_for-0.1.1.gem
+          gem fetch acting_for --version 0.1.1 --source https://rubygems.org
+
+      - name: Verify distributed checksum and size
+        run: |
+          set -euo pipefail
+          test -f acting_for-0.1.1.gem
+          bytes=$(stat -c%s acting_for-0.1.1.gem)
+          sha=$(sha256sum acting_for-0.1.1.gem | awk '{print $1}')
+          echo "Published gem size: $bytes bytes"
+          echo "Published gem SHA256: $sha"
+          test "$bytes" = "16384"
+          test "$sha" = "57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29"
+
+      - name: Fresh install published gem
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          export GEM_HOME="$tmp/gems"
+          export GEM_PATH="$GEM_HOME"
+          export PATH="$GEM_HOME/bin:$PATH"
+          gem install ./acting_for-0.1.1.gem --no-document
+          cd /tmp
+          ruby -e 'require "acting_for"; abort "unexpected version" unless ActingFor::VERSION == "0.1.1"; puts "Fresh install version: #{ActingFor::VERSION}"; puts "Engine: #{ActingFor::Engine < Rails::Engine}"'
