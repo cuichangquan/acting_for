@@ -4193,3 +4193,72 @@ downloaded artifact内の `acting_for-0.1.1.gem` についてもSHA256 `57ceb266
 - Official Demo main：まだRubyGems 0.1.0
 - 次の1項目は、final Release Source / artifact / SHA256を確認した状態で、RubyGems 0.1.1 publishの明示承認を取ること。
 
+## D246: ActingFor 0.1.1 public release completed
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。RELEASED。Official Demoのpublished-gem verificationは次工程。**
+- 根拠：D245で固定したfinal artifactをユーザーがRubyGemsへpublishし、published artifact verification、exact tag、GitHub Releaseまで完了した。
+
+### RubyGems publication
+
+ユーザーがfinal artifactをRubyGemsへpushし、次の成功結果を確認した。
+
+```text
+Successfully registered gem: acting_for (0.1.1)
+```
+
+### Distributed artifact verification
+
+RubyGemsから `acting_for 0.1.1` を独立に再取得し、GitHub Actions run `36527924057` で検証した。
+
+```text
+Downloaded acting_for-0.1.1
+Published gem size: 16384 bytes
+Published gem SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+Fresh install version: 0.1.1
+Engine: true
+```
+
+D245で固定したfinal artifactとsize / SHA256が一致した。
+
+### Tag / GitHub Release
+
+GitHub Actions run `36528135746` でrelease operationを実施した。
+
+```text
+Tag: v0.1.1
+Tag target: 3fdccde58c79e1b0943e22d60016993ab6743835
+GitHub Release: ActingFor 0.1.1
+draft: false
+prerelease: false
+```
+
+`v0.1.1` はRelease Sourceへ直接付いたlightweight tagであり、後続documentation commitへ移動しない。
+
+### Released Public API addition
+
+0.1.1で `ActingFor::Decision#reason_code` を公開した。
+
+```text
+:allow            -> :delegation_allowed
+:require_approval -> :delegation_requires_approval
+:deny             -> :no_matching_delegation
+```
+
+既存Decision API、Delegation matching semantics、schema / Migration、AuditEventの既存String reason valuesは維持する。
+
+### Release status
+
+```text
+RubyGems 0.1.1: PASS
+Distributed artifact checksum: PASS
+Fresh install: PASS
+v0.1.1 tag: PASS
+GitHub Release: PASS
+
+Release status: RELEASED
+Post-release Official Demo: PENDING
+```
+
+次の1項目は、Official Demoをtemporary exact Git dependencyからreleased RubyGems `~> 0.1.1` へ切り替え、automated integration / smoke verificationを実施すること。
+
