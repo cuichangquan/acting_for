@@ -5,6 +5,7 @@ class DecisionTest < ActiveSupport::TestCase
     decision = ActingFor::Decision.new(:allow)
 
     assert_equal :allow, decision.status
+    assert_equal :delegation_allowed, decision.reason_code
     assert_predicate decision, :allowed?
     refute_predicate decision, :denied?
     refute_predicate decision, :approval_required?
@@ -14,6 +15,7 @@ class DecisionTest < ActiveSupport::TestCase
     decision = ActingFor::Decision.new(:deny)
 
     assert_equal :deny, decision.status
+    assert_equal :no_matching_delegation, decision.reason_code
     refute_predicate decision, :allowed?
     assert_predicate decision, :denied?
     refute_predicate decision, :approval_required?
@@ -23,6 +25,7 @@ class DecisionTest < ActiveSupport::TestCase
     decision = ActingFor::Decision.new(:require_approval)
 
     assert_equal :require_approval, decision.status
+    assert_equal :delegation_requires_approval, decision.reason_code
     refute_predicate decision, :allowed?
     refute_predicate decision, :denied?
     assert_predicate decision, :approval_required?
