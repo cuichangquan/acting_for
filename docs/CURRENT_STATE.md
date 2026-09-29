@@ -66,7 +66,7 @@ Released: `acting_for` 0.1.0 / `v0.1.0`
 
 ## Implemented
 
-D244：`Decision#reason_code` をActingFor 0.1.1として公開する方針を確定。Core PR #2を先にRelease Gate→main merge→exact Release Source固定→gem build / artifact verification→RubyGems 0.1.1 publish→distributed artifact verification→v0.1.1 tag / GitHub Releaseの順で進め、その後Official DemoをRubyGems `~> 0.1.1`へ切替・検証・mergeする。Demoのexact Git依存はpre-release verification専用。`lib/acting_for/version.rb` は0.1.1へbump済み。RubyGems publish / tag / GitHub Release / main mergeはまだ未実施。Pre-merge candidate package verificationはActions run `36526009671` でPASS：strict build、17 files、16,384 bytes、candidate SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、package secret scan、local artifact install、`ActingFor::VERSION == "0.1.1"`、Engine loadを確認。これはfinal Release Source固定前のcandidate evidenceであり、最終artifact checksumではない。
+D244：`Decision#reason_code` をActingFor 0.1.1として公開する方針を確定。Core PR #2を先にRelease Gate→main merge→exact Release Source固定→gem build / artifact verification→RubyGems 0.1.1 publish→distributed artifact verification→v0.1.1 tag / GitHub Releaseの順で進め、その後Official DemoをRubyGems `~> 0.1.1`へ切替・検証・mergeする。Demoのexact Git依存はpre-release verification専用。`lib/acting_for/version.rb` は0.1.1へbump済み。RubyGems publish / tag / GitHub Release / main mergeはまだ未実施。Pre-merge candidate package verificationはActions run `36526009671` でPASS：strict build、17 files、16,384 bytes、candidate SHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、package secret scan、local artifact install、`ActingFor::VERSION == "0.1.1"`、Engine loadを確認。これはfinal Release Source固定前のcandidate evidenceであり、最終artifact checksumではない。Temporary package workflow削除後の最終Core CI run `36526103853` はRuby 3.4 / 4.0 × Rails 8.0 / 8.1 + RuboCopの全5 jobs green。PR #2はmergeableで、最終diff review上も想定した12 filesのみ。technical merge readinessはPASS。
 
 D243：Official Demoのfocused Human Browser Verificationを完了。¥800はALLOW / `delegation_allowed` / EXECUTED、¥2,000はREQUIRE APPROVAL / `delegation_requires_approval` / NOT EXECUTED、¥5,000はDENY / `no_matching_delegation` / NOT EXECUTED。Audit EventsのReasonは3件ともDecision Reasonと一致し、Executed Purchasesには¥800のShopping Agent購入だけが存在。Human Browser Verification PASS。両Draft PRは未merge、version / release未変更。
 
@@ -177,7 +177,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**0.1.1 Core PR #2の最終merge readinessを確定すること**。temporary package workflow削除後の最終Core CI、PR差分、version / release-facing docsを確認し、RubyGems authentication確認を残件として明示する。main mergeはその確認後にユーザー承認を取ってから行う。
+次の1項目は、**RubyGems authenticationを確認し、Core PR #2をmainへmergeするか最終承認を取ること**。technical Release GateはPASSしているが、PRは意図的にDraft / 未mergeのまま維持する。merge後にexact main SHAをRelease Sourceとして固定し、final artifactを再buildする。
 
 ## Important Rules
 
