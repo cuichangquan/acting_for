@@ -1,0 +1,166 @@
+name: Publish GitHub Release v0.1.1
+
+on:
+  push:
+    branches:
+      - release/v0.1.1-github-release
+
+permissions:
+  contents: write
+
+jobs:
+  publish-github-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_SOURCE: 3fdccde58c79e1b0943e22d60016993ab6743835
+      TAG: v0.1.1
+      GEM_SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify release source exists
+        run: |
+          set -euo pipefail
+          git cat-file -e "$RELEASE_SOURCE^{commit}"
+          version=$(git show "$RELEASE_SOURCE:lib/acting_for/version.rb")
+          echo "$version"
+          echo "$version" | grep 'VERSION = "0.1.1"'
+
+      - name: Create exact release tag
+        run: |
+          set -euo pipefail
+          existing=$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$existing" ]; then
+            test "$existing" = "$RELEASE_SOURCE"
+            echo "$TAG already exists at exact Release Source."
+          else
+            git tag "$TAG" "$RELEASE_SOURCE"
+            git push origin "refs/tags/$TAG"
+          fi
+
+      - name: Prepare GitHub Release notes
+        run: |
+          cat > /tmp/release-notes.md <<'EOF'
+          # ActingFor 0.1.1
+
+          *Rails-native delegated authorization for AI agents.*
+
+          ActingFor 0.1.1 is a backward-compatible patch release adding a stable final authorization reason to `ActingFor::Decision`.
+
+          - RubyGems: `acting_for` 0.1.1
+          - Tag: `v0.1.1`
+          - Release Source SHA: `3fdccde58c79e1b0943e22d60016993ab6743835`
+          - Gem size: `16,384 bytes`
+          - SHA256: `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`
+
+          Install with:
+
+          ```ruby
+          gem "acting_for", "~> 0.1.1"
+          ```
+
+          ## New in 0.1.1
+
+          `ActingFor::Decision#reason_code` exposes the final delegated-authorization reason as a Symbol:
+
+          | Decision status | reason_code |
+          | --- | --- |
+          | `:allow` | `:delegation_allowed` |
+          | `:require_approval` | `:delegation_requires_approval` |
+          | `:deny` | `:no_matching_delegation` |
+
+          Example:
+
+          ```ruby
+          decision = ActingFor.authorize(...)
+          decision.status
+          # => :deny
+
+          decision.reason_code
+          # => :no_matching_delegation
+          ```
+
+          The persisted `AuditEvent#reason_code` keeps its existing String representation, and Authorization now derives it directly from the returned Decision reason so both describe the same final authorization outcome.
+
+          ## Compatibility
+
+          0.1.1 does not change:
+
+          - the three Decision statuses
+          - `allowed?`, `denied?`, or `approval_required?`
+          - Delegation matching semantics
+          - database schema or migrations
+          - existing AuditEvent reason String values
+          - supported Ruby / Rails ranges
+
+          The new API intentionally exposes only the final Decision reason. It does not expose per-Delegation mismatch details such as expiration, revocation, resource mismatch, or constraint mismatch.
+
+          ## Verification
+
+          Before release:
+
+          - Ruby 3.4 / Rails 8.0: PASS
+          - Ruby 3.4 / Rails 8.1: PASS
+          - Ruby 4.0 / Rails 8.0: PASS
+          - Ruby 4.0 / Rails 8.1: PASS
+          - RuboCop: PASS
+          - representative suite: 351 runs / 898 assertions / 0 failures / 0 errors / 0 skips
+          - Official Demo candidate integration: 18 runs / 118 assertions / 0 failures / 0 errors / 0 skips
+          - focused human browser verification: PASS
+
+          Published artifact verification:
+
+          - RubyGems download: PASS
+          - distributed size: 16,384 bytes
+          - distributed SHA256 matches final artifact
+          - fresh install: PASS
+          - `ActingFor::VERSION == "0.1.1"`: PASS
+          - Rails Engine load: PASS
+
+          ## Responsibility boundary
+
+          ActingFor still does not authenticate Agents or execute business operations. The host application remains responsible for authenticating/resolving the Agent and Principal, loading the real Resource, establishing trusted Context, applying its own authorization, and enforcing the returned Decision.
+
+          `require_approval` remains a stop condition, not permission to execute. Approval workflow remains a host responsibility.
+
+          ## Supported environments
+
+          | Ruby | Rails | Database |
+          | --- | --- | --- |
+          | 3.4 | 8.0 | PostgreSQL 16 |
+          | 3.4 | 8.1 | PostgreSQL 16 |
+          | 4.0 | 8.0 | PostgreSQL 16 |
+          | 4.0 | 8.1 | PostgreSQL 16 |
+
+          Repository:
+          https://github.com/cuichangquan/acting_for
+
+          Official Demo:
+          https://github.com/cuichangquan/acting_for_demo
+
+          Licensed under the MIT License.
+          EOF
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,targetCommitish
+          else
+            gh release create "$TAG"               --repo "$GITHUB_REPOSITORY"               --verify-tag               --title "ActingFor 0.1.1"               --notes-file /tmp/release-notes.md
+          fi
+
+      - name: Verify published GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY"             --json tagName,name,isDraft,isPrerelease,url,targetCommitish
+          tag_sha=$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')
+          test "$tag_sha" = "$RELEASE_SOURCE"
