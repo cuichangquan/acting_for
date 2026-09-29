@@ -1,6 +1,6 @@
 # ActingFor 0.1.1 Release Plan
 
-Status: **Pre-release preparation**
+Status: **Release source fixed / final artifact verified / publication approval pending**
 
 Decision: D244
 
@@ -86,7 +86,7 @@ post-release evidence
 - [x] pre-merge local artifact install PASS
 - [x] technical Release Gate CI — Actions run `36526103853`, all 5 jobs green; subsequent changes are evidence/documentation only
 - [x] final PR diff review / technical merge readiness — PR #2 mergeable, expected 12-file release diff only
-- [ ] RubyGems authentication confirmation
+- [x] RubyGems authentication confirmation — WebAuthn / 2FA available
 
 ## Pre-merge candidate package evidence
 
@@ -111,14 +111,32 @@ The exact merged main SHA becomes the candidate Release Source only after the fi
 
 Before publication:
 
-- [ ] record `VERSION=0.1.1`
-- [ ] record exact `RELEASE_SOURCE`
-- [ ] `gem build --strict acting_for.gemspec` PASS
-- [ ] package contents reviewed
-- [ ] secret / credential review PASS
-- [ ] local artifact installation PASS
-- [ ] record gem filename / file count / size / SHA256
+- [x] record `VERSION=0.1.1`
+- [x] record exact `RELEASE_SOURCE=3fdccde58c79e1b0943e22d60016993ab6743835`
+- [x] `gem build --strict acting_for.gemspec` PASS
+- [x] package contents reviewed — 17 files
+- [x] secret / credential review PASS
+- [x] local artifact installation PASS
+- [x] record gem filename / file count / size / SHA256
 - [ ] explicit approval to publish
+
+## Final release artifact
+
+```text
+Release Source: 3fdccde58c79e1b0943e22d60016993ab6743835
+GitHub Actions run: 36526786968
+Gem filename: acting_for-0.1.1.gem
+File count: 17
+Size: 16384 bytes
+SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+Package secret scan: PASS
+Artifact install: PASS
+ActingFor::VERSION: 0.1.1
+Engine load: PASS
+GitHub Actions artifact id: 11015405271
+```
+
+The downloaded workflow artifact was independently checked again: the contained gem is 16,384 bytes and has the same SHA256.
 
 ## Publication
 
