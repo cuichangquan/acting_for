@@ -3820,3 +3820,70 @@ DecisionとAuditで理由を別々に意味付けしない。実装ではDecisio
 - 実装・Test・Documentation・Demo更新・version bump・RubyGems publicationは本Decisionではまだ行わない。
 - 次の作業は、D240のAcceptance Criteria / Test仕様を確定してから実装へ進む。
 
+## D241: Decision reason_code acceptance criteria and implementation verification
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Feature branch実装・正式CI検証済み / main未merge / 未リリース。**
+- 根拠：ユーザーがD240のAcceptance Criteriaを明示承認し、tests-firstで実装・検証を進めることを承認した。
+
+### Acceptance Criteria
+
+`ActingFor::Decision#reason_code` は次を満たす。
+
+1. `:allow` のreason_codeは `:delegation_allowed`。
+2. `:require_approval` のreason_codeは `:delegation_requires_approval`。
+3. `:deny` のreason_codeは `:no_matching_delegation`。
+4. 既存Public API `status` / `allowed?` / `denied?` / `approval_required?` の意味を変更しない。
+5. Decisionは引き続きimmutableで、不正statusは `ArgumentError`。
+6. `ActingFor.authorize(...)` が返すDecisionのreason_codeと、自動保存されるAuditEventのreason_codeは同じ意味・値を持つ。DecisionはSymbol、AuditEventは既存どおりString。
+7. schema / Migration、Delegation matching、AuditEventの既存DB値は変更しない。
+
+### Tests-first evidence
+
+Feature branch：
+
+```text
+feature/decision-reason-code
+```
+
+Public APIの期待値を先にUnit / Integration Testへ追加し、Production code未変更の状態でPR #2のCI run #50を実行した。
+
+結果：
+
+- RuboCop：PASS。
+- Ruby 3.4 / 4.0 × Rails 8.0 / 8.1 の4 test jobs：期待どおりFAIL。
+- failure pointは未実装の `Decision#reason_code` を要求する新規Test。
+
+このRedを確認後に実装へ進んだ。
+
+### Implementation
+
+`ActingFor::Decision` に `reason_code` を追加し、statusから固定mappingで生成する。
+
+```text
+allow            -> delegation_allowed
+require_approval -> delegation_requires_approval
+deny             -> no_matching_delegation
+```
+
+AuthorizationのAuditEvent生成では、reasonを別途算出せず `decision.reason_code.to_s` を保存する。これにより、返却DecisionとAuditEventが同じ最終Decision理由を利用する。
+
+### Verification
+
+実装後のPR #2 CI run #51：
+
+- Ruby 3.4 / Rails 8.0：351 runs / 898 assertions / 0 failures / 0 errors / 0 skips。
+- Ruby 3.4 / Rails 8.1：PASS。
+- Ruby 4.0 / Rails 8.0：PASS。
+- Ruby 4.0 / Rails 8.1：PASS。
+- RuboCop：PASS。
+- 全5 jobs green。
+
+### Boundary / Next Step
+
+- Feature branchとDraft PR #2に実装済み。
+- `main` にはまだmergeしない。
+- versionはまだ `0.1.0`。
+- RubyGems / tag / GitHub Releaseは未実施。
+- 次はPublic API / Getting Started / README等のdocumentationとOfficial Demoの表示・検証方針を整えたうえで、merge readinessを確認する。
+
