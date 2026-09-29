@@ -4104,3 +4104,92 @@ Official Demo PR #1は、RubyGems 0.1.1公開前にはmainへmergeしない。
 
 0.1.1 release-facing filesを準備し、version bump、Release Notes、Release Plan、README / Getting Startedのpre-release表記を整えたうえでCore CIを再実行する。
 
+## D245: 0.1.1 Core merge and final release artifact verification
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Core merge / final artifact verification PASS。RubyGems publish未実施。**
+- 根拠：ユーザーがRubyGems WebAuthn / 2FA利用可能状態を確認し、D244で定めたCore先行release手順の継続を明示承認した。
+
+### RubyGems authentication
+
+0.1.0公開時と同じRubyGems accountでWebAuthn / 2FAを利用できる状態であることをユーザーが確認した。
+
+### Core PR merge
+
+ActingFor PR #2 `Release Decision reason_code in 0.1.1` をmainへmergeした。
+
+Branch rulesetはmainに対して次を要求していた。
+
+- squash mergeのみ
+- required status check `test`
+
+既存CIはmatrix jobの表示名が `Ruby x / Rails y` だったため、required context `test` を満たすaggregate gateをCIへ追加した。matrix 4 jobs + RuboCopがすべてsuccessのときだけ `test` がsuccessになる。
+
+最終PR head：
+
+```text
+b17220c6777b81411d0f5a7ba7c91f8766759cac
+```
+
+PR CI run：
+
+```text
+36526586850
+Ruby 3.4 / Rails 8.0 PASS
+Ruby 3.4 / Rails 8.1 PASS
+Ruby 4.0 / Rails 8.0 PASS
+Ruby 4.0 / Rails 8.1 PASS
+RuboCop PASS
+required status "test" PASS
+```
+
+Squash merge結果：
+
+```text
+3fdccde58c79e1b0943e22d60016993ab6743835
+```
+
+main push CI run `36526668458` も同じ全job + required `test` がPASS。
+
+### 0.1.1 Release Source
+
+ActingFor 0.1.1のexact Release Sourceを次へ固定する。
+
+```text
+VERSION=0.1.1
+RELEASE_SOURCE=3fdccde58c79e1b0943e22d60016993ab6743835
+```
+
+このDecision以後にmainへ追加するrelease evidence / post-release documentation commitへtagを動かさない。最終Gem、`v0.1.1` tag、GitHub ReleaseはこのRelease Sourceを基準にする。
+
+### Final artifact verification
+
+Release Sourceをexact checkoutしてGitHub Actions run `36526786968` でfinal artifactをbuild / audit / installした。
+
+```text
+Gem filename: acting_for-0.1.1.gem
+Gem file count: 17
+Gem size: 16,384 bytes
+Gem SHA256: 57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29
+Package secret scan: PASS
+Installed ActingFor version: 0.1.1
+Rails Engine load: PASS
+```
+
+GitHub Actions artifact：
+
+```text
+acting_for-0.1.1-final
+artifact id: 11015405271
+```
+
+downloaded artifact内の `acting_for-0.1.1.gem` についてもSHA256 `57ceb266285a0970af79c3ad745171638799b00b6d8617bf9ecfc13382819c29`、size 16,384 bytesを再確認した。
+
+### Release boundary / Next Step
+
+- RubyGems `acting_for 0.1.1`：**未公開**
+- `v0.1.1` tag：**未作成**
+- GitHub Release：**未公開**
+- Official Demo main：まだRubyGems 0.1.0
+- 次の1項目は、final Release Source / artifact / SHA256を確認した状態で、RubyGems 0.1.1 publishの明示承認を取ること。
+
