@@ -3975,3 +3975,67 @@ v0.1.0の既存Human Manual Verification（Scenarios 1–11 PASS）は履歴と�
 - RubyGems / tag / GitHub Release：変更なし。
 - 次の1項目は、Official Demoのfocused human browser verificationを実施し、結果を記録すること。
 
+## D243: Decision reason_code focused human browser verification PASS
+
+- 日付：2026-09-29（Asia/Tokyo）。
+- 状態：**確定。Human Browser Verification PASS / main未merge / 未リリース。**
+- 根拠：ユーザーがOfficial Demoの3つのShopping Agent結果画面、Audit Events、Executed Purchasesをブラウザで確認し、D242で定義したfocused verification evidenceを提示した。
+
+### Human Browser Verification
+
+Official Demo feature branchで、3つのDecisionを人間がブラウザ確認した。
+
+```text
+¥800 / Everyday Item
+ActingFor Decision: ALLOW
+Decision Reason: delegation_allowed
+Purchase: EXECUTED
+
+¥2,000 / Approval Item
+ActingFor Decision: REQUIRE APPROVAL
+Decision Reason: delegation_requires_approval
+Purchase: NOT EXECUTED
+
+¥5,000 / Expensive Item
+ActingFor Decision: DENY
+Decision Reason: no_matching_delegation
+Purchase: NOT EXECUTED
+```
+
+### Audit consistency
+
+Audit Eventsでは3件すべてでDecision Reasonとpersist済みReasonが一致した。
+
+```text
+Product#1 / ALLOW            / delegation_allowed           / matched [1]
+Product#2 / REQUIRE APPROVAL / delegation_requires_approval / matched [2]
+Product#3 / DENY             / no_matching_delegation       / matched []
+```
+
+sanitized contextはそれぞれ `{"amount":800}`、`{"amount":2000}`、`{"amount":5000}`。
+
+### Business execution boundary
+
+Executed PurchasesにはShopping Agentによる¥800のALLOW購入だけが存在した。
+
+したがって、Demo host applicationが次を満たすことをHuman Browser Verificationでも確認した。
+
+- `allow` のみbusiness actionを実行する。
+- `require_approval` は実行せず停止する。
+- `deny` は実行しない。
+- Decision画面の `reason_code` とAuditEventの `reason_code` は同じ最終認可理由を表す。
+
+### Verification conclusion
+
+`Decision#reason_code` focused Human Browser Verification：**PASS**。
+
+D242のautomated integration verificationと合わせ、Core implementation / Core CI / Documentation / Official Demo automated integration / Official Demo focused human browser verificationまで完了した。
+
+### Release boundary / Next Step
+
+- ActingFor Draft PR #2：未merge。
+- Official Demo Draft PR #1：未merge。
+- ActingFor version：まだ `0.1.0`。
+- RubyGems / tag / GitHub Release：変更なし。
+- 次の1項目は、両Draft PRのmerge readinessを確認し、merge順序とrelease versionを正式決定すること。
+
