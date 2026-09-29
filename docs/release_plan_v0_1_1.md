@@ -1,6 +1,6 @@
 # ActingFor 0.1.1 Release Plan
 
-Status: **Released / published artifact verified / post-release Demo pending**
+Status: **POST-RELEASE VERIFIED**
 
 Decision: D244
 
@@ -181,12 +181,12 @@ Official Demo must not merge its temporary exact-Git dependency to main.
 
 After RubyGems publication:
 
-- [ ] change Demo dependency to `gem "acting_for", "~> 0.1.1"`
-- [ ] regenerate / verify `Gemfile.lock`
-- [ ] automated integration PASS
-- [ ] smoke verification PASS
-- [ ] update compatibility evidence
-- [ ] merge Demo PR #1 to main
+- [x] change Demo dependency to `gem "acting_for", "~> 0.1.1"`
+- [x] regenerate / verify `Gemfile.lock`
+- [x] automated integration PASS — 18 runs / 118 assertions / 0 failures / 0 errors / 0 skips
+- [x] smoke verification PASS
+- [x] update compatibility evidence
+- [x] merge Demo PR #1 to main — `98ec1f1e4a83c2f036069c51549dbdcb88b3e9b8`
 
 ## Final status target
 
@@ -202,4 +202,17 @@ POST-RELEASE VERIFIED
   Official Demo on RubyGems 0.1.1
   Demo integration / smoke verified
   evidence recorded
+```
+
+
+## Post-release completion evidence
+
+```text
+Core post-release main CI: 36528505929 PASS
+Official Demo main: 98ec1f1e4a83c2f036069c51549dbdcb88b3e9b8
+Official Demo main CI: 36529324085 PASS
+Installed ActingFor version: 0.1.1
+Demo integration: 18 runs / 118 assertions / 0 failures / 0 errors / 0 skips
+Demo smoke HTTP: PASS
+Final status: POST-RELEASE VERIFIED
 ```
