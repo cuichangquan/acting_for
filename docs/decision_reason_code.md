@@ -1,16 +1,16 @@
-# Decision reason_code — Next Release Public API
+# Decision reason_code — ActingFor 0.1.1 Public API
 
 更新日：2026-09-29
 
-状態：**Design approved / Implemented / CI verified / Not yet released**
+状態：**Released in ActingFor 0.1.1**
 
-ActingFor 0.1.0 remains the latest published RubyGems release. This document records the next-release Public API addition defined by D240 and verified by D241.
+ActingFor 0.1.1 is published on RubyGems. This document records the `Decision#reason_code` Public API addition defined by D240, implemented and verified by D241–D245, and released in 0.1.1.
 
 ## Public API
 
 `ActingFor.authorize(...)` continues to return an immutable `ActingFor::Decision`.
 
-The next release adds:
+ActingFor 0.1.1 adds:
 
 ```ruby
 decision.reason_code
@@ -72,6 +72,6 @@ decision.approval_required?
 - No change to the three Decision statuses.
 - No change to existing AuditEvent String reason values.
 - No existing Public API is removed or renamed.
-- `Decision#reason_code` is not available in the published `acting_for 0.1.0` gem.
+- `Decision#reason_code` is available starting with `acting_for 0.1.1`.
 
-For the released 0.1.0 contract, see [v0.1 Public API Design](public_api_v0_1.md). For the design and implementation decisions, see D240 and D241 in [DECISIONS](DECISIONS.md).
+For the released 0.1.0 baseline contract, see [v0.1 Public API Design](public_api_v0_1.md). For the 0.1.1 design, verification, and release decisions, see D240–D246 in [DECISIONS](DECISIONS.md).
