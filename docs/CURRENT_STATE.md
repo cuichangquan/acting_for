@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D240
+D241
 ```
 
 ## Current Status
@@ -59,12 +59,14 @@ ActingFor 0.1.0 published to RubyGems; distributed artifact verified; `v0.1.0` t
 Official Demo switched to RubyGems `~> 0.1.0`; automated integration verification and smoke verification PASS
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
-Decision reason_code Public API design approved (D240); implementation / tests / release pending
+Decision reason_code Public API design approved (D240); tests-first implementation and formal CI verification completed on Draft PR #2 (D241); main merge / release pending
 
 Released: `acting_for` 0.1.0 / `v0.1.0`
 ```
 
 ## Implemented
+
+D241：`Decision#reason_code` のAcceptance Criteriaを確定し、feature branch `feature/decision-reason-code` / Draft PR #2でtests-first実装。Production code未変更のCI run #50で4 test matrixが期待どおりRed、実装後CI run #51でRuby 3.4 / 4.0 × Rails 8.0 / 8.1の4 matrix + RuboCopが全5 jobs Green。Ruby 3.4 / Rails 8.0は351 runs / 898 assertions / 0 failures / 0 errors / 0 skips。AuthorizationはAudit reasonを `decision.reason_code.to_s` から保存し、DecisionとAuditの最終理由を一致させる。main未merge、version / release未変更。
 
 D240：`ActingFor::Decision#reason_code` を次期Public APIとして追加する設計を確定。戻り値はSymbolで、`:allow -> :delegation_allowed`、`:require_approval -> :delegation_requires_approval`、`:deny -> :no_matching_delegation` の3組のみ。AuditEventの既存String `reason_code` と意味を一致させ、個別Delegationの不一致理由や `matched_delegation_ids` は今回のPublic APIに含めない。設計承認のみで、Production code / Test / version / releaseは未変更。
 
@@ -169,7 +171,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-次の1項目は、**D240 `Decision#reason_code` のAcceptance Criteria / Test仕様を確定すること**。まだProduction codeを変更せず、3 statusのreason_code、AuditEventとの整合、immutability / invalid construction、既存Public API regressionをテスト観点として整理し、ユーザー承認後に実装へ進む。
+次の1項目は、**D240/D241 `Decision#reason_code` の公開向けdocumentationとOfficial Demo反映方針を確定すること**。README / Public API / Getting Startedの最小更新範囲と、Demoでreason_codeをどう見せて検証するかを整理し、ユーザー承認後に反映する。main merge / version bump / releaseはその後に判断する。
 
 ## Important Rules
 
