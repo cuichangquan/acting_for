@@ -1,0 +1,89 @@
+name: Update MCP progress docs
+
+on:
+  push:
+    branches:
+      - docs/record-mcp-reference-verification
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: docs/record-mcp-reference-verification
+
+      - name: Update current-state and progress docs
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          current_path = Path("docs/CURRENT_STATE.md")
+          current = current_path.read_text()
+          current = current.replace("更新日：2026-09-29", "更新日：2026-09-30", 1)
+
+          status_anchor = "Decision reason_code Public API design approved (D240); implementation / CI completed (D241); documentation / Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release order approved (D244); Core merge / final artifact verification completed (D245); 0.1.1 released (D246); Official Demo switched to RubyGems 0.1.1 and post-release verification completed (D247)\n"
+          status_line = "Official Demo MCP reference integration implemented and verified end-to-end with the official MCP Ruby HTTP client; Demo main CI PASS (2026-09-30)\n"
+          if status_line not in current:
+              assert status_anchor in current
+              current = current.replace(status_anchor, status_anchor + status_line, 1)
+
+          implemented_anchor = "## Implemented\n\n"
+          implemented_entry = "Official Demo MCP Reference Integration（2026-09-30）：Official MCP Ruby SDK 1.6.1 / Streamable HTTPで `POST /mcp` と `purchase_product(product_id)` を実装し、既存 `ShoppingAgentPurchase` → `ActingFor.authorize` 境界を再利用。Agent / Principal / Product priceはHost側で解決し、MCP入力からtrusted authorization contextを上書きできない構成を維持。Official `MCP::Client::HTTP` による外部client verification run `36706086236` で ¥800=`allow` / ¥2,000=`require_approval` / ¥5,000=`deny` を確認し、23 runs / 152 assertions / 0 failures / 0 errors / 0 skips、Smoke HTTP PASS、External MCP client verification PASS。Demo PR #2をsquash mergeし、Demo main `1f75f82e6a4e0e9d54e10b983be1bd89f23efd5e` のActions run `36706924955` もPASS。ActingFor Core / schema / Public API変更なし。\n\n"
+          if implemented_entry not in current:
+              assert implemented_anchor in current
+              current = current.replace(implemented_anchor, implemented_anchor + implemented_entry, 1)
+          current_path.write_text(current)
+
+          progress_path = Path("docs/PROGRESS.md")
+          progress = progress_path.read_text()
+          progress = progress.replace("更新日：2026-09-29", "更新日：2026-09-30", 1)
+
+          quote_old = "Official DemoもRubyGems 0.1.1へ切替し、integration / smoke / main CIまで完了してPOST-RELEASE VERIFIED。"
+          quote_new = quote_old + " その後Official DemoでMCP Reference Integrationを実装し、公式MCP Ruby HTTP clientから `purchase_product` を呼ぶend-to-end verificationとDemo main CIまでPASS。ActingFor Core変更なしでMCP transportとdelegated authorizationの責務分離を実証した。"
+          if quote_new not in progress:
+              assert quote_old in progress
+              progress = progress.replace(quote_old, quote_new, 1)
+
+          row20 = "| 20 | Gem Release | ✅ `acting_for` 0.1.1 / `v0.1.1` / GitHub Release公開・配布artifact・Official Demo post-release検証完了（D246・D247） |\n"
+          row21 = "| 21 | MCP Reference Integration | ✅ Official MCP Ruby SDK / Streamable HTTP / external MCP client verification / Demo main CI PASS。Core変更なし |\n"
+          if row21 not in progress:
+              assert row20 in progress
+              progress = progress.replace(row20, row20 + row21, 1)
+
+          flow_old = "  正式Tests ✅ → CI ✅ → Runnable Quick Start ✅ → Release 0.1.0 ✅ → Release 0.1.1 ✅\n"
+          flow_new = "  正式Tests ✅ → CI ✅ → Runnable Quick Start ✅ → Release 0.1.0 ✅ → Release 0.1.1 ✅ → MCP Reference Integration ✅\n"
+          if flow_new not in progress:
+              assert flow_old in progress
+              progress = progress.replace(flow_old, flow_new, 1)
+
+          record_anchor = "## 実装・検証済みの実績\n\n"
+          record_entry = "- Official Demo MCP Reference Integration（2026-09-30）：Official MCP Ruby SDK 1.6.1 / Streamable HTTPで `POST /mcp` と `purchase_product(product_id)` を実装。MCP Toolは既存 `ShoppingAgentPurchase` を経由して `ActingFor.authorize` へ到達し、Agent / Principal / trusted Product priceはHost側で解決する。Official `MCP::Client::HTTP` を使ったActions run `36706086236` で `allow / delegation_allowed / executed=true`、`require_approval / delegation_requires_approval / executed=false`、`deny / no_matching_delegation / executed=false` を確認し、External MCP client verification PASS。Demo PR #2 squash merge後のmain `1f75f82e6a4e0e9d54e10b983be1bd89f23efd5e` / Actions run `36706924955` もPASS。ActingFor Core / schema / Public API変更なし。\n\n"
+          if record_entry not in progress:
+              assert record_anchor in progress
+              progress = progress.replace(record_anchor, record_anchor + record_entry, 1)
+
+          summary_old = "ActingFor 0.1.1はRubyGems / GitHub Releaseで公開済みで、Official Demoのpost-release verificationまで完了。"
+          summary_new = summary_old + " Official DemoのMCP Reference Integrationもexternal MCP client / main CIまで検証完了。"
+          if summary_new not in progress:
+              assert summary_old in progress
+              progress = progress.replace(summary_old, summary_new, 1)
+
+          progress_path.write_text(progress)
+          PY
+
+      - name: Commit documentation update
+        run: |
+          if git diff --quiet -- docs/CURRENT_STATE.md docs/PROGRESS.md; then
+            echo "Documentation already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/CURRENT_STATE.md docs/PROGRESS.md
+          git commit -m "docs: record MCP reference verification"
+          git push origin HEAD:docs/record-mcp-reference-verification
