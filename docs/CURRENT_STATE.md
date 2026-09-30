@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-29
+更新日：2026-09-30
 
 ## Source of Truth
 
@@ -60,11 +60,14 @@ Official Demo switched to RubyGems `~> 0.1.0`; automated integration verificatio
 Official Demo Full Human Manual Verification completed: Scenarios 1–11 PASS (completion pass 2026-09-23)
 Post-release documentation current-state consistency cleanup completed (D239); historical release-stage records preserved
 Decision reason_code Public API design approved (D240); implementation / CI completed (D241); documentation / Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release order approved (D244); Core merge / final artifact verification completed (D245); 0.1.1 released (D246); Official Demo switched to RubyGems 0.1.1 and post-release verification completed (D247)
+Official Demo MCP reference integration implemented and verified end-to-end with the official MCP Ruby HTTP client; Demo main CI PASS (2026-09-30)
 
 Released: `acting_for` 0.1.1 / `v0.1.1`
 ```
 
 ## Implemented
+
+Official Demo MCP Reference Integration（2026-09-30）：Official MCP Ruby SDK 1.6.1 / Streamable HTTPで `POST /mcp` と `purchase_product(product_id)` を実装し、既存 `ShoppingAgentPurchase` → `ActingFor.authorize` 境界を再利用。Agent / Principal / Product priceはHost側で解決し、MCP入力からtrusted authorization contextを上書きできない構成を維持。Official `MCP::Client::HTTP` による外部client verification run `36706086236` で ¥800=`allow` / ¥2,000=`require_approval` / ¥5,000=`deny` を確認し、23 runs / 152 assertions / 0 failures / 0 errors / 0 skips、Smoke HTTP PASS、External MCP client verification PASS。Demo PR #2をsquash mergeし、Demo main `1f75f82e6a4e0e9d54e10b983be1bd89f23efd5e` のActions run `36706924955` もPASS。ActingFor Core / schema / Public API変更なし。
 
 D247：Official DemoをRubyGems `acting_for ~> 0.1.1`へ切替。published-gem verification run `36528758797` で18 runs / 118 assertions / 0 failures / 0 errors / 0 skips、Smoke HTTP PASS。Demo PR #1をmergeし、Demo main `98ec1f1e4a83c2f036069c51549dbdcb88b3e9b8` のActions run `36529324085` でもVERSION 0.1.1、18/118、Smoke PASS。Final statusはPOST-RELEASE VERIFIED。focused human browser evidenceはpre-release candidate由来であることを明示し、published-gem human rerunとしては扱わない。
 
