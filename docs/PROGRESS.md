@@ -4,7 +4,7 @@
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
-> 設計の大部分・基盤実装・Delegation / Authorization / Decision / ConstraintEvaluator / Audit authorization integrationが完了。正式Minitest Unit / Delegation / Authorization / Audit / Engine / Migration / Host Boundary TestはDocker検証完了。CI前の確定済みcoverage確認完了。正式CI matrix・core RuboCopはGitHub Actionsで成功（D229）。Runnable Quick Startは新規Rails Applicationで検証完了（D230）。D231はRELEASE READY（D076全9項目PASS）。D232 Delegation lifecycle Security Invariant regression Test、D233 AuditEvent tamper resistance Security regression Testはいずれも正式CI確認済み。D237でActingFor / DemoをPublic化し、D238でActingFor 0.1.0をRubyGems / `v0.1.0` tag / GitHub Releaseへ正式公開して配布artifact verificationまで完了。Official Demo verification closure後、D239でpost-release documentationの現在状態表記をreleased状態へ整合した。D240〜D247で `Decision#reason_code` を設計・実装・検証し、ActingFor 0.1.1をRubyGems / `v0.1.1` / GitHub Releaseへ公開。Official DemoもRubyGems 0.1.1へ切替し、integration / smoke / main CIまで完了してPOST-RELEASE VERIFIED。 その後Official DemoでMCP Reference Integrationを実装し、公式MCP Ruby HTTP clientから `purchase_product` を呼ぶend-to-end verificationとDemo main CIまでPASS。ActingFor Core変更なしでMCP transportとdelegated authorizationの責務分離を実証した。
+> **現在：ActingFor 0.1.2はRELEASED。** D248のContext Symbol-key修正・host log相関例を実装し、正式4 matrixの355 runs / 910 assertionsと独立レビューを完了。D249で公開前artifactと公開後の配布Gemの両方を85 checks / 8 scenariosで検証し、配布checksum一致・通常Gem install・固定sourceへのtag・GitHub Release公開まで完了した。Official Demoのreleased 0.1.2への更新もmainへ統合し、post-merge CI / HTTP / MCP検証までPASS。公開後の文書exact head / merge SHA / main CI closureは[Core PR #11](https://github.com/cuichangquan/acting_for/pull/11)で追跡する。Demoのpost-merge closureは[Demo PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5)に記録済み。
 
 ## 全体進捗
 
@@ -26,12 +26,12 @@
 | 14 | ConstraintEvaluator実装 | ✅ 完了 |
 | 15 | Decision実装 | ✅ 完了 |
 | 16 | Audit Authorization Integration | ✅ 完了 |
-| 17 | 正式Minitest suite | ✅ D221〜D228正式coverage + D232 / D233 + D234 Security hardening batch A-H（すべてCI確認済み） |
-| 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D229） |
-| 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
-| 20 | Gem Release | ✅ `acting_for` 0.1.1 / `v0.1.1` / GitHub Release公開・配布artifact・Official Demo post-release検証完了（D246・D247） |
+| 17 | 正式Minitest suite | ✅ 既存coverage + D248回帰4件。正式4 matrixで355 runs / 910 assertions / 0 failures / 0 errors / 0 skips |
+| 18 | CI | ✅ 正式4 matrix / PostgreSQL 16 / RuboCop green（D248・PR #10）。公開後docsのexact head / merge SHA / main CI closureは[PR #11](https://github.com/cuichangquan/acting_for/pull/11) |
+| 19 | Runnable Quick Start | ✅ D230の導入手順に加え、0.1.2 final artifactと公開後の通常Gem installを別の新規Rails Appで検証。各85 checks / 8 scenarios PASS（D249） |
+| 20 | Gem Release | ✅ `acting_for` 0.1.2 / `v0.1.2` / GitHub Release公開、配布checksum・fresh install PASS（D249）。post-release closureはCore PR #11 / Demo PR #5 |
 | 21 | MCP Reference Integration | ✅ Official MCP Ruby SDK / Streamable HTTP / external MCP client verification / Demo main CI PASS。Core変更なし |
-| 22 | 0.1.2候補 | D248：Context判定・監査のSymbol-key整合とhost log相関例。公開前の候補。検証・レビューは[PR #10](https://github.com/cuichangquan/acting_for/pull/10)を参照 |
+| 22 | 0.1.2改善 | ✅ D248：Context判定・監査のSymbol-key整合とhost log相関例を実装・検証・統合済み。[PR #10](https://github.com/cuichangquan/acting_for/pull/10) / [Release Notes](release_notes_v0_1_2.md) |
 
 ## 現在の位置
 
@@ -52,11 +52,17 @@ Public API / Value Object実装
       ↓
 品質・公開：正式TestのCI前coverage実装・Docker検証済み
   正式Tests ✅ → CI ✅ → Runnable Quick Start ✅ → Release 0.1.0 ✅ → Release 0.1.1 ✅ → MCP Reference Integration ✅
+  0.1.2実装・検証 ✅ → RubyGems公開 ✅ → 配布fresh install ✅ → tag / GitHub Release ✅
+  公開後docs / main CI closure: Core PR #11 / Demo PR #5
 ```
 
 上記は進捗の俯瞰であり、未承認の実装順序や完了率を定めない。
 
 ## 実装・検証済みの実績
+
+- D249 0.1.2 release：固定Release Source `adce638556e8e8b5a048fbd7241cd9df2808db7b`、17-file gem 16,384 bytes。公開前[run 43548370616](https://github.com/cuichangquan/acting_for/actions/runs/43548370616)と公開後[run 43550371341](https://github.com/cuichangquan/acting_for/actions/runs/43550371341)で各85 checks / 8 scenariosがPASS。RubyGems配布checksum一致、通常Gem install、exact-source tag / GitHub Releaseまで完了。Demo PR #5は29 runs / 182 assertions・HTTP / MCP検証後にmainへ統合し、[post-merge run 43550608317](https://github.com/cuichangquan/acting_for_demo/actions/runs/43550608317)でも同結果がPASS。[D249](DECISIONS.md#d249-actingfor-012-public-release-and-verification) / [Release Notes](release_notes_v0_1_2.md)を参照。
+
+- D248 0.1.2 implementation：Public API回帰4件で修正前の3 failuresを再現し、最小修正後は正式4 matrixで355 runs / 910 assertions / 0 failures / 0 errors / 0 skips。[PR #10](https://github.com/cuichangquan/acting_for/pull/10)で独立レビュー・統合済み。
 
 - Official Demo MCP Reference Integration（2026-09-30）：Official MCP Ruby SDK 1.6.1 / Streamable HTTPで `POST /mcp` と `purchase_product(product_id)` を実装。MCP Toolは既存 `ShoppingAgentPurchase` を経由して `ActingFor.authorize` へ到達し、Agent / Principal / trusted Product priceはHost側で解決する。Official `MCP::Client::HTTP` を使ったActions run `36706086236` で `allow / delegation_allowed / executed=true`、`require_approval / delegation_requires_approval / executed=false`、`deny / no_matching_delegation / executed=false` を確認し、External MCP client verification PASS。Demo PR #2 squash merge後のmain `1f75f82e6a4e0e9d54e10b983be1bd89f23efd5e` / Actions run `36706924955` もPASS。ActingFor Core / schema / Public API変更なし。
 
@@ -104,7 +110,7 @@ Public API / Value Object実装
 - v0.1正式CI（D229）：PR / main push、正式4 matrix、PostgreSQL 16、`db:prepare` / Minitest、core RuboCop独立jobを実装。GitHub Actions全5 jobs green。Productionはbehavior非変更のStyle修正のみ。
 - Runnable Quick Start（D230）：GitHub main Gem・Rails標準Migration取り込み・User / Product・Agent・delegate / authorize・全Decision predicate・Audit保存を新規Rails Appで検証。Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15。READMEの古いstatus / support表記整理。Production code変更なし。
 
-今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式CI matrix全体とRuboCopはD229で検証成功。Quick StartはD230で実装・新規Rails Applicationで検証成功。ActingFor 0.1.1はRubyGems / GitHub Releaseで公開済みで、Official Demoのpost-release verificationまで完了。 Official DemoのMCP Reference Integrationもexternal MCP client / main CIまで検証完了。
+今回の現在地点は[CURRENT_STATE](CURRENT_STATE.md)、従来のModel検証詳細は[DECISIONS](DECISIONS.md#model-runtime-verification完了記録2026-09-18)を参照。正式CI matrix全体とRuboCopはD229で検証成功。Quick StartはD230で実装・新規Rails Applicationで検証成功。ActingFor 0.1.2はRELEASED。公開後のCore文書とDemoのexact head / merge SHA / main CI closureは[Core PR #11](https://github.com/cuichangquan/acting_for/pull/11) / [Demo PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5)に集約する。過去の0.1.1や公開前artifactの証跡と、0.1.2配布Gemの検証を区別する。
 
 ## 設計の正本
 

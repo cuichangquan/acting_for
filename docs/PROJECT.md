@@ -1,11 +1,11 @@
 # ActingFor 開発方針
 
-更新日：2026-09-23
+更新日：2026-11-14
 
 - プロジェクト名：**ActingFor**
 - Gem名：`acting_for`
 - リポジトリ：[cuichangquan/acting_for](https://github.com/cuichangquan/acting_for)
-- 現在の段階：**ActingFor 0.1.0 / `v0.1.0` released**。D238でRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Releaseまで完了。Official DemoもRubyGems `~> 0.1.0`へ移行し、automated / smoke / Full Human Manual Verification（Scenarios 1–11）まで完了した。D239でpost-release documentationの現在状態表記を公開済み状態へ整合した。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、release証跡は[DECISIONS D238](DECISIONS.md#d238-v010-public-release-completed)を参照。
+- 現在の段階：**ActingFor 0.1.2 / `v0.1.2` RELEASED**。D248の実装・正式CI・独立レビュー後、D249でfinal artifactと配布Gemをそれぞれ検証し、配布checksum・通常install・固定sourceへのtag・GitHub Release公開まで完了した。Official Demoのreleased 0.1.2更新もmainへ統合し、post-merge CI / HTTP / MCP検証までPASS。公開後の文書exact head / merge SHA / main CI closureは[Core PR #11](https://github.com/cuichangquan/acting_for/pull/11)で追跡する。Demoのpost-merge closureは[Demo PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5)に記録済み。現在進捗は[CURRENT_STATE](CURRENT_STATE.md) / [PROGRESS](PROGRESS.md)、release証跡は[DECISIONS D249](DECISIONS.md#d249-actingfor-012-public-release-and-verification)を参照。
 - 紹介文の本文：[README](../README.md)
 - 決定の理由と状態：[DECISIONS](DECISIONS.md)
 
@@ -479,7 +479,7 @@ Issueを作成したら、この表の対応する行をIssueへのリンクに�
 
 ## 8. 次に進めること
 
-D231のGate結果と[Release transaction plan](release_plan_v0_1_0.md)を確認し、別途ユーザーの明示承認後に公開する。Release authentication方式の選択・認証確認は実行前の確認事項。version `0.1.0` / tag `v0.1.0`、既存仕様・境界・matrixを維持する。
+0.1.2のrelease本体は[D249](DECISIONS.md#d249-actingfor-012-public-release-and-verification)で完了。公開後の文書・main CI closureは[Core PR #11](https://github.com/cuichangquan/acting_for/pull/11)、Official Demoの統合・post-merge closureは[Demo PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5)を確認する。そのうえで次の改善候補を1項目ずつ判断する。Gemとtagの固定sourceは保持し、過去versionの工程を現在の未完了作業と混同しない。
 
 ## 9. 初版の根拠
 
