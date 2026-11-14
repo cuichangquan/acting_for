@@ -1,0 +1,312 @@
+name: Verify ActingFor 0.1.2 release artifact
+
+on:
+  push:
+    branches: [release/verify-0.1.2-20261114]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      RELEASE_SOURCE: adce638556e8e8b5a048fbd7241cd9df2808db7b
+      RAILS_ENV: test
+      BUNDLE_PATH__SYSTEM: "true"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: acting_for_release_verification
+          POSTGRES_DB: acting_for_release_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d acting_for_release_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out exact release source
+        uses: actions/checkout@v6
+        with:
+          ref: adce638556e8e8b5a048fbd7241cd9df2808db7b
+          path: release-source
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: false
+      - name: Strict build and package verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/acting-for-release-0.1.2"
+          mkdir -p "$artifact_dir"
+          cd "$GITHUB_WORKSPACE/release-source"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SOURCE"
+          test -z "$(git status --porcelain)"
+          release_source_epoch="$(git show -s --format=%ct HEAD)"
+          SOURCE_DATE_EPOCH="$release_source_epoch" gem build --strict acting_for.gemspec --output "$artifact_dir/acting_for-0.1.2.gem"
+          test -z "$(git status --porcelain)"
+          ruby - <<'PACKAGE_RUBY'
+          require "digest"
+          require "fileutils"
+          require "json"
+          require "rubygems/package"
+
+          expected_source = "adce638556e8e8b5a048fbd7241cd9df2808db7b"
+          expected_version = "0.1.2"
+          source_dir = File.join(ENV.fetch("GITHUB_WORKSPACE"), "release-source")
+          artifact_dir = File.join(ENV.fetch("RUNNER_TEMP"), "acting-for-release-0.1.2")
+          gem_path = File.join(artifact_dir, "acting_for-#{expected_version}.gem")
+          unpack_dir = File.join(ENV.fetch("RUNNER_TEMP"), "acting-for-package-inspection")
+          raise "Unexpected release source" unless ENV.fetch("RELEASE_SOURCE") == expected_source
+
+          expected_files = %w[
+            LICENSE
+            README.md
+            app/models/acting_for/agent.rb
+            app/models/acting_for/application_record.rb
+            app/models/acting_for/audit_event.rb
+            app/models/acting_for/delegation.rb
+            app/services/acting_for/internal/authorization.rb
+            app/services/acting_for/internal/constraint_evaluator.rb
+            app/services/acting_for/internal/delegation_creator.rb
+            db/migrate/20260918030001_create_acting_for_agents.rb
+            db/migrate/20260918030002_create_acting_for_delegations.rb
+            db/migrate/20260918030003_create_acting_for_audit_events.rb
+            lib/acting_for.rb
+            lib/acting_for/decision.rb
+            lib/acting_for/engine.rb
+            lib/acting_for/errors.rb
+            lib/acting_for/version.rb
+          ].sort.freeze
+
+          package = Gem::Package.new(gem_path)
+          package.verify
+          raise "Wrong package identity" unless package.spec.name == "acting_for" && package.spec.version.to_s == expected_version
+          raise "Unexpected packaged files" unless package.contents.sort == expected_files
+          raise "Unexpected gemspec file list" unless package.spec.files.sort == expected_files
+          raise "Expected exactly 17 files" unless expected_files.length == 17
+          raise "Inspection directory already exists" if File.exist?(unpack_dir)
+          package.extract_files(unpack_dir)
+
+          # A bounded signature scan supplements the exact file allowlist and source comparison.
+          # It cannot prove that arbitrary text contains no secret.
+          secret_signatures = {
+            "private key" => /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/,
+            "GitHub token" => /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})\b/,
+            "RubyGems token" => /\brubygems_[A-Za-z0-9]{20,}\b/,
+            "AWS access key" => /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/,
+            "Slack token" => /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/
+          }.freeze
+
+          file_checksums = expected_files.to_h do |relative_path|
+            packaged_path = File.join(unpack_dir, relative_path)
+            original_path = File.join(source_dir, relative_path)
+            raise "Nonregular packaged file: #{relative_path}" unless File.file?(packaged_path) && !File.symlink?(packaged_path)
+            bytes = File.binread(packaged_path)
+            raise "Source mismatch: #{relative_path}" unless bytes == File.binread(original_path)
+            secret_signatures.each do |name, pattern|
+              raise "Possible #{name} in #{relative_path}" if bytes.match?(pattern)
+            end
+            [relative_path, Digest::SHA256.hexdigest(bytes)]
+          end
+
+          sha256 = Digest::SHA256.file(gem_path).hexdigest
+          report = {
+            name: package.spec.name,
+            version: expected_version,
+            release_source: expected_source,
+            file_count: expected_files.length,
+            size_bytes: File.size(gem_path),
+            sha256: sha256,
+            ruby: RUBY_DESCRIPTION,
+            rubygems: Gem::VERSION,
+            package_verification: "PASS",
+            known_secret_signature_scan: "PASS",
+            payload_sha256: file_checksums,
+            installation_verification: "PENDING"
+          }
+          File.write(File.join(artifact_dir, "report.json"), JSON.pretty_generate(report) + "\n")
+          File.write(File.join(artifact_dir, "SHA256SUMS"), "#{sha256}  #{File.basename(gem_path)}\n")
+          puts JSON.pretty_generate(report.reject { |key, _| key == :payload_sha256 })
+          PACKAGE_RUBY
+      - name: Install artifact into a fresh Rails app
+        shell: bash
+        run: |
+          set -euo pipefail
+          bootstrap_dir="$RUNNER_TEMP/acting-for-release-bootstrap"
+          app_dir="$RUNNER_TEMP/acting_for_release_app"
+          mkdir -p "$bootstrap_dir"
+          cat > "$bootstrap_dir/Gemfile" <<'GEMFILE'
+          source "https://rubygems.org"
+          gem "rails", "~> 8.0.0"
+          gem "pg"
+          gem "json", "< 3"
+          GEMFILE
+          BUNDLE_GEMFILE="$bootstrap_dir/Gemfile" bundle install --jobs 4 --retry 2
+          BUNDLE_GEMFILE="$bootstrap_dir/Gemfile" bundle exec rails new "$app_dir"   --database=postgresql --api --minimal --skip-bundle --skip-git   --skip-docker --skip-ci --skip-kamal --skip-rubocop --skip-brakeman   --skip-thruster --skip-solid
+          # Install the actual built package. The fresh app has no source-checkout dependency.
+          gem install "$RUNNER_TEMP/acting-for-release-0.1.2/acting_for-0.1.2.gem" --local --ignore-dependencies --no-document
+          cat > "$app_dir/Gemfile" <<'GEMFILE'
+          source "https://rubygems.org"
+          gem "rails", "~> 8.0.0"
+          gem "pg"
+          gem "json", "< 3"
+          gem "acting_for", "= 0.1.2"
+          GEMFILE
+          cd "$app_dir"
+          bundle install --local
+          cat > config/database.yml <<'DATABASE'
+          test:
+            adapter: postgresql
+            host: 127.0.0.1
+            port: 5432
+            username: postgres
+            password: acting_for_release_verification
+            database: acting_for_release_test
+          DATABASE
+          bundle exec rails acting_for:install:migrations
+          bundle exec rails generate model User name:string --skip-test-framework
+          bundle exec rails generate model Product name:string price:integer --skip-test-framework
+          bundle exec rails db:migrate
+      - name: Verify installed public API and Audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/verify_installed_gem.rb" <<'VERIFY_RUBY'
+          require "digest"
+          require "json"
+          require "securerandom"
+
+          artifact_dir = File.join(ENV.fetch("RUNNER_TEMP"), "acting-for-release-0.1.2")
+          report_path = File.join(artifact_dir, "report.json")
+          report = JSON.parse(File.read(report_path))
+          checks = []
+          check = lambda do |condition, description|
+            raise "FAIL: #{description}" unless condition
+            checks << description
+          end
+
+          spec = Gem.loaded_specs.fetch("acting_for")
+          check.call(ActingFor::VERSION == "0.1.2" && spec.version.to_s == "0.1.2", "Installed version is 0.1.2")
+          check.call(Rails.version.start_with?("8.0."), "Fresh app uses Rails 8.0")
+          check.call(Rails.application.railties.any? { |railtie| railtie.is_a?(ActingFor::Engine) }, "Engine loaded in fresh app")
+          source = Bundler.locked_gems.specs.find { |entry| entry.name == "acting_for" }.source
+          check.call(source.is_a?(Bundler::Source::Rubygems), "Bundler uses a normal gem dependency, not Git or path")
+          installed_root = File.realpath(spec.full_gem_path)
+          release_root = File.realpath(File.join(ENV.fetch("GITHUB_WORKSPACE"), "release-source"))
+          check.call(!installed_root.start_with?(release_root + File::SEPARATOR), "Gem loads outside source checkout")
+          implementation_path = File.realpath(ActingFor.method(:authorize).source_location.first)
+          check.call(implementation_path.start_with?(installed_root + File::SEPARATOR), "Public API comes from installed gem")
+          report.fetch("payload_sha256").each do |relative_path, checksum|
+            check.call(Digest::SHA256.file(File.join(installed_root, relative_path)).hexdigest == checksum,
+                       "Installed payload matches artifact: #{relative_path}")
+          end
+
+          connection = ActiveRecord::Base.connection
+          postgres_version = connection.select_value("SHOW server_version")
+          check.call(connection.adapter_name == "PostgreSQL", "Fresh app uses PostgreSQL")
+          check.call(connection.select_value("SHOW server_version_num").to_i / 10_000 == 16, "Database is PostgreSQL 16")
+          check.call(Dir[Rails.root.join("db/migrate/*_create_acting_for_*.acting_for.rb")].length == 3,
+                     "All three Engine migrations were installed")
+          %w[acting_for_agents acting_for_delegations acting_for_audit_events].each do |table|
+            check.call(connection.table_exists?(table), "Migration created #{table}")
+          end
+
+          principal = User.create!(name: "Release verification principal")
+          agent = ActingFor::Agent.create!(identifier: "acting-for-0.1.2-release-verification")
+          products = [800, 2_000, 5_000].map { |price| Product.create!(name: "Product #{price}", price: price) }
+          delegation = lambda do |action:, effect:, constraints: []|
+            ActingFor.delegate(agent: agent, principal: principal, action: action, resource: Product,
+                               effect: effect, constraints: constraints, expires_at: 1.hour.from_now)
+          end
+          reasons = { allow: :delegation_allowed, require_approval: :delegation_requires_approval, deny: :no_matching_delegation }
+          scenarios = []
+          verify = lambda do |label:, action:, product:, context:, expected:, matched:, audit_context:, audit_keys: [:amount]|
+            before_count = ActingFor::AuditEvent.count
+            decision = ActingFor.authorize(agent: agent, principal: principal, action: action, resource: product,
+                                           context: context, audit_context_keys: audit_keys)
+            check.call(decision.status == expected, "#{label}: Decision")
+            check.call(decision.reason_code == reasons.fetch(expected), "#{label}: reason_code")
+            check.call(decision.allowed? == (expected == :allow), "#{label}: execution permission")
+            check.call(ActingFor::AuditEvent.count == before_count + 1, "#{label}: exactly one AuditEvent")
+            # Each action/product pair is unique in this fresh, single-process verification app.
+            event = ActingFor::AuditEvent.where(agent_id: agent.id, action: action.to_s, resource_id: product.id.to_s).sole
+            check.call(event.decision == expected.to_s && event.reason_code == decision.reason_code.to_s, "#{label}: Audit decision")
+            check.call(event.matched_delegation_ids == matched.sort, "#{label}: matched delegations")
+            check.call(event.sanitized_context == audit_context, "#{label}: selected Audit Context")
+            scenarios << { name: label, decision: decision.status, reason_code: decision.reason_code, audit_verified: true }
+          end
+
+          allow = delegation.call(action: :purchase, effect: :allow,
+                                  constraints: [{ field: :amount, operator: :lte, value: 1_000 }])
+          approval = delegation.call(action: :purchase, effect: :require_approval,
+                                     constraints: [{ field: :amount, operator: :gt, value: 1_000 },
+                                                   { field: :amount, operator: :lte, value: 3_000 }])
+          products.zip([:allow, :require_approval, :deny], [[allow.id], [approval.id], []]).each do |product, status, ids|
+            verify.call(label: "Purchase #{product.price}", action: :purchase, product: product,
+                        context: { amount: product.price }, expected: status, matched: ids,
+                        audit_context: { "amount" => product.price })
+          end
+
+          %i[allow require_approval].each do |effect|
+            action = "hia_#{effect}"
+            delegation.call(action: action, effect: effect, constraints: [{ field: :amount, operator: :lte, value: 1_000 }])
+            verify.call(label: "HIA constrained #{effect}", action: action, product: products.first,
+                        context: { amount: 800 }.with_indifferent_access, expected: :deny, matched: [], audit_context: {})
+          end
+          mixed = delegation.call(action: :mixed_keys, effect: :allow,
+                                  constraints: [{ field: :amount, operator: :lte, value: 1_000 }])
+          verify.call(label: "Ordinary mixed keys", action: :mixed_keys, product: products.first,
+                      context: { amount: 800, "amount" => 5_000 }, expected: :allow, matched: [mixed.id],
+                      audit_context: { "amount" => 800 })
+
+          unconstrained = delegation.call(action: :hia_precedence, effect: :allow)
+          delegation.call(action: :hia_precedence, effect: :require_approval,
+                          constraints: [{ field: :amount, operator: :lte, value: 1_000 }])
+          verify.call(label: "HIA preserves unconstrained allow", action: :hia_precedence, product: products.first,
+                      context: { amount: 800 }.with_indifferent_access, expected: :allow, matched: [unconstrained.id], audit_context: {})
+
+          correlation = delegation.call(action: :correlation, effect: :allow)
+          authorization_id = SecureRandom.uuid
+          verify.call(label: "Host authorization correlation", action: :correlation, product: products.first,
+                      context: { amount: 800, authorization_id: authorization_id }, expected: :allow, matched: [correlation.id],
+                      audit_context: { "amount" => 800, "authorization_id" => authorization_id },
+                      audit_keys: %i[amount authorization_id])
+
+          report.merge!("installation_verification" => "PASS", "ruby" => RUBY_DESCRIPTION, "rails" => Rails.version,
+                        "postgresql" => postgres_version, "public_api_scenarios" => scenarios, "checks_passed" => checks.length)
+          File.write(report_path, JSON.pretty_generate(report) + "\n")
+          puts JSON.pretty_generate(report.reject { |key, _| key == "payload_sha256" })
+          if ENV["GITHUB_STEP_SUMMARY"]
+            File.open(ENV.fetch("GITHUB_STEP_SUMMARY"), "a") do |file|
+              file.puts "## ActingFor 0.1.2 artifact verification"
+              file.puts ""
+              file.puts "- Release source: `#{report.fetch('release_source')}`"
+              file.puts "- Package: 17 files / #{report.fetch('size_bytes')} bytes"
+              file.puts "- SHA256: `#{report.fetch('sha256')}`"
+              file.puts "- Fresh artifact installation: PASS (#{checks.length} checks, #{scenarios.length} scenarios)"
+              file.puts "- Ruby: #{RUBY_VERSION}; Rails: #{Rails.version}; PostgreSQL: #{postgres_version}"
+              file.puts "- Publication: not performed"
+            end
+          end
+          VERIFY_RUBY
+          cd "$RUNNER_TEMP/acting_for_release_app"
+          bundle exec rails runner "$RUNNER_TEMP/verify_installed_gem.rb"
+      - name: Upload verified package and evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: acting-for-0.1.2-adce6385
+          path: |
+            ${{ runner.temp }}/acting-for-release-0.1.2/acting_for-0.1.2.gem
+            ${{ runner.temp }}/acting-for-release-0.1.2/SHA256SUMS
+            ${{ runner.temp }}/acting-for-release-0.1.2/report.json
+          if-no-files-found: error
+          retention-days: 14
