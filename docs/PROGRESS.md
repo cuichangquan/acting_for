@@ -1,6 +1,6 @@
 # ActingFor Progress
 
-更新日：2026-09-30
+更新日：2026-11-14
 
 正本は [GitHub `main`](https://github.com/cuichangquan/acting_for/tree/main)。本書はプロジェクト全体の進捗マップ。短い現在地点は[CURRENT_STATE](CURRENT_STATE.md)、正式Decision履歴は[DECISIONS](DECISIONS.md)で管理し、詳細仕様を本書へ複製しない。
 
@@ -31,6 +31,7 @@
 | 19 | Runnable Quick Start | ✅ 新規Rails Applicationで実検証済み（D230） |
 | 20 | Gem Release | ✅ `acting_for` 0.1.1 / `v0.1.1` / GitHub Release公開・配布artifact・Official Demo post-release検証完了（D246・D247） |
 | 21 | MCP Reference Integration | ✅ Official MCP Ruby SDK / Streamable HTTP / external MCP client verification / Demo main CI PASS。Core変更なし |
+| 22 | 0.1.2候補 | D248：Context判定・監査のSymbol-key整合とhost log相関例。公開前の候補。検証・レビューは[PR #10](https://github.com/cuichangquan/acting_for/pull/10)を参照 |
 
 ## 現在の位置
 

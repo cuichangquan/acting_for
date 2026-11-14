@@ -168,6 +168,41 @@ class AuthorizationTest < ActiveSupport::TestCase
     end
   end
 
+  %i[allow require_approval].each do |effect|
+    test "authorize does not match a #{effect} constraint through indifferent access" do
+      delegate(effect: effect, constraints: [{ field: :amount, operator: :lte, value: 100 }])
+      context = { amount: 100 }.with_indifferent_access
+
+      decision = authorize(context: context, audit_context_keys: [:amount])
+
+      assert_equal :deny, decision.status
+      assert_equal [], audit.matched_delegation_ids
+      assert_equal({}, audit.sanitized_context)
+    end
+  end
+
+  test "authorize evaluates and audits the exact symbol key when a string key also exists" do
+    delegation = delegate(constraints: [{ field: :amount, operator: :lte, value: 100 }])
+
+    decision = authorize(context: { amount: 100, "amount" => 999 }, audit_context_keys: [:amount])
+
+    assert_equal :allow, decision.status
+    assert_equal [delegation.id], audit.matched_delegation_ids
+    assert_equal({ "amount" => 100 }, audit.sanitized_context)
+  end
+
+  test "authorize preserves an unconstrained allow when approval lacks an exact symbol key" do
+    allowed = delegate
+    delegate(effect: :require_approval, constraints: [{ field: :amount, operator: :lte, value: 100 }])
+    context = { amount: 100 }.with_indifferent_access
+
+    decision = authorize(context: context, audit_context_keys: [:amount])
+
+    assert_equal :allow, decision.status
+    assert_equal [allowed.id], audit.matched_delegation_ids
+    assert_equal({}, audit.sanitized_context)
+  end
+
   test "authorize requires every constraint to pass" do
     delegate(constraints: [
                { field: :amount, operator: :lte, value: 100 },

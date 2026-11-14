@@ -4334,3 +4334,28 @@ Final status: POST-RELEASE VERIFIED
 
 ActingFor 0.1.1 release verificationをここで閉じる。
 
+
+## D248: Context Symbol-key consistency and host log correlation candidate
+
+- 日付：2026-11-14（Asia/Tokyo）。
+- 状態：**確定。0.1.2候補の改善範囲。公開は未実施。**
+- 根拠：ユーザーが、Contextの再現確認・必要な修正と、認可記録と処理ログを結び付ける実装例を進める提案へ「OK」と回答した。
+
+### Scope and behavior
+
+- D215の「実在するトップレベルSymbol keyを厳密に参照する」契約へConstraintEvaluatorを合わせる。Auditの既存の選択ルールは変更しない。
+- `HashWithIndifferentAccess` のString-backed keyを、Symbol keyが存在する根拠として扱わない。通常HashのSymbol / String key、制約演算子、effect優先順位は維持する。
+- 不一致となるのは該当制約。Hash全体を拒否せず、無条件allow等の別のmatching Delegationは引き続き評価する。既存のHIA動作に依存した利用者への影響は[候補Release Notes](release_notes_v0_1_2.md)へ明記する。
+- 既存の `context` / `audit_context_keys` を使う、呼出単位のhost-generated `authorization_id` の例をGetting Startedへ追加する。監査と業務ログの関連付けに限定し、冪等性・承認・業務成功の保証は追加しない。
+- `VERSION` は0.1.2候補。Public API signature / schema / Migrationは変更しない。
+- CI各jobの上限を、既存のユーザー運用方針どおり8分へ明示する。
+
+### Tests-first evidence
+
+[PR #10](https://github.com/cuichangquan/acting_for/pull/10)のtest-only baseline `fbadce7b5d71d70d97cb97865db3912fc51f3977` / [Actions run 43546478117](https://github.com/cuichangquan/acting_for/actions/runs/43546478117)で、正式4 matrixすべてが同じ3件の不整合を再現した。各355 runs / 904 assertions / 3 failures / 0 errors / 0 skips。RuboCopはPASS。失敗はallow・require_approval制約のHIAによる誤った一致と、無条件allowとの組合せに限定され、通常Hashのcontrol caseはPASS。
+
+修正後の正式CI・独立レビュー結果はPR #10を参照する。修正前の再現証跡を修正後のPASS証跡として扱わない。
+
+### Release boundary
+
+RubyGems 0.1.2 publish / tag / GitHub Releaseの実施承認ではない。公開済み版は0.1.1。最終Release Source固定・artifact build / install / checksum verificationはRelease Runbookに従う。今回の対象はCoreの小規模修正と導入例であり、Demoの画面追加・依存更新は含まない。

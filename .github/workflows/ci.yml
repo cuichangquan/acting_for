@@ -12,6 +12,7 @@ jobs:
   test:
     name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }}
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +53,7 @@ jobs:
 
   rubocop:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     env:
       BUNDLE_GEMFILE: gemfiles/rails_8_0.gemfile
     steps:
@@ -67,6 +69,7 @@ jobs:
     needs: [test, rubocop]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Verify required CI jobs
         env:
