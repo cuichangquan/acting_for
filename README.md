@@ -14,9 +14,9 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 ## Status
 
-> **Released: v0.1.1.** ActingFor 0.1.1 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.1](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.1). It adds `Decision#reason_code` while keeping the existing Decision statuses, Delegation semantics, AuditEvent reason values, and database schema unchanged. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
+> **Published: 0.1.2.** ActingFor 0.1.2 is published on [RubyGems](https://rubygems.org/gems/acting_for/versions/0.1.2). It aligns constraint evaluation with the documented exact Symbol-key Context contract and adds an authorization-to-host-log correlation example. Public API signatures, Decision statuses and reason codes, and the database schema remain unchanged. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 
-Next candidate: [0.1.2](docs/release_notes_v0_1_2.md) aligns constraint evaluation with the documented exact Symbol-key Context contract and adds an authorization-to-host-log correlation example. The candidate is not yet published; the released installation instructions below remain on 0.1.1.
+See the [0.1.2 Release Notes](docs/release_notes_v0_1_2.md) for upgrade behavior and release verification progress. Hosts using `HashWithIndifferentAccess` should construct the trusted Symbol-keyed Context explicitly and review their complete delegation rules.
 
 ## ActingFor at a glance
 
@@ -186,12 +186,12 @@ The released 0.1.0 contract remains documented in the [v0.1 Public API](docs/pub
 
 ## Quick Start
 
-Install the released `0.1.1` gem from RubyGems.
+Install the released `0.1.2` gem from RubyGems.
 
 1. Add the Gem and install dependencies:
 
    ```ruby
-   gem "acting_for", "~> 0.1.1"
+   gem "acting_for", "~> 0.1.2"
    # Rails 8.0 uses JSON options removed in JSON 3.
    gem "json", "< 3"
    ```
@@ -458,6 +458,7 @@ Project documents are maintained primarily in Japanese:
 
 - [Getting Started](docs/getting_started.md)
 - [Release Runbook](docs/release_runbook.md)
+- [0.1.2 Release Notes and Verification](docs/release_notes_v0_1_2.md)
 - [v0.1.0 Release Process and Verification Record](docs/release_process_v0_1_0.md)
 - [v0.1.0 Release Notes](docs/release_notes_v0_1_0.md)
 - [Current State](docs/CURRENT_STATE.md)
