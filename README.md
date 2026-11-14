@@ -14,9 +14,9 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 ## Status
 
-> **Published: 0.1.2.** ActingFor 0.1.2 is published on [RubyGems](https://rubygems.org/gems/acting_for/versions/0.1.2). It aligns constraint evaluation with the documented exact Symbol-key Context contract and adds an authorization-to-host-log correlation example. Public API signatures, Decision statuses and reason codes, and the database schema remain unchanged. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
+> **Released: v0.1.2.** ActingFor 0.1.2 is published on [RubyGems](https://rubygems.org/gems/acting_for/versions/0.1.2) and as [GitHub Release v0.1.2](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.2). It aligns constraint evaluation with the documented exact Symbol-key Context contract and adds an authorization-to-host-log correlation example. Public API signatures, Decision statuses and reason codes, and the database schema remain unchanged. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 
-See the [0.1.2 Release Notes](docs/release_notes_v0_1_2.md) for upgrade behavior and release verification progress. Hosts using `HashWithIndifferentAccess` should construct the trusted Symbol-keyed Context explicitly and review their complete delegation rules.
+See the [0.1.2 Release Notes](docs/release_notes_v0_1_2.md) for upgrade behavior and release verification evidence. Hosts using `HashWithIndifferentAccess` should construct the trusted Symbol-keyed Context explicitly and review their complete delegation rules.
 
 ## ActingFor at a glance
 

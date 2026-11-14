@@ -4359,3 +4359,56 @@ ActingFor 0.1.1 release verificationをここで閉じる。
 ### Release boundary
 
 RubyGems 0.1.2 publish / tag / GitHub Releaseの実施承認ではない。公開済み版は0.1.1。最終Release Source固定・artifact build / install / checksum verificationはRelease Runbookに従う。今回の対象はCoreの小規模修正と導入例であり、Demoの画面追加・依存更新は含まない。
+
+## D249: ActingFor 0.1.2 public release and verification
+
+- 日付：2026-11-14（Asia/Tokyo）。
+- 状態：**確定。RELEASED。RubyGems公開、配布artifact・通常install検証、固定sourceへのtag、GitHub Releaseまで完了。**
+- 根拠：D248の実装・正式CI・独立レビュー・main統合後、ユーザーが0.1.2の公開を明示承認した。final artifact検証後、ユーザー自身のRubyGems認証でpublishし、`Successfully registered gem: acting_for (0.1.2)` を報告した。RubyGems公開metadataと実配布Gemでも公開・checksumを確認した。
+
+### Frozen source and final artifact
+
+```text
+Version: 0.1.2
+Release Source: adce638556e8e8b5a048fbd7241cd9df2808db7b
+Gem: acting_for-0.1.2.gem
+File count: 17
+Size: 16,384 bytes
+SHA256: ac2b5ceb93aa3896aab9891bca73424d808629ec3e3109e7fd3d2313f63fdaab
+```
+
+Sourceは[PR #10](https://github.com/cuichangquan/acting_for/pull/10)を統合したexact main SHAに固定。修正後の正式4 matrixは各355 runs / 910 assertions / 0 failures / 0 errors / 0 skipsで、RuboCopと独立レビューも完了した。
+
+公開前の[Actions run 43548370616](https://github.com/cuichangquan/acting_for/actions/runs/43548370616)で、固定sourceからの `gem build --strict`、17-file allowlist、packageとsourceの全ファイル一致、既知secret signatureの検査、built artifactから新規Rails Applicationへの導入を確認した。Git/path dependencyを使わず、Engine load・Migration・全Decision・Audit・Context-key regression・host-generated correlationの **85 checks / 8 scenariosがPASS**。実行環境はRuby 3.4.12 / Rails 8.0.5.2 / PostgreSQL 16.16。これは公開前artifactの証跡であり、公開後の通常install証跡へ読み替えない。
+
+### RubyGems publication and distributed artifact
+
+- RubyGems公開日時：2026-11-14 12:05 JST（metadataの`created_at`: `2026-11-14T03:05:25.069Z`）。
+- 公開版：[acting_for 0.1.2](https://rubygems.org/gems/acting_for/versions/0.1.2)。
+- [実配布Gem](https://rubygems.org/downloads/acting_for-0.1.2.gem)を再取得し、16,384 bytes / SHA256 `ac2b5ceb93aa3896aab9891bca73424d808629ec3e3109e7fd3d2313f63fdaab` がfinal artifactと一致。RubyGems metadataのSHA256も一致した。
+- 公開後の[Actions run 43550371341](https://github.com/cuichangquan/acting_for/actions/runs/43550371341)で、public metadata・配布checksum・全payload一致を確認し、通常のversion指定によるGem installとcache内artifactのchecksumを検証。新規Rails ApplicationでEngine / Migration / Public API / Audit / Context-key regression / correlationの **85 checks / 8 scenariosがPASS**。環境はRuby 3.4.12 / RubyGems 3.6.9 / Rails 8.0.5.2 / PostgreSQL 16.16。
+- 同runの公開後検証job成功を条件にtag / Release jobを実行し、両jobがSUCCESS。GitHub APIで `refs/tags/v0.1.2` がcommit `adce638556e8e8b5a048fbd7241cd9df2808db7b` を指すことを確認した。
+- [GitHub Release ActingFor 0.1.2](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.2)は2026-11-14 12:13 JST（`published_at`: `2026-11-14T03:13:14Z`）に公開。Release ID `444978967`、`draft=false` / `prerelease=false`、targetは固定Release Source。一時workflow branchのhelper commitはGem / tagのsourceではない。
+
+### Source and post-publication documentation boundary
+
+Gemと `v0.1.2` tagの対象は上記Release Sourceに固定する。公開後のREADME / Getting Started / 現在状態 / Release Notes等の更新は別のdocumentation commitとし、そのcommitへtagを付け替えない。公開済みGemを文書更新のためにbuildし直したり上書きしたりしない。D248以前のDecision本文・番号は維持する。
+
+### Post-release evidence and closure
+
+```text
+RubyGems 0.1.2 publication: PASS
+Distributed artifact checksum: PASS
+Fresh published-gem installation: PASS (85 checks / 8 scenarios)
+v0.1.2 tag / GitHub Release: PASS
+Official Demo RubyGems 0.1.2 pre-merge / post-merge integration / HTTP smoke / MCP: PASS
+Official Demo merge: 2e0d0eafb2830b2887bce98d05893014ea3bdc98
+
+Release status: RELEASED
+Core documentation / exact head / merge SHA / post-merge CI closure: Core PR #11
+Official Demo post-merge CI: PASS (run 43550608317; closure in Demo PR #5)
+```
+
+Official Demoは[PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5)でreleased 0.1.2へ更新。[pre-merge run 43550284519](https://github.com/cuichangquan/acting_for_demo/actions/runs/43550284519)で29 runs / 182 assertions / 0 failures / 0 errors / 0 skipsとHTTP smoke / MCP verificationがPASSし、独立Codexレビュー後にmain `2e0d0eafb2830b2887bce98d05893014ea3bdc98` へ統合した。[post-merge run 43550608317](https://github.com/cuichangquan/acting_for_demo/actions/runs/43550608317)でもinstalled 0.1.2、29 runs / 182 assertions / 0 failures / 0 errors / 0 skips、HTTP smoke PASS、公式MCP clientの3判定PASSを確認した。exact merge SHAと両CI runのclosureは同PR #5に記録した。
+
+Coreの公開後文書の最終reviewed head・merge SHA・post-merge CIは[PR #11](https://github.com/cuichangquan/acting_for/pull/11)のclosure記録で追跡する。文書内に自身の未確定merge SHAを埋め込むためだけの追加commitは作らず、実際に完了した各工程の証跡へリンクする。過去の0.1.1や公開前artifactの証跡を0.1.2公開後の検証へ読み替えず、今回の自動検証をHuman browser verificationとも扱わない。

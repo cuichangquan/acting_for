@@ -1,14 +1,16 @@
 # Getting Started
 
-This is the detailed runnable introduction to ActingFor. It preserves the code, values, and expected results verified in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation).
+This is the detailed runnable introduction to ActingFor. Its walkthrough and expected results were established in a new Rails application for [D230](DECISIONS.md#d230-runnable-quick-start-implementation). The 0.1.2 artifact and published Gem were separately verified in fresh Rails applications; see [D249](DECISIONS.md#d249-actingfor-012-public-release-and-verification).
 
-ActingFor 0.1.1 is released on RubyGems. This guide installs the released `~> 0.1.1` version requirement, including the `Decision#reason_code` Public API added in 0.1.1.
+ActingFor 0.1.2 is released on RubyGems. This guide installs `~> 0.1.2`, including the exact Symbol-key correction in 0.1.2 and the `Decision#reason_code` Public API added in 0.1.1.
 
 ## Verified environment
 
-- Ruby 3.4.10
-- Rails 8.0.5.1
-- PostgreSQL 16.15
+- Ruby 3.4.12
+- Rails 8.0.5.2
+- PostgreSQL 16.16
+
+This environment was used for both [pre-publication artifact verification](https://github.com/cuichangquan/acting_for/actions/runs/43548370616) and [fresh installation of the published Gem](https://github.com/cuichangquan/acting_for/actions/runs/43550371341). Both passed 85 checks across 8 scenarios covering migrations, all three Decisions, Audit, the Context-key correction, and host-generated authorization correlation. The original D230 walkthrough used Ruby 3.4.10 / Rails 8.0.5.1 / PostgreSQL 16.15.
 
 Install Ruby 3.4, PostgreSQL 16, and PostgreSQL client development libraries first. The database account must be able to create databases. Configure PostgreSQL through variables such as `PGHOST`, `PGUSER`, and `PGPASSWORD`, or through `config/database.yml`.
 
@@ -17,8 +19,8 @@ The example uses Principal `User`, Shopping Agent, Action `purchase`, Resource `
 ## 1. Create a new Rails application
 
 ```sh
-gem install rails -v 8.0.5.1
-rails _8.0.5.1_ new shopping_demo --database=postgresql --minimal --skip-bundle --skip-git
+gem install rails -v 8.0.5.2
+rails _8.0.5.2_ new shopping_demo --database=postgresql --minimal --skip-bundle --skip-git
 cd shopping_demo
 ```
 
@@ -27,7 +29,7 @@ cd shopping_demo
 Add to the generated `Gemfile`:
 
 ```ruby
-gem "acting_for", "~> 0.1.1"
+gem "acting_for", "~> 0.1.2"
 # Rails 8.0 uses JSON options removed in JSON 3.
 gem "json", "< 3"
 ```
@@ -126,7 +128,7 @@ decision = ActingFor.authorize(
 # => [:allow, true, false, false]
 ```
 
-In 0.1.1, the same Decision also exposes its final authorization reason:
+Since 0.1.1, the same Decision also exposes its final authorization reason:
 
 ```ruby
 decision.reason_code

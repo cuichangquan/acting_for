@@ -1,6 +1,6 @@
 # ActingFor 0.1.2 Release Notes
 
-Status: **Candidate; not published**
+Status: **RELEASED — RubyGems, distributed artifact verification, exact-source tag, and GitHub Release completed.**
 
 ## Fix: exact Symbol keys in authorization Context
 
@@ -38,4 +38,22 @@ The test-first baseline is [CI run 43546478117](https://github.com/cuichangquan/
 
 The four added public-API regression cases check Decision results, matched delegation IDs, and selected Audit Context. The post-fix CI and independent review evidence is recorded in [PR #10](https://github.com/cuichangquan/acting_for/pull/10).
 
-This document describes the candidate. RubyGems publication, the `v0.1.2` tag, and a GitHub Release have not occurred. Before publication, freeze the release source and perform the artifact build, install, and checksum checks in the [Release Runbook](release_runbook.md). The published version remains 0.1.1 until that release procedure is completed.
+The corrected formal suite passed with 355 tests / 910 assertions, no failures, errors, or skips, across Ruby 3.4 / 4.0 and Rails 8.0 / 8.1. The user subsequently authorized the 0.1.2 release and published with their own RubyGems authentication. RubyGems metadata records publication at 2026-11-14 12:05 JST. The [distributed Gem](https://rubygems.org/downloads/acting_for-0.1.2.gem) was downloaded after publication; its size and SHA256 match the final artifact below, as does the metadata checksum.
+
+The final artifact was built from the frozen source and verified before publication in [Actions run 43548370616](https://github.com/cuichangquan/acting_for/actions/runs/43548370616). Strict build, the 17-file package allowlist, package-to-source comparison, known-secret-signature scan, and fresh Rails installation passed. The installation check passed 85 checks across 8 scenarios on Ruby 3.4.12 / Rails 8.0.5.2 / PostgreSQL 16.16, including migration, all three Decisions and Audit, the Context-key correction, and authorization correlation.
+
+| Release evidence | Value |
+| --- | --- |
+| Version | `0.1.2` |
+| Frozen release source | [`adce638556e8e8b5a048fbd7241cd9df2808db7b`](https://github.com/cuichangquan/acting_for/commit/adce638556e8e8b5a048fbd7241cd9df2808db7b) |
+| Gem | `acting_for-0.1.2.gem` |
+| Packaged files / size | 17 files / 16,384 bytes |
+| SHA256 | `ac2b5ceb93aa3896aab9891bca73424d808629ec3e3109e7fd3d2313f63fdaab` |
+| RubyGems publication | Confirmed by successful registration, public metadata, and package download |
+| Distributed artifact checksum | PASS; matches the final artifact and RubyGems metadata |
+| Fresh published-gem installation | PASS; 85 checks / 8 scenarios in [Actions run 43550371341](https://github.com/cuichangquan/acting_for/actions/runs/43550371341) |
+| `v0.1.2` tag and GitHub Release | PASS; tag points to the frozen source; [public Release](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.2) published 2026-11-14 12:13 JST |
+| Core post-publication documentation / CI | Final reviewed head, merge SHA, and post-merge CI closure are tracked in [Core PR #11](https://github.com/cuichangquan/acting_for/pull/11) |
+| Official Demo on released 0.1.2 | [Demo PR #5](https://github.com/cuichangquan/acting_for_demo/pull/5) merged; [post-merge CI](https://github.com/cuichangquan/acting_for_demo/actions/runs/43550608317) passed 29 tests / 182 assertions, HTTP smoke, and official MCP verification on installed 0.1.2 |
+
+The package and `v0.1.2` tag use the frozen source above. Documentation commits made after publication have their own revisions and do not replace the packaged source or change the published bytes. The published-Gem workflow downloaded and checked the public metadata, checksum, and payload, then verified a normal version-based Gem installation and its cached artifact in a fresh Rails app. The tag/Release job ran only after that verification succeeded. Both jobs in run 43550371341 passed. The environment was Ruby 3.4.12 / RubyGems 3.6.9 / Rails 8.0.5.2 / PostgreSQL 16.16. These checks follow the [Release Runbook](release_runbook.md). See [D249](DECISIONS.md#d249-actingfor-012-public-release-and-verification) for the release record.
