@@ -186,11 +186,15 @@ end
 
 The host establishes business-critical values; ActingFor evaluates constraints against the supplied Context. Use the host-loaded `product.price`, as above, instead of blindly trusting an Agent-supplied `params[:amount]`. Agent-supplied business values require verification before use.
 
+Build an ordinary Hash with actual top-level Symbol keys, such as `{ amount: product.price }`. String keys do not match constraint fields. `HashWithIndifferentAccess` stores String keys and does not provide the required exact Symbol keys; build a trusted Hash explicitly instead of passing request parameters through.
+
 ActingFor does not fetch prices, validate currency, check ownership, or compare an Agent's claims with stored data. Those are host responsibilities. See the [Context Trust Boundary](public_api_v0_1.md#13-context-trust-boundary).
 
 ## 9. Verify automatic Audit persistence
 
 Every Decision is recorded automatically inside `ActingFor.authorize(...)`; there is no separate Audit call.
+
+The following inspection uses the fresh, single-user console session above, with no concurrent requests. `AuditEvent.last` is only convenient for that isolated session; it cannot identify a particular request in a running application.
 
 ```ruby
 ActingFor::AuditEvent.order(:id).pluck(:decision)
@@ -205,7 +209,43 @@ Audit Context defaults to `{}`. Only fields explicitly selected with `audit_cont
 
 If persistence fails, `ActingFor.authorize(...)` raises `ActingFor::AuditPersistenceError` and returns no Decision. The failure is neither an `allow` nor a normal `deny`; the host must not continue to business logic.
 
+### Correlate authorization Audit with host processing logs
 
+Generate a new host-owned ID for each `authorize` call, including retries. The existing `context` and `audit_context_keys` arguments can save it alongside the Decision without adding a new Core API:
+
+```ruby
+require "securerandom"
+
+product = Product.find_by!(price: 8_900)
+authorization_id = SecureRandom.uuid
+decision = ActingFor.authorize(
+  agent: shopping_agent, principal: user, action: :purchase,
+  resource: product,
+  context: { amount: product.price, authorization_id: authorization_id },
+  audit_context_keys: [:amount, :authorization_id]
+)
+
+Rails.logger.info({
+  event: "agent_authorization",
+  authorization_id: authorization_id,
+  decision: decision.status,
+  reason_code: decision.reason_code
+}.to_json)
+```
+
+Continue to business processing only when host authorization permits it and `decision.allowed?` is true. Pass the same `authorization_id` to the host's purchase or job processing and include it in that processing's outcome logs; use the same ID to log a stopped request when the Decision requires approval or denies it. This links the authorization decision with what the host subsequently did. It is a correlation ID, not an idempotency key or an authorization token; duplicate-execution protection remains with the host.
+
+For this PostgreSQL example, find the matching AuditEvent by the ID rather than by the latest record:
+
+```ruby
+audit = ActingFor::AuditEvent.find_by!(
+  "sanitized_context ->> 'authorization_id' = ?", authorization_id
+)
+audit.sanitized_context
+# => { "amount" => 8900, "authorization_id" => authorization_id }
+```
+
+The authorization log records the returned Decision, not a successful purchase. Record database business success only after the transaction that owns the business changes commits. An AuditEvent created inside an outer transaction can also be rolled back with that transaction; the host's ordinary log is not rolled back with it.
 
 ## How ActingFor differs from host authorization and audit tooling
 

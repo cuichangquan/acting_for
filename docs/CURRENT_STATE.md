@@ -1,6 +1,6 @@
 # ActingFor Current State
 
-更新日：2026-09-30
+更新日：2026-11-14
 
 ## Source of Truth
 
@@ -24,7 +24,7 @@ New Chat開始時には必ずGitHub `main` の最新版を確認すること。
 ## Latest Decision
 
 ```text
-D247
+D248
 ```
 
 ## Current Status
@@ -62,10 +62,13 @@ Post-release documentation current-state consistency cleanup completed (D239); h
 Decision reason_code Public API design approved (D240); implementation / CI completed (D241); documentation / Demo candidate verification completed (D242); focused human browser verification PASS (D243); 0.1.1 release order approved (D244); Core merge / final artifact verification completed (D245); 0.1.1 released (D246); Official Demo switched to RubyGems 0.1.1 and post-release verification completed (D247)
 Official Demo MCP reference integration implemented and verified end-to-end with the official MCP Ruby HTTP client; Demo main CI PASS (2026-09-30)
 
+0.1.2 candidate: exact Symbol-key Context correction and host log correlation example (D248; PR #10)
 Released: `acting_for` 0.1.1 / `v0.1.1`
 ```
 
 ## Implemented
+
+D248：ContextのSymbol-key契約と判定・監査を整合する0.1.2候補。公開API経由の再現テスト4件を追加し、修正前の正式4 matrixで同じ3件の不整合を確認。最小修正・通常Symbol Hashの案内・認可とhost logの相関ID例を準備した。修正後のCIとレビュー証跡は[PR #10](https://github.com/cuichangquan/acting_for/pull/10)、互換性は[候補Release Notes](release_notes_v0_1_2.md)を参照。RubyGems 0.1.2 / tag / GitHub Releaseは未公開。
 
 Official Demo MCP Reference Integration（2026-09-30）：Official MCP Ruby SDK 1.6.1 / Streamable HTTPで `POST /mcp` と `purchase_product(product_id)` を実装し、既存 `ShoppingAgentPurchase` → `ActingFor.authorize` 境界を再利用。Agent / Principal / Product priceはHost側で解決し、MCP入力からtrusted authorization contextを上書きできない構成を維持。Official `MCP::Client::HTTP` による外部client verification run `36706086236` で ¥800=`allow` / ¥2,000=`require_approval` / ¥5,000=`deny` を確認し、23 runs / 152 assertions / 0 failures / 0 errors / 0 skips、Smoke HTTP PASS、External MCP client verification PASS。Demo PR #2をsquash mergeし、Demo main `1f75f82e6a4e0e9d54e10b983be1bd89f23efd5e` のActions run `36706924955` もPASS。ActingFor Core / schema / Public API変更なし。
 
@@ -186,7 +189,7 @@ Engineのstandalone loadはD093をD094で修正し、`require "rails"` を使用
 
 ActingFor 0.1.0のRubyGems publication、配布artifact verification、`v0.1.0` tag / GitHub Release、Official DemoのRubyGems `~> 0.1.0` 移行、automated integration / smoke / Full Human Manual Verificationまで完了した。v0.1.0 release verificationは閉じた状態。
 
-ActingFor 0.1.1 release verificationは **POST-RELEASE VERIFIED** として完了。次の重要事項は新規機能・改善候補から1項目を選び、別Decisionとして開始する。
+ActingFor 0.1.1 release verificationは **POST-RELEASE VERIFIED** として完了。D248で0.1.2候補の小規模修正と導入例を開始した。[PR #10](https://github.com/cuichangquan/acting_for/pull/10)の正式CI・レビュー結果を確認し、[Release Runbook](release_runbook.md)に従って最終source / artifactを検証してから公開を判断する。
 
 ## Important Rules
 

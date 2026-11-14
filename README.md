@@ -16,6 +16,8 @@ AI AgentがPrincipalの代理として何をしてよいかを、委任された
 
 > **Released: v0.1.1.** ActingFor 0.1.1 is published on [RubyGems](https://rubygems.org/gems/acting_for) and as [GitHub Release v0.1.1](https://github.com/cuichangquan/acting_for/releases/tag/v0.1.1). It adds `Decision#reason_code` while keeping the existing Decision statuses, Delegation semantics, AuditEvent reason values, and database schema unchanged. CI covers Ruby 3.4 / 4.0, Rails 8.0 / 8.1, and PostgreSQL 16.
 
+Next candidate: [0.1.2](docs/release_notes_v0_1_2.md) aligns constraint evaluation with the documented exact Symbol-key Context contract and adds an authorization-to-host-log correlation example. The candidate is not yet published; the released installation instructions below remain on 0.1.1.
+
 ## ActingFor at a glance
 
 ![ActingFor overview: Principal, Delegation, Agent, authorization decisions, AuditEvent, and Rails Host Application](docs/images/acting_for_overview.svg)

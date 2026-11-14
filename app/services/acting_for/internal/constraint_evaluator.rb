@@ -18,7 +18,7 @@ module ActingFor
 
           field = constraint["field"]
           key = field.to_sym
-          return false unless context.key?(key)
+          return false unless exact_symbol_key?(context, key)
 
           actual = context[key]
           return false if actual.nil?
@@ -43,6 +43,10 @@ module ActingFor
           else
             false
           end
+        end
+
+        def exact_symbol_key?(context, key)
+          context.each_key.any? { |existing_key| existing_key.is_a?(Symbol) && existing_key == key }
         end
 
         def canonical_constraint?(constraint)
